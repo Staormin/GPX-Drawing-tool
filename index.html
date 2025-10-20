@@ -1,0 +1,2724 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPX Drawing tool</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      /* ===== CSS Variables ===== */
+      :root {
+        --primary: #0066cc;
+        --primary-dark: #0084ff;
+        --secondary: #8b5cf6;
+        --secondary-dark: #7c3aed;
+        --accent: #10b981;
+        --accent-dark: #059669;
+        --error: #ef4444;
+        --error-dark: #dc2626;
+        --text-primary: #1f2937;
+        --text-secondary: #94a3b8;
+        --border: #e2e8f0;
+        --bg-light: rgba(255, 255, 255, 0.95);
+        --bg-lighter: rgba(255, 255, 255, 0.8);
+        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a1f2e 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        color: #1f2937;
+      }
+
+      .container {
+        background: var(--bg-light);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 24px;
+        box-shadow: var(--shadow-lg), 0 0 1px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        padding: 30px 50px 50px 50px;
+        max-width: 1400px;
+        width: 100%;
+      }
+
+      .content-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 45px;
+        align-items: start;
+      }
+
+      @media (max-width: 1024px) {
+        .content-wrapper {
+          gap: 35px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .content-wrapper {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .container {
+          padding: 35px;
+        }
+
+        h1 {
+          font-size: 32px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        button {
+          font-size: 14px;
+          padding: 14px 20px;
+        }
+      }
+
+      .form-section {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      #gpxForm {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      #gpxForm .button-group {
+        margin-top: auto;
+      }
+
+      .map-section {
+        min-width: 0;
+      }
+
+      #map {
+        width: 100%;
+        height: 550px;
+        border-radius: 16px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+      }
+
+      #map:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      }
+
+      h1 {
+        color: #0f172a;
+        margin-bottom: 12px;
+        font-size: 42px;
+        font-weight: 700;
+        text-align: center;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, var(--primary) 0%, #00a8e8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .form-group {
+        margin-bottom: 28px;
+      }
+
+      label {
+        display: block;
+        color: #1f2937;
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      input[type='number'],
+      input[type='text'] {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.25s ease;
+        outline: none;
+        background: rgba(255, 255, 255, 0.8);
+        font-family: inherit;
+        color: #1f2937;
+      }
+
+      input[type='number']::placeholder,
+      input[type='text']::placeholder {
+        color: #cbd5e1;
+      }
+
+      input[type='number']:focus,
+      input[type='text']:focus {
+        border-color: var(--primary);
+        box-shadow:
+          0 0 0 4px rgba(0, 102, 204, 0.08),
+          0 4px 12px rgba(0, 102, 204, 0.12);
+        background: var(--bg-light);
+      }
+
+      .input-hint {
+        color: #94a3b8;
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 400;
+      }
+
+      .input-error {
+        color: #991b1b;
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
+        display: none;
+        animation: slideIn 0.2s ease;
+      }
+
+      .input-error.show {
+        display: block;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 40px;
+      }
+
+      button {
+        flex: 1;
+        padding: 16px 24px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+      }
+
+      .btn-generate {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 102, 204, 0.25);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-generate::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .btn-generate:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 102, 204, 0.35);
+      }
+
+      .btn-generate:hover::before {
+        left: 100%;
+      }
+
+      .btn-generate:active {
+        transform: translateY(-1px);
+      }
+
+      .btn-generate:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .output {
+        margin-top: 30px;
+        padding: 18px 22px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+        border-radius: 12px;
+        display: none;
+        border-left: 4px solid var(--accent);
+        animation: slideIn 0.3s ease;
+      }
+
+      .output.error {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(244, 63, 94, 0.05) 100%);
+        border-left-color: var(--error);
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* Toast notification styles */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        border-left: 4px solid var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 2000;
+        animation: slideInRight 0.3s ease;
+        max-width: 400px;
+      }
+
+      .toast.success {
+        border-left-color: var(--accent);
+      }
+
+      .toast.error {
+        border-left-color: var(--error);
+      }
+
+      .toast-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .toast-content {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1f2937;
+        line-height: 1.4;
+      }
+
+      .toast.success .toast-content {
+        color: #047857;
+      }
+
+      .toast.error .toast-content {
+        color: #991b1b;
+      }
+
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(400px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes slideOutRight {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(400px);
+        }
+      }
+
+      .toast.fade-out {
+        animation: slideOutRight 0.3s ease;
+      }
+
+      @media (max-width: 768px) {
+        .toast {
+          right: 12px;
+          left: 12px;
+          max-width: none;
+        }
+      }
+
+      .output-title {
+        font-weight: 700;
+        color: #065f46;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .output.error .output-title {
+        color: #7f1d1d;
+      }
+
+      .output-content {
+        color: #047857;
+        font-size: 14px;
+        line-height: 1.6;
+        font-weight: 500;
+      }
+
+      .output.error .output-content {
+        color: #991b1b;
+      }
+
+      /* Line segments styling */
+      .line-segments-section {
+        margin-top: 45px;
+        padding-top: 35px;
+        border-top: 2px solid #e2e8f0;
+      }
+
+      .line-segments-title {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 20px;
+        font-size: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .line-segment-item {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(248, 250, 252, 0.8) 100%);
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+      }
+
+      .line-segment-item:hover {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.03) 0%, rgba(0, 132, 255, 0.03) 100%);
+        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.08);
+      }
+
+      .segment-header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .segment-number {
+        font-weight: 700;
+        color: #0066cc;
+        font-size: 14px;
+      }
+
+      .btn-remove-segment {
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        font-size: 28px;
+        font-weight: 300;
+        background: transparent;
+        color: #ef4444;
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+      }
+
+      .btn-remove-segment:hover {
+        background: transparent;
+        color: #dc2626;
+        transform: scale(1.15);
+      }
+
+      .btn-remove-segment:active {
+        transform: scale(0.95);
+      }
+
+      .segment-input-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+
+      .radio-group {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 14px;
+        padding: 14px;
+        background: rgba(248, 250, 252, 0.7);
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        flex: 1;
+      }
+
+      .radio-option input[type='radio'] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        accent-color: #0066cc;
+      }
+
+      .radio-option label {
+        margin: 0;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1f2937;
+      }
+
+      .conditional-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+        animation: fadeIn 0.2s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .conditional-inputs.hidden {
+        display: none;
+      }
+
+      .btn-add-segment {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 14px 22px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      }
+
+      .btn-add-segment:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+      }
+
+      .btn-add-segment:active {
+        transform: translateY(0);
+      }
+
+      /* Top bar with title and project selector */
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 20px;
+      }
+
+      .top-bar h1 {
+        margin: 0;
+        flex: 1;
+      }
+
+      /* Project selector styles */
+      .project-selector {
+        flex: 0 0 280px;
+      }
+
+      .project-search-wrapper {
+        position: relative;
+        display: flex;
+        gap: 0;
+        align-items: stretch;
+      }
+
+      #projectSearch {
+        flex: 1;
+        padding: 10px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        outline: none;
+        background: rgba(255, 255, 255, 0.8);
+        color: #1f2937;
+        font-family: inherit;
+        transition: all 0.25s ease;
+        min-width: 0;
+      }
+
+      #projectSearch:focus {
+        border-color: #0066cc;
+        box-shadow:
+          0 0 0 3px rgba(0, 102, 204, 0.08),
+          0 2px 8px rgba(0, 102, 204, 0.12);
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      #projectSearch::placeholder {
+        color: #cbd5e1;
+      }
+
+      @media (max-width: 1024px) {
+        .top-bar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+
+        .project-selector {
+          flex: 0 0 auto;
+          width: 100%;
+        }
+
+        .top-bar h1 {
+          margin-bottom: 0;
+        }
+      }
+
+      .project-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+        margin-top: 4px;
+      }
+
+      .project-dropdown.show {
+        display: block;
+      }
+
+      .project-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .project-item:last-child {
+        border-bottom: none;
+      }
+
+      .project-item:hover {
+        background: rgba(0, 102, 204, 0.05);
+      }
+
+      .project-item.selected {
+        background: rgba(0, 102, 204, 0.1);
+        color: #0066cc;
+        font-weight: 500;
+      }
+
+      .project-item-name {
+        flex: 1;
+        color: #1f2937;
+        font-size: 14px;
+      }
+
+      .project-item-delete {
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px 8px;
+        transition: all 0.15s ease;
+        border-radius: 6px;
+      }
+
+      .project-item-delete:hover {
+        background: rgba(239, 68, 68, 0.1);
+        transform: scale(1.1);
+      }
+
+      .btn-save-project {
+        background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        font-size: 15px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+      }
+
+      .btn-save-project:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
+      }
+
+      .btn-save-project:active {
+        transform: translateY(-1px);
+      }
+
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      @media (max-width: 768px) {
+        .button-group {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ===== LAYERS PANEL ===== */
+      .layers-panel {
+        background: var(--bg-light);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .layers-panel-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .layers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .layers-empty {
+        text-align: center;
+        padding: 20px 10px;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      /* ===== ACTION BUTTONS ===== */
+      .btn-action {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 102, 204, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn-action:hover {
+        opacity: 0.9;
+      }
+
+      .btn-action:active {
+        opacity: 0.8;
+      }
+
+      .btn-action-icon {
+        font-size: 18px;
+      }
+
+      /* ===== MODAL ===== */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+      }
+
+      .modal {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 30px;
+        animation: slideIn 0.3s ease;
+      }
+
+      .modal-header {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .modal-header-icon {
+        font-size: 24px;
+      }
+
+      .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .modal-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .modal-form-group label {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+      }
+
+      .modal-form-group input {
+        padding: 12px 14px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.25s ease;
+        outline: none;
+      }
+
+      .modal-form-group input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.08);
+      }
+
+      .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .modal-btn {
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+      }
+
+      .modal-btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+      }
+
+      .modal-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+      }
+
+      .modal-btn-secondary {
+        background: transparent;
+        color: var(--text-primary);
+        border: 2px solid var(--border);
+      }
+
+      .modal-btn-secondary:hover {
+        background: var(--bg-lighter);
+        border-color: var(--primary);
+      }
+
+      /* Modal Close Button */
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .modal-close:hover {
+        color: var(--text-primary);
+        transform: rotate(90deg);
+      }
+
+      /* Layers Panel Section */
+      .layers-panel-section {
+        margin-top: 15px;
+        padding-top: 15px;
+      }
+
+      .layers-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .layers-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+      }
+
+      .layers-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: nowrap;
+        width: 100%;
+      }
+
+      .layers-actions .btn-action {
+        flex: 1;
+      }
+
+      .layers-panel {
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-lighter);
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .layers-empty-state {
+        padding: 30px 20px;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      .layer-item {
+        padding: 12px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+      }
+
+      .layer-item:hover {
+        opacity: 0.8;
+      }
+
+      .layer-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .layer-item-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px;
+      }
+
+      .layer-item-type {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+
+      .layer-item-actions {
+        display: flex;
+        gap: 6px;
+        margin-left: 10px;
+      }
+
+      .layer-action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+      }
+
+      .layer-action-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--text-primary);
+      }
+
+      .layer-action-btn.delete:hover {
+        color: var(--error);
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="top-bar">
+        <h1>GPX Drawing tool</h1>
+        <!-- Project Selector -->
+        <div class="project-selector">
+          <div class="project-search-wrapper">
+            <input
+              type="text"
+              id="projectSearch"
+              placeholder="Load project"
+              autocomplete="off"
+            />
+            <div class="project-dropdown" id="projectDropdown"></div>
+          </div>
+        </div>
+      </div>
+      <div class="content-wrapper">
+        <div class="form-section">
+          <form id="gpxForm">
+
+            <!-- Centers and Radius (Hidden for new layer-based UX) -->
+            <div class="form-group" style="display: none;">
+              <label for="coordinates">Centers</label>
+              <input
+                type="text"
+                id="coordinates"
+                placeholder="48.8566, 2.3522, 48.9, 2.4, 49.0, 2.5"
+              />
+              <div class="input-hint">
+                Enter one or more center points as: lat, lon [, lat, lon, ...]
+              </div>
+              <div class="input-error" id="coordinatesError"></div>
+            </div>
+
+            <div class="form-group" style="display: none;">
+              <label for="radius">Radius (km)</label>
+              <input type="text" id="radius" placeholder="1.0, 2.5, 5.0" />
+              <div class="input-hint">
+                Circle radius in kilometers (supports multiple radii separated by comma or space)
+              </div>
+              <div class="input-error" id="radiusError"></div>
+            </div>
+
+            <!-- Layers Panel Section -->
+            <div class="layers-panel-section">
+              <div class="layers-header">
+                <div class="layers-actions">
+                  <button type="button" class="btn-action" id="addCircleBtn" title="Add a new circle">
+                    + Add Circle
+                  </button>
+                  <button type="button" class="btn-action" id="addLineSegmentBtn" title="Add a new line segment">
+                    + Add Line
+                  </button>
+                  <button type="button" class="btn-action" id="addPointBtn" title="Add a new point">
+                    + Add Point
+                  </button>
+                </div>
+              </div>
+              <div class="layers-panel" id="layersPanel">
+                <div class="layers-empty-state">
+                  No elements added yet. Use the buttons above to add circles, line segments, or points.
+                </div>
+              </div>
+            </div>
+
+            <div class="button-group">
+              <button type="button" class="btn-save-project" id="saveProjectBtn">
+                💾 Save Project
+              </button>
+              <button type="submit" class="btn-generate">📥 Download GPX</button>
+            </div>
+          </form>
+
+          <div id="output" class="output">
+            <div class="output-title">Status</div>
+            <div class="output-content" id="outputMessage"></div>
+          </div>
+        </div>
+
+        <div class="map-section">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Circle Modal -->
+    <div class="modal-overlay" id="circleModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="circleModalTitle">Add Circle</h2>
+        </div>
+        <form id="circleForm" class="modal-form">
+          <div class="modal-form-group">
+            <label for="circleName">Circle Name</label>
+            <input type="text" id="circleName" placeholder="e.g., Search Area, Zone 1" required />
+          </div>
+          <div class="modal-form-group">
+            <label for="circleCenter">Center Coordinates</label>
+            <input type="text" id="circleCenter" placeholder="48.8566, 2.3522" required />
+            <div class="input-hint">Latitude, Longitude</div>
+          </div>
+          <div class="modal-form-group">
+            <label for="circleRadius">Radius (km)</label>
+            <input type="text" id="circleRadius" placeholder="1.0" required />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelCircleBtn">Cancel</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Add Circle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Line Segment Modal -->
+    <div class="modal-overlay" id="lineSegmentModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="lineSegmentModalTitle">Add Line Segment</h2>
+        </div>
+        <form id="lineSegmentForm" class="modal-form">
+          <div class="modal-form-group">
+            <label for="lineSegmentName">Line Segment Name</label>
+            <input type="text" id="lineSegmentName" placeholder="e.g., Path 1, Route A" required />
+          </div>
+          <div class="modal-form-group">
+            <label for="lineSegmentCenter">Center Coordinates</label>
+            <input type="text" id="lineSegmentCenter" placeholder="48.8566, 2.3522" required />
+            <div class="input-hint">Latitude, Longitude</div>
+          </div>
+          <div class="modal-form-group">
+            <label for="lineSegmentMode">Mode</label>
+            <select id="lineSegmentMode" required>
+              <option value="coordinate">Endpoint (by coordinates)</option>
+              <option value="azimuth">Azimuth (by bearing and distance)</option>
+            </select>
+          </div>
+          <div id="coordinateMode" class="modal-form-group">
+            <label for="lineSegmentEndpoint">Endpoint Coordinates</label>
+            <input type="text" id="lineSegmentEndpoint" placeholder="48.9, 2.4" />
+            <div class="input-hint">Latitude, Longitude</div>
+          </div>
+          <div id="azimuthMode" class="modal-form-group" style="display: none;">
+            <label for="lineSegmentAzimuth">Azimuth (degrees)</label>
+            <input type="text" id="lineSegmentAzimuth" placeholder="45" />
+          </div>
+          <div id="azimuthMode" class="modal-form-group" style="display: none;">
+            <label for="lineSegmentDistance">Distance (km)</label>
+            <input type="text" id="lineSegmentDistance" placeholder="5.0" />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelLineSegmentBtn">Cancel</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Add Line</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Point Modal -->
+    <div class="modal-overlay" id="pointModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="pointModalTitle">Add Point</h2>
+        </div>
+        <form id="pointForm" class="modal-form">
+          <div class="modal-form-group">
+            <label for="pointName">Point Name</label>
+            <input type="text" id="pointName" placeholder="e.g., Waypoint 1, Landmark" required />
+          </div>
+          <div class="modal-form-group">
+            <label for="pointCoordinates">Coordinates</label>
+            <input type="text" id="pointCoordinates" placeholder="48.8566, 2.3522" required />
+            <div class="input-hint">Latitude, Longitude</div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelPointBtn">Cancel</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Add Point</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Filename Modal -->
+    <div class="modal-overlay" id="filenameModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="filenameModalTitle">Save File</h2>
+        </div>
+        <form id="filenameForm" class="modal-form">
+          <div class="modal-form-group">
+            <label for="filenameInput">Filename</label>
+            <input type="text" id="filenameInput" placeholder="filename.gpx" required />
+            <div class="input-hint">The .gpx extension will be added automatically if not provided</div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelFilenameBtn">Cancel</button>
+            <button type="submit" class="modal-btn modal-btn-primary" id="confirmFilenameBtn">Download</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // ===== UTILITY FUNCTIONS: COORDINATES & CALCULATIONS =====
+      // Convert degrees to radians
+      function toRadians(degrees) {
+        return (degrees * Math.PI) / 180;
+      }
+
+      // Convert radians to degrees
+      function toDegrees(radians) {
+        return (radians * 180) / Math.PI;
+      }
+
+      // Calculate destination point given distance and bearing from start point
+      function destinationPoint(lat, lon, distance, bearing) {
+        const R = 6371; // Earth's radius in km
+        const δ = distance / R; // angular distance
+        const θ = toRadians(bearing);
+
+        const φ1 = toRadians(lat);
+        const λ1 = toRadians(lon);
+
+        const φ2 = Math.asin(Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ));
+
+        const λ2 =
+          λ1 +
+          Math.atan2(
+            Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+            Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2)
+          );
+
+        return {
+          lat: toDegrees(φ2),
+          lon: toDegrees(λ2),
+        };
+      }
+
+      // Generate circle points
+      function generateCircle(centerLat, centerLon, radiusKm, numPoints) {
+        const points = [];
+
+        for (let i = 0; i < numPoints; i++) {
+          const bearing = (360 / numPoints) * i;
+          const point = destinationPoint(centerLat, centerLon, radiusKm, bearing);
+          points.push(point);
+        }
+
+        // Close the circle by adding the first point again
+        points.push(points[0]);
+
+        return points;
+      }
+
+      // Generate GPX XML for multiple centers
+      function generateMultiCenterGPX(centers, radiiKm, numPoints) {
+        const timestamp = new Date().toISOString();
+        const radiiDesc =
+          radiiKm.length === 1 ? `radius ${radiiKm[0]} km` : `radii ${radiiKm.join(', ')} km`;
+        const centersDesc =
+          centers.length === 1
+            ? `center at ${centers[0].lat}, ${centers[0].lon}`
+            : `${centers.length} centers`;
+
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GPX Circle Generator"
+     xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>Circle Tracks</name>
+    <desc>Circular tracks with ${centersDesc} and ${radiiDesc}</desc>
+    <time>${timestamp}</time>
+  </metadata>
+`;
+
+        // Add waypoints for all centers
+        centers.forEach((center, centerIndex) => {
+          gpx += `  <wpt lat="${center.lat.toFixed(6)}" lon="${center.lon.toFixed(6)}">
+    <ele>0</ele>
+    <name>Center ${centerIndex + 1}</name>
+    <desc>Circle center point ${centerIndex + 1}</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+`;
+        });
+
+        // Generate tracks for each center and radius combination
+        centers.forEach((center, centerIndex) => {
+          radiiKm.forEach((radiusKm) => {
+            const points = generateCircle(center.lat, center.lon, radiusKm, numPoints);
+
+            gpx += `  <trk>
+    <name>Center ${centerIndex + 1} - Circle ${radiusKm}km</name>
+    <type>Circle</type>
+    <trkseg>
+`;
+
+            points.forEach((point) => {
+              gpx += `      <trkpt lat="${point.lat.toFixed(6)}" lon="${point.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+`;
+            });
+
+            gpx += `    </trkseg>
+  </trk>
+`;
+          });
+        });
+
+        gpx += `</gpx>`;
+
+        return gpx;
+      }
+
+      // Generate line segment tracks for GPX
+      function generateLineSegmentTracks(segments) {
+        let gpxTracks = '';
+
+        segments.forEach((segment, segmentIndex) => {
+          let endpoint;
+
+          if (segment.type === 'coordinate') {
+            endpoint = segment.endpoint;
+          } else {
+            // Calculate endpoint from azimuth and distance
+            endpoint = destinationPoint(
+              segment.center.lat,
+              segment.center.lon,
+              segment.distance,
+              segment.azimuth
+            );
+          }
+
+          gpxTracks += `  <trk>
+    <name>Line Segment ${segmentIndex + 1}</name>
+    <type>LineSegment</type>
+    <trkseg>
+      <trkpt lat="${segment.center.lat.toFixed(6)}" lon="${segment.center.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+      <trkpt lat="${endpoint.lat.toFixed(6)}" lon="${endpoint.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+`;
+        });
+
+        return gpxTracks;
+      }
+
+      // Generate complete GPX with circles and line segments
+      function generateCompleteGPX(centers, radiiKm, numPoints, segments, layerPoints = []) {
+        const timestamp = new Date().toISOString();
+        const radiiDesc =
+          radiiKm.length === 1 ? `radius ${radiiKm[0]} km` : `radii ${radiiKm.join(', ')} km`;
+        const centersDesc =
+          centers.length === 1
+            ? `center at ${centers[0].lat}, ${centers[0].lon}`
+            : `${centers.length} centers`;
+
+        let descSuffix = '';
+        if (segments.length > 0) descSuffix += ` plus ${segments.length} line segment(s)`;
+        if (layerPoints.length > 0) descSuffix += ` plus ${layerPoints.length} point(s)`;
+
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GPX Circle Generator"
+     xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>Circle Tracks and Line Segments</name>
+    <desc>Circular tracks with ${centersDesc} and ${radiiDesc}${descSuffix}</desc>
+    <time>${timestamp}</time>
+  </metadata>
+`;
+
+        // Add waypoints for all centers
+        centers.forEach((center, centerIndex) => {
+          gpx += `  <wpt lat="${center.lat.toFixed(6)}" lon="${center.lon.toFixed(6)}">
+    <ele>0</ele>
+    <name>Center ${centerIndex + 1}</name>
+    <desc>Circle center point ${centerIndex + 1}</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+`;
+        });
+
+        // Add waypoints for all layer points
+        layerPoints.forEach((point) => {
+          gpx += `  <wpt lat="${point.coordinates.lat.toFixed(6)}" lon="${point.coordinates.lon.toFixed(6)}">
+    <ele>0</ele>
+    <name>${point.name}</name>
+    <desc>User added point</desc>
+    <sym>Flag, Red</sym>
+  </wpt>
+`;
+        });
+
+        // Generate tracks for each center and radius combination
+        centers.forEach((center, centerIndex) => {
+          radiiKm.forEach((radiusKm) => {
+            const points = generateCircle(center.lat, center.lon, radiusKm, numPoints);
+
+            gpx += `  <trk>
+    <name>Center ${centerIndex + 1} - Circle ${radiusKm}km</name>
+    <type>Circle</type>
+    <trkseg>
+`;
+
+            points.forEach((point) => {
+              gpx += `      <trkpt lat="${point.lat.toFixed(6)}" lon="${point.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+`;
+            });
+
+            gpx += `    </trkseg>
+  </trk>
+`;
+          });
+        });
+
+        // Add line segment tracks
+        if (segments.length > 0) {
+          gpx += generateLineSegmentTracks(segments);
+        }
+
+        gpx += `</gpx>`;
+
+        return gpx;
+      }
+
+      // Generate timestamp for filename
+      function getTimestamp() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const date = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${date}_${hours}-${minutes}-${seconds}`;
+      }
+
+      // ===== GPX FILE UTILITIES =====
+      // Download GPX file
+      function downloadGPX(content, filename) {
+        const blob = new Blob([content], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Show output message
+      function showMessage(message, isError = false) {
+        const output = document.getElementById('output');
+        const outputMessage = document.getElementById('outputMessage');
+
+        output.classList.remove('success', 'error');
+        output.classList.add(isError ? 'error' : 'success');
+        output.classList.add('show');
+        outputMessage.textContent = message;
+      }
+
+      // ===== UI FEEDBACK & NOTIFICATIONS =====
+      // Show toast notification
+      function showToast(message, isSuccess = true, duration = 3000) {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
+
+        const icon = isSuccess ? '✓' : '⚠';
+        toast.innerHTML = `
+          <div class="toast-icon">${icon}</div>
+          <div class="toast-content">${message}</div>
+        `;
+
+        // Add to DOM
+        document.body.appendChild(toast);
+
+        // Auto remove after duration
+        setTimeout(() => {
+          toast.classList.add('fade-out');
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, duration);
+      }
+
+      // ===== MAP VISUALIZATION =====
+      let map;
+      let mapLayers = [];
+      let mapInitialized = false;
+
+      function initMap() {
+        if (mapInitialized) return;
+
+        try {
+          // Create map centered on default location (Paris)
+          map = L.map('map').setView([48.8566, 2.3522], 12);
+
+          // Add OpenStreetMap tile layer
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+          }).addTo(map);
+
+          mapInitialized = true;
+
+          // Invalidate size to ensure map renders correctly
+          setTimeout(() => {
+            if (map) {
+              map.invalidateSize();
+            }
+          }, 100);
+        } catch (error) {
+          console.error('Error initializing map:', error);
+        }
+      }
+
+      // Clear all map layers (circles and markers)
+      function clearMapLayers() {
+        if (!map) return;
+        mapLayers.forEach((layer) => map.removeLayer(layer));
+        mapLayers = [];
+      }
+
+      // ===== LAYERS MANAGEMENT =====
+      // Data structure for layers
+      let layers = {
+        circles: [],
+        lineSegments: [],
+        points: []
+      };
+
+      // Add a new circle to layers
+      function addCircleLayer(name, center, radius) {
+        const circle = {
+          id: Date.now(),
+          name: name,
+          center: center,
+          radius: radius
+        };
+        layers.circles.push(circle);
+        updateLayersPanel();
+        updateMapPreview();
+        return circle.id;
+      }
+
+      // Add a new line segment to layers
+      function addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance) {
+        const segment = {
+          id: Date.now(),
+          name: name,
+          center: center,
+          mode: mode,
+          endpoint: endpoint,
+          azimuth: azimuth,
+          distance: distance
+        };
+        layers.lineSegments.push(segment);
+        updateLayersPanel();
+        updateMapPreview();
+        return segment.id;
+      }
+
+      // Add a new point to layers
+      function addPointLayer(name, coordinates) {
+        const point = {
+          id: Date.now(),
+          name: name,
+          coordinates: coordinates
+        };
+        layers.points.push(point);
+        updateLayersPanel();
+        updateMapPreview();
+        return point.id;
+      }
+
+      // Remove a layer by type and id
+      function removeLayer(type, id) {
+        if (type === 'circle') {
+          layers.circles = layers.circles.filter(c => c.id !== id);
+        } else if (type === 'lineSegment') {
+          layers.lineSegments = layers.lineSegments.filter(s => s.id !== id);
+        } else if (type === 'point') {
+          layers.points = layers.points.filter(p => p.id !== id);
+        }
+        updateLayersPanel();
+        updateMapPreview();
+      }
+
+      // Update the layers panel UI
+      function updateLayersPanel() {
+        const layersPanel = document.getElementById('layersPanel');
+
+        if (layers.circles.length === 0 && layers.lineSegments.length === 0 && layers.points.length === 0) {
+          layersPanel.innerHTML = '<div class="layers-empty-state">No elements added yet. Use the buttons above to add circles, line segments, or points.</div>';
+          return;
+        }
+
+        let html = '';
+
+        // Add circles
+        layers.circles.forEach(circle => {
+          html += `
+            <div class="layer-item" data-type="circle" data-id="${circle.id}">
+              <div class="layer-item-info">
+                <div class="layer-item-name">🔵 ${escapeHtml(circle.name)}</div>
+                <div class="layer-item-type">Circle • ${circle.radius} km radius</div>
+              </div>
+              <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="editCircleLayer(${circle.id})">Edit</button>
+                <button type="button" class="layer-action-btn delete" onclick="removeLayer('circle', ${circle.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+
+        // Add line segments
+        layers.lineSegments.forEach(segment => {
+          const modeLabel = segment.mode === 'coordinate' ? 'Endpoint' : 'Azimuth';
+          html += `
+            <div class="layer-item" data-type="lineSegment" data-id="${segment.id}">
+              <div class="layer-item-info">
+                <div class="layer-item-name">➖ ${escapeHtml(segment.name)}</div>
+                <div class="layer-item-type">Line Segment • ${modeLabel}</div>
+              </div>
+              <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
+                <button type="button" class="layer-action-btn delete" onclick="removeLayer('lineSegment', ${segment.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+
+        // Add points
+        layers.points.forEach(point => {
+          html += `
+            <div class="layer-item" data-type="point" data-id="${point.id}">
+              <div class="layer-item-info">
+                <div class="layer-item-name">📍 ${escapeHtml(point.name)}</div>
+                <div class="layer-item-type">Point • ${point.coordinates.lat.toFixed(4)}, ${point.coordinates.lon.toFixed(4)}</div>
+              </div>
+              <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="editPointLayer(${point.id})">Edit</button>
+                <button type="button" class="layer-action-btn delete" onclick="removeLayer('point', ${point.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+
+        layersPanel.innerHTML = html;
+      }
+
+      // Edit circle layer
+      function editCircleLayer(id) {
+        const circle = layers.circles.find(c => c.id === id);
+        if (!circle) return;
+
+        // Populate modal with circle data
+        document.getElementById('circleName').value = circle.name;
+        document.getElementById('circleCenter').value = `${circle.center.lat}, ${circle.center.lon}`;
+        document.getElementById('circleRadius').value = circle.radius;
+
+        // Change modal title and button text
+        document.getElementById('circleModalTitle').textContent = 'Edit Circle';
+        const submitBtn = document.querySelector('#circleForm .modal-btn-primary');
+        submitBtn.textContent = 'Update Circle';
+
+        // Store the id for update
+        document.getElementById('circleForm').dataset.editId = id;
+
+        // Show modal
+        document.getElementById('circleModal').classList.add('show');
+      }
+
+      // Edit line segment layer
+      function editLineSegmentLayer(id) {
+        const segment = layers.lineSegments.find(s => s.id === id);
+        if (!segment) return;
+
+        // Populate modal with segment data
+        document.getElementById('lineSegmentName').value = segment.name;
+        document.getElementById('lineSegmentCenter').value = `${segment.center.lat}, ${segment.center.lon}`;
+        document.getElementById('lineSegmentMode').value = segment.mode;
+
+        // Show/hide appropriate fields based on mode
+        updateLineSegmentModeFields(segment.mode);
+
+        if (segment.mode === 'coordinate') {
+          document.getElementById('lineSegmentEndpoint').value = `${segment.endpoint.lat}, ${segment.endpoint.lon}`;
+        } else {
+          document.getElementById('lineSegmentAzimuth').value = segment.azimuth;
+          document.getElementById('lineSegmentDistance').value = segment.distance;
+        }
+
+        // Change modal title and button text
+        document.getElementById('lineSegmentModalTitle').textContent = 'Edit Line Segment';
+        const submitBtn = document.querySelector('#lineSegmentForm .modal-btn-primary');
+        submitBtn.textContent = 'Update Line Segment';
+
+        // Store the id for update
+        document.getElementById('lineSegmentForm').dataset.editId = id;
+
+        // Show modal
+        document.getElementById('lineSegmentModal').classList.add('show');
+      }
+
+      // Edit point layer
+      function editPointLayer(id) {
+        const point = layers.points.find(p => p.id === id);
+        if (!point) return;
+
+        // Populate modal with point data
+        document.getElementById('pointName').value = point.name;
+        document.getElementById('pointCoordinates').value = `${point.coordinates.lat}, ${point.coordinates.lon}`;
+
+        // Change modal title and button text
+        document.getElementById('pointModalTitle').textContent = 'Edit Point';
+        const submitBtn = document.querySelector('#pointForm .modal-btn-primary');
+        submitBtn.textContent = 'Update Point';
+
+        // Store the id for update
+        document.getElementById('pointForm').dataset.editId = id;
+
+        // Show modal
+        document.getElementById('pointModal').classList.add('show');
+      }
+
+      // Helper to update line segment mode fields visibility
+      function updateLineSegmentModeFields(mode) {
+        const coordinateMode = document.querySelector('div[id="coordinateMode"]');
+        const azimuthMode = document.querySelectorAll('div[id="azimuthMode"]');
+
+        if (mode === 'coordinate') {
+          coordinateMode.style.display = 'block';
+          azimuthMode.forEach(el => el.style.display = 'none');
+        } else {
+          coordinateMode.style.display = 'none';
+          azimuthMode.forEach(el => el.style.display = 'block');
+        }
+      }
+
+      // HTML escape helper
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // ===== PROJECT MANAGEMENT: CONSTANTS & HELPER FUNCTIONS =====
+      const PROJECTS_STORAGE_KEY = 'gpxCircleProjects';
+
+      // Get all saved projects from localStorage
+      function getAllProjects() {
+        const data = localStorage.getItem(PROJECTS_STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+      }
+
+      // Save all projects to localStorage
+      function saveProjectsToStorage(projects) {
+        localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+      }
+
+      // Collect current form data
+      function getCurrentFormData() {
+        return {
+          layers: layers
+        };
+      }
+
+      // Load form data from saved project
+      function loadFormData(data) {
+        // Load layers
+        if (data.layers) {
+          layers = JSON.parse(JSON.stringify(data.layers)); // Deep copy
+          updateLayersPanel();
+          updateMapPreview();
+        }
+      }
+
+      // ===== INITIALIZATION =====
+      // Single consolidated initialization on page load
+      document.addEventListener('DOMContentLoaded', function () {
+        // Initialize map
+        setTimeout(initMap, 100);
+
+        // Setup project search
+        const projectSearch = document.getElementById('projectSearch');
+        const projectDropdown = document.getElementById('projectDropdown');
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+
+        if (projectSearch && projectDropdown) {
+          // Show dropdown on focus
+          projectSearch.addEventListener('focus', function() {
+            refreshProjectsDropdown();
+            projectDropdown.classList.add('show');
+          });
+
+          // Filter on input
+          projectSearch.addEventListener('input', function(e) {
+            if (e.target.value.trim().length === 0) {
+              refreshProjectsDropdown();
+            } else {
+              filterProjects(e.target.value);
+            }
+            projectDropdown.classList.add('show');
+          });
+
+          // Hide dropdown when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!e.target.closest('.project-search-wrapper')) {
+              projectDropdown.classList.remove('show');
+            }
+          });
+        }
+
+        // Setup save project button
+        if (saveProjectBtn) {
+          saveProjectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Check if there are any elements added
+            if (layers.circles.length === 0 && layers.lineSegments.length === 0 && layers.points.length === 0) {
+              showMessage('Please add at least one element (circle, line segment, or point)', true);
+              return;
+            }
+
+            // Generate default project name
+            const timestamp = getTimestamp();
+            const circlesCount = layers.circles.length;
+            const segmentsCount = layers.lineSegments.length;
+            const pointsCount = layers.points.length;
+
+            let defaultProjectName = `${timestamp}`;
+            if (circlesCount > 0) defaultProjectName += `_${circlesCount}circles`;
+            if (segmentsCount > 0) defaultProjectName += `_${segmentsCount}segments`;
+            if (pointsCount > 0) defaultProjectName += `_${pointsCount}points`;
+
+            // Show filename modal for project name
+            document.getElementById('filenameInput').value = defaultProjectName;
+            document.getElementById('filenameModalTitle').textContent = 'Save Project';
+            document.getElementById('confirmFilenameBtn').textContent = 'Save';
+            document.getElementById('filenameForm').dataset.action = 'save';
+            document.getElementById('filenameModal').classList.add('show');
+          });
+        }
+
+        // Load projects on page load
+        refreshProjectsDropdown();
+
+        // ===== LAYERS MODAL EVENT LISTENERS =====
+        // Add Circle button
+        const addCircleBtn = document.getElementById('addCircleBtn');
+        if (addCircleBtn) {
+          addCircleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Reset form for new circle
+            document.getElementById('circleForm').reset();
+            document.getElementById('circleForm').removeAttribute('data-editId');
+            document.getElementById('circleModalTitle').textContent = 'Add Circle';
+            document.querySelector('#circleForm .modal-btn-primary').textContent = 'Add Circle';
+            document.getElementById('circleModal').classList.add('show');
+          });
+        }
+
+        // Cancel Circle button
+        const cancelCircleBtn = document.getElementById('cancelCircleBtn');
+        if (cancelCircleBtn) {
+          cancelCircleBtn.addEventListener('click', function () {
+            document.getElementById('circleModal').classList.remove('show');
+          });
+        }
+
+        // Circle Form submission
+        const circleForm = document.getElementById('circleForm');
+        if (circleForm) {
+          circleForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('circleName').value.trim();
+            const centerStr = document.getElementById('circleCenter').value.trim();
+            const radiusStr = document.getElementById('circleRadius').value.trim();
+
+            // Parse center coordinates
+            const centerParts = centerStr.split(',').map(s => parseFloat(s.trim()));
+            if (centerParts.length !== 2 || isNaN(centerParts[0]) || isNaN(centerParts[1])) {
+              alert('Invalid center coordinates. Please enter as: lat, lon');
+              return;
+            }
+
+            const radius = parseFloat(radiusStr);
+            if (isNaN(radius) || radius <= 0) {
+              alert('Invalid radius. Please enter a positive number.');
+              return;
+            }
+
+            const center = { lat: centerParts[0], lon: centerParts[1] };
+            const editId = circleForm.dataset.editId;
+
+            if (editId) {
+              // Update existing circle
+              const circle = layers.circles.find(c => c.id === parseInt(editId));
+              if (circle) {
+                circle.name = name;
+                circle.center = center;
+                circle.radius = radius;
+              }
+            } else {
+              // Add new circle
+              addCircleLayer(name, center, radius);
+            }
+
+            updateLayersPanel();
+            updateMapPreview();
+            document.getElementById('circleModal').classList.remove('show');
+            circleForm.reset();
+            circleForm.removeAttribute('data-editId');
+          });
+        }
+
+        // Add Line Segment button
+        const addLineSegmentBtn = document.getElementById('addLineSegmentBtn');
+        if (addLineSegmentBtn) {
+          addLineSegmentBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Reset form for new line segment
+            document.getElementById('lineSegmentForm').reset();
+            document.getElementById('lineSegmentForm').removeAttribute('data-editId');
+            document.getElementById('lineSegmentModalTitle').textContent = 'Add Line Segment';
+            document.querySelector('#lineSegmentForm .modal-btn-primary').textContent = 'Add Line Segment';
+            document.getElementById('lineSegmentMode').value = 'coordinate';
+            updateLineSegmentModeFields('coordinate');
+            document.getElementById('lineSegmentModal').classList.add('show');
+          });
+        }
+
+        // Cancel Line Segment button
+        const cancelLineSegmentBtn = document.getElementById('cancelLineSegmentBtn');
+        if (cancelLineSegmentBtn) {
+          cancelLineSegmentBtn.addEventListener('click', function () {
+            document.getElementById('lineSegmentModal').classList.remove('show');
+          });
+        }
+
+        // Line Segment Mode change
+        const lineSegmentMode = document.getElementById('lineSegmentMode');
+        if (lineSegmentMode) {
+          lineSegmentMode.addEventListener('change', function () {
+            updateLineSegmentModeFields(this.value);
+          });
+        }
+
+        // Line Segment Form submission
+        const lineSegmentForm = document.getElementById('lineSegmentForm');
+        if (lineSegmentForm) {
+          lineSegmentForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('lineSegmentName').value.trim();
+            const centerStr = document.getElementById('lineSegmentCenter').value.trim();
+            const mode = document.getElementById('lineSegmentMode').value;
+
+            // Parse center coordinates
+            const centerParts = centerStr.split(',').map(s => parseFloat(s.trim()));
+            if (centerParts.length !== 2 || isNaN(centerParts[0]) || isNaN(centerParts[1])) {
+              alert('Invalid center coordinates. Please enter as: lat, lon');
+              return;
+            }
+
+            const center = { lat: centerParts[0], lon: centerParts[1] };
+            let endpoint, azimuth, distance;
+
+            if (mode === 'coordinate') {
+              const endpointStr = document.getElementById('lineSegmentEndpoint').value.trim();
+              const endpointParts = endpointStr.split(',').map(s => parseFloat(s.trim()));
+              if (endpointParts.length !== 2 || isNaN(endpointParts[0]) || isNaN(endpointParts[1])) {
+                alert('Invalid endpoint coordinates. Please enter as: lat, lon');
+                return;
+              }
+              endpoint = { lat: endpointParts[0], lon: endpointParts[1] };
+            } else {
+              azimuth = parseFloat(document.getElementById('lineSegmentAzimuth').value);
+              distance = parseFloat(document.getElementById('lineSegmentDistance').value);
+
+              if (isNaN(azimuth) || azimuth < 0 || azimuth >= 360) {
+                alert('Invalid azimuth. Please enter a number between 0 and 359.');
+                return;
+              }
+
+              if (isNaN(distance) || distance <= 0) {
+                alert('Invalid distance. Please enter a positive number.');
+                return;
+              }
+            }
+
+            const editId = lineSegmentForm.dataset.editId;
+
+            if (editId) {
+              // Update existing line segment
+              const segment = layers.lineSegments.find(s => s.id === parseInt(editId));
+              if (segment) {
+                segment.name = name;
+                segment.center = center;
+                segment.mode = mode;
+                segment.endpoint = endpoint;
+                segment.azimuth = azimuth;
+                segment.distance = distance;
+              }
+            } else {
+              // Add new line segment
+              addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance);
+            }
+
+            updateLayersPanel();
+            updateMapPreview();
+            document.getElementById('lineSegmentModal').classList.remove('show');
+            lineSegmentForm.reset();
+            lineSegmentForm.removeAttribute('data-editId');
+          });
+        }
+
+        // Add Point button
+        const addPointBtn = document.getElementById('addPointBtn');
+        if (addPointBtn) {
+          addPointBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Reset form for new point
+            document.getElementById('pointForm').reset();
+            document.getElementById('pointForm').removeAttribute('data-editId');
+            document.getElementById('pointModalTitle').textContent = 'Add Point';
+            document.querySelector('#pointForm .modal-btn-primary').textContent = 'Add Point';
+            document.getElementById('pointModal').classList.add('show');
+          });
+        }
+
+        // Cancel Point button
+        const cancelPointBtn = document.getElementById('cancelPointBtn');
+        if (cancelPointBtn) {
+          cancelPointBtn.addEventListener('click', function () {
+            document.getElementById('pointModal').classList.remove('show');
+          });
+        }
+
+        // Point Form submission
+        const pointForm = document.getElementById('pointForm');
+        if (pointForm) {
+          pointForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('pointName').value.trim();
+            const coordinatesStr = document.getElementById('pointCoordinates').value.trim();
+
+            // Parse coordinates
+            const coordinateParts = coordinatesStr.split(',').map(s => parseFloat(s.trim()));
+            if (coordinateParts.length !== 2 || isNaN(coordinateParts[0]) || isNaN(coordinateParts[1])) {
+              alert('Invalid coordinates. Please enter as: lat, lon');
+              return;
+            }
+
+            const coordinates = { lat: coordinateParts[0], lon: coordinateParts[1] };
+            const editId = pointForm.dataset.editId;
+
+            if (editId) {
+              // Update existing point
+              const point = layers.points.find(p => p.id === parseInt(editId));
+              if (point) {
+                point.name = name;
+                point.coordinates = coordinates;
+              }
+            } else {
+              // Add new point
+              addPointLayer(name, coordinates);
+            }
+
+            updateLayersPanel();
+            updateMapPreview();
+            document.getElementById('pointModal').classList.remove('show');
+            pointForm.reset();
+            pointForm.removeAttribute('data-editId');
+          });
+        }
+
+        // ===== FILENAME MODAL EVENT LISTENERS =====
+        const cancelFilenameBtn = document.getElementById('cancelFilenameBtn');
+        if (cancelFilenameBtn) {
+          cancelFilenameBtn.addEventListener('click', function () {
+            document.getElementById('filenameModal').classList.remove('show');
+          });
+        }
+
+        // Close modals on ESC key press
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape') {
+            const circleModal = document.getElementById('circleModal');
+            const lineSegmentModal = document.getElementById('lineSegmentModal');
+            const pointModal = document.getElementById('pointModal');
+            const filenameModal = document.getElementById('filenameModal');
+
+            if (circleModal && circleModal.classList.contains('show')) {
+              circleModal.classList.remove('show');
+            } else if (lineSegmentModal && lineSegmentModal.classList.contains('show')) {
+              lineSegmentModal.classList.remove('show');
+            } else if (pointModal && pointModal.classList.contains('show')) {
+              pointModal.classList.remove('show');
+            } else if (filenameModal && filenameModal.classList.contains('show')) {
+              filenameModal.classList.remove('show');
+            }
+          }
+        });
+
+        const filenameForm = document.getElementById('filenameForm');
+        if (filenameForm) {
+          filenameForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const filename = document.getElementById('filenameInput').value.trim();
+            const action = filenameForm.dataset.action;
+
+            if (!filename) {
+              alert('Please enter a filename');
+              return;
+            }
+
+            if (action === 'download') {
+              // Download GPX
+              let finalFilename = filename;
+              if (!finalFilename.endsWith('.gpx')) {
+                finalFilename += '.gpx';
+              }
+
+              downloadGPX(pendingGPXData.content, finalFilename);
+
+              const circleInfo =
+                pendingGPXData.radii.length === 1
+                  ? `${pendingGPXData.circlesCount} circle(s) with ${pendingGPXData.points} points each and ${pendingGPXData.radii[0]} km radius.`
+                  : `${pendingGPXData.circlesCount} circle(s) with ${pendingGPXData.points} points each and radii: ${pendingGPXData.radii.join(', ')} km.`;
+              const segmentInfo =
+                pendingGPXData.segmentsCount > 0 ? ` Plus ${pendingGPXData.segmentsCount} line segment(s).` : '';
+
+              showMessage(
+                `GPX file generated successfully! ${circleInfo}${segmentInfo} File downloaded as ${finalFilename}`,
+                false
+              );
+
+              document.getElementById('filenameModal').classList.remove('show');
+            } else if (action === 'save') {
+              // Save project
+              let projectName = filename;
+              if (projectName.endsWith('.gpx')) {
+                projectName = projectName.slice(0, -4);
+              }
+
+              saveProject(projectName);
+              document.getElementById('filenameModal').classList.remove('show');
+            }
+          });
+        }
+
+        // Close modals when clicking outside of them
+        document.addEventListener('click', function (e) {
+          const circleModal = document.getElementById('circleModal');
+          if (e.target === circleModal) {
+            circleModal.classList.remove('show');
+          }
+
+          const lineSegmentModal = document.getElementById('lineSegmentModal');
+          if (e.target === lineSegmentModal) {
+            lineSegmentModal.classList.remove('show');
+          }
+
+          const filenameModal = document.getElementById('filenameModal');
+          if (e.target === filenameModal) {
+            filenameModal.classList.remove('show');
+          }
+        });
+      });
+
+      // ===== LINE SEGMENTS MANAGEMENT =====
+      // Parse multiple coordinate pairs (numbers taken 2 by 2)
+      function parseMultipleCoordinates(input) {
+        // Split by comma and trim each part
+        const parts = input.split(',').map((part) => part.trim());
+
+        // If odd number of values, return error
+        if (parts.length % 2 !== 0) {
+          return { error: 'Please enter coordinates as pairs: lat, lon, lat, lon, ...' };
+        }
+
+        const centers = [];
+
+        // Process numbers 2 by 2
+        for (let i = 0; i < parts.length; i += 2) {
+          const lat = parseFloat(parts[i]);
+          const lon = parseFloat(parts[i + 1]);
+
+          // Validate latitude and longitude
+          if (isNaN(lat) || lat < -90 || lat > 90) {
+            return {
+              error: `Invalid latitude at position ${i + 1}: ${parts[i]} (must be between -90 and 90)`,
+            };
+          }
+
+          if (isNaN(lon) || lon < -180 || lon > 180) {
+            return {
+              error: `Invalid longitude at position ${i + 2}: ${parts[i + 1]} (must be between -180 and 180)`,
+            };
+          }
+
+          centers.push({ lat, lon });
+        }
+
+        if (centers.length === 0) {
+          return { error: 'Please enter at least one center coordinate pair' };
+        }
+
+        return { centers };
+      }
+
+      // Track whether user has manually edited the filename
+      let filenameManuallyEdited = false;
+
+      // Generate suggested filename
+      function generateSuggestedFilename() {
+        const coordsInput = document.getElementById('coordinates').value.trim();
+        const radiusInput = document.getElementById('radius').value.trim();
+
+        // Parse coordinates and radii to count them
+        const coordsResult = parseMultipleCoordinates(coordsInput);
+        if (coordsResult.error) {
+          return '';
+        }
+
+        let processedInput = radiusInput;
+        processedInput = processedInput.replace(/(\d),(\d)/g, '$1.$2');
+
+        const radiusParts = processedInput
+          .split(/[\s,]+/)
+          .map((part) => part.trim())
+          .filter((part) => part.length > 0);
+
+        const radii = radiusParts.map((part) => {
+          const value = parseFloat(part);
+          if (isNaN(value) || value <= 0) {
+            return null;
+          }
+          return Math.round(value * 100) / 100;
+        });
+
+        if (radii.some((r) => r === null)) {
+          return '';
+        }
+
+        const timestamp = getTimestamp();
+        const radiiStr = radii.length === 1 ? `${radii[0]}km` : `${radii.join('_')}km`;
+        const centersCount = coordsResult.centers.length;
+
+        let lineSegmentsCount = 0;
+        try {
+          lineSegmentsCount = parseLineSegments().length;
+        } catch (e) {
+          // Ignore
+        }
+
+        const filename =
+          lineSegmentsCount > 0
+            ? `${timestamp}_circles_${centersCount}centers_${lineSegmentsCount}segments_${radiiStr}.gpx`
+            : `${timestamp}_circles_${centersCount}centers_${radiiStr}.gpx`;
+
+        return filename;
+      }
+
+      // Update filename display
+      function updateFilenameDisplay() {
+        const filenameInput = document.getElementById('filename');
+        if (filenameManuallyEdited) {
+          return; // Don't override if user has edited it
+        }
+
+        const suggested = generateSuggestedFilename();
+        if (suggested) {
+          filenameInput.placeholder = `Suggested: ${suggested}`;
+        }
+      }
+
+      // Show inline error message
+      function showInlineError(elementId, message) {
+        const errorEl = document.getElementById(elementId);
+        if (errorEl) {
+          if (message) {
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+          } else {
+            errorEl.classList.remove('show');
+            errorEl.textContent = '';
+          }
+        }
+      }
+
+      // Update map in real-time as inputs change
+      function updateMapPreview() {
+        if (!mapInitialized || !map) {
+          return;
+        }
+
+        // Clear all map layers
+        mapLayers.forEach(layer => {
+          map.removeLayer(layer);
+        });
+        mapLayers = [];
+
+        try {
+          // Draw all circles from layers
+          if (layers.circles.length > 0) {
+            const colors = ['#0066cc', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+            layers.circles.forEach((circle, index) => {
+              const color = colors[index % colors.length];
+
+              // Add center marker
+              const centerMarker = L.circleMarker([circle.center.lat, circle.center.lon], {
+                radius: 6,
+                fillColor: color,
+                color: color,
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8,
+              }).addTo(map);
+              centerMarker.bindPopup(
+                `<b>${escapeHtml(circle.name)}</b><br>Center: ${circle.center.lat.toFixed(6)}, ${circle.center.lon.toFixed(6)}<br>Radius: ${circle.radius} km`
+              );
+              mapLayers.push(centerMarker);
+
+              // Add circle
+              const mapCircle = L.circle([circle.center.lat, circle.center.lon], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.2,
+                radius: circle.radius * 1000, // Convert km to meters
+                weight: 3,
+              }).addTo(map);
+              mapCircle.bindPopup(
+                `<b>${escapeHtml(circle.name)}</b><br>Radius: ${circle.radius} km`
+              );
+              mapLayers.push(mapCircle);
+            });
+          }
+
+          // Draw all line segments from layers
+          if (layers.lineSegments.length > 0) {
+            const lineColors = ['#ff1744', '#00bcd4', '#ffb300', '#00e676', '#f50057', '#7c4dff'];
+            layers.lineSegments.forEach((segment, index) => {
+              let endpoint;
+
+              if (segment.mode === 'coordinate') {
+                endpoint = segment.endpoint;
+              } else {
+                // Calculate endpoint from azimuth and distance
+                endpoint = destinationPoint(
+                  segment.center.lat,
+                  segment.center.lon,
+                  segment.distance,
+                  segment.azimuth
+                );
+              }
+
+              const color = lineColors[index % lineColors.length];
+
+              // Draw line
+              const polyline = L.polyline(
+                [
+                  [segment.center.lat, segment.center.lon],
+                  [endpoint.lat, endpoint.lon],
+                ],
+                {
+                  color: color,
+                  weight: 3,
+                  opacity: 0.8,
+                  dashArray: '5, 5',
+                }
+              ).addTo(map);
+              polyline.bindPopup(
+                `<b>${escapeHtml(segment.name)}</b><br>From: ${segment.center.lat.toFixed(4)}, ${segment.center.lon.toFixed(4)}<br>To: ${endpoint.lat.toFixed(4)}, ${endpoint.lon.toFixed(4)}`
+              );
+              mapLayers.push(polyline);
+
+              // Draw start point
+              const startMarker = L.marker([segment.center.lat, segment.center.lon], {
+                title: escapeHtml(segment.name) + ' Start',
+              }).addTo(map);
+              startMarker.bindPopup(
+                `<b>${escapeHtml(segment.name)} - Start</b><br>Lat: ${segment.center.lat.toFixed(6)}<br>Lon: ${segment.center.lon.toFixed(6)}`
+              );
+              mapLayers.push(startMarker);
+
+              // Draw end point
+              const endMarker = L.circleMarker([endpoint.lat, endpoint.lon], {
+                radius: 6,
+                fillColor: color,
+                color: color,
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8,
+              }).addTo(map);
+              endMarker.bindPopup(
+                `<b>${escapeHtml(segment.name)} - End</b><br>Lat: ${endpoint.lat.toFixed(6)}<br>Lon: ${endpoint.lon.toFixed(6)}`
+              );
+              mapLayers.push(endMarker);
+            });
+          }
+
+          // Draw all points from layers
+          if (layers.points.length > 0) {
+            layers.points.forEach((point) => {
+              const pointMarker = L.marker([point.coordinates.lat, point.coordinates.lon], {
+                title: point.name,
+              }).addTo(map);
+              pointMarker.bindPopup(
+                `<b>${escapeHtml(point.name)}</b><br>Lat: ${point.coordinates.lat.toFixed(6)}<br>Lon: ${point.coordinates.lon.toFixed(6)}`
+              );
+              mapLayers.push(pointMarker);
+            });
+          }
+
+          // Fit map to show all elements
+          if (mapLayers.length > 0) {
+            const group = new L.featureGroup(mapLayers);
+            map.fitBounds(group.getBounds(), {
+              padding: [50, 50],
+              animate: true,
+              duration: 1,
+            });
+          }
+        } catch (mapError) {
+          console.error('Map update error:', mapError);
+        }
+
+        // Update filename suggestion
+        updateFilenameDisplay();
+      }
+
+      // Add event listeners for real-time map updates (if hidden inputs exist)
+      const coordsInput = document.getElementById('coordinates');
+      if (coordsInput) {
+        coordsInput.addEventListener('input', updateMapPreview);
+        coordsInput.addEventListener('change', updateMapPreview);
+      }
+
+      const radiusInput = document.getElementById('radius');
+      if (radiusInput) {
+        radiusInput.addEventListener('input', updateMapPreview);
+        radiusInput.addEventListener('change', updateMapPreview);
+      }
+
+      // Form submission handler
+      // Store GPX data for download
+      let pendingGPXData = {
+        content: null,
+        defaultFilename: null,
+        circlesCount: 0,
+        segmentsCount: 0,
+        radii: [],
+        points: 0
+      };
+
+      // Generate filename for GPX
+      function generateGPXFilename() {
+        const timestamp = getTimestamp();
+        const radiiStr = pendingGPXData.radii.length === 1
+          ? `${pendingGPXData.radii[0]}km`
+          : `${pendingGPXData.radii.join('_')}km`;
+        const circlesCount = pendingGPXData.circlesCount;
+        const segmentsCount = pendingGPXData.segmentsCount;
+        return segmentsCount > 0
+          ? `${timestamp}_${circlesCount}circles_${segmentsCount}segments_${radiiStr}.gpx`
+          : `${timestamp}_${circlesCount}circles_${radiiStr}.gpx`;
+      }
+
+      document.getElementById('gpxForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // Check if there are any elements added
+        if (layers.circles.length === 0 && layers.lineSegments.length === 0 && layers.points.length === 0) {
+          showMessage('Please add at least one element (circle, line segment, or point)', true);
+          return;
+        }
+
+        try {
+          // Convert layers to centers and radii arrays for GPX generation
+          const centers = layers.circles.map(c => c.center);
+          const radii = layers.circles.map(c => c.radius);
+
+          // Fixed number of points
+          const points = 360;
+
+          // Convert line segments to the format expected by generateCompleteGPX
+          const lineSegments = layers.lineSegments.map(segment => ({
+            center: segment.center,
+            type: segment.mode,
+            endpoint: segment.mode === 'coordinate' ? segment.endpoint : null,
+            azimuth: segment.mode === 'azimuth' ? segment.azimuth : null,
+            distance: segment.mode === 'azimuth' ? segment.distance : null
+          }));
+
+          // Update map preview
+          updateMapPreview();
+
+          // Generate GPX with circles, line segments, and points
+          const gpxContent = generateCompleteGPX(centers, radii, points, lineSegments, layers.points);
+
+          // Store GPX data for download
+          pendingGPXData.content = gpxContent;
+          pendingGPXData.circlesCount = layers.circles.length;
+          pendingGPXData.segmentsCount = layers.lineSegments.length;
+          pendingGPXData.pointsCount = layers.points.length;
+          pendingGPXData.radii = radii;
+          pendingGPXData.points = points;
+          pendingGPXData.defaultFilename = generateGPXFilename();
+
+          // Show filename modal with prefilled filename
+          document.getElementById('filenameInput').value = pendingGPXData.defaultFilename.replace('.gpx', '');
+          document.getElementById('filenameModalTitle').textContent = 'Download GPX File';
+          document.getElementById('confirmFilenameBtn').textContent = 'Download';
+          document.getElementById('filenameForm').dataset.action = 'download';
+          document.getElementById('filenameModal').classList.add('show');
+        } catch (error) {
+          showMessage('Error generating GPX file: ' + error.message, true);
+        }
+      });
+
+      // ===== PROJECT MANAGEMENT: SAVE/LOAD/DELETE =====
+      // Old function to support backward compatibility (kept for reference)
+      function collectLegacyLineSegments() {
+        const lineSegments = [];
+        const container = document.getElementById('lineSegmentsContainer');
+        const segmentItems = container.querySelectorAll('.line-segment-item');
+
+        segmentItems.forEach((item, index) => {
+          const centerInput = item.querySelector('.segment-center').value.trim();
+          const mode = item.querySelector('input[name="segment-mode-' + index + '"]:checked')?.value || 'coordinate';
+          const endpointInput = item.querySelector('.segment-endpoint')?.value.trim() || '';
+          const azimuthInput = item.querySelector('.segment-azimuth')?.value || '';
+          const distanceInput = item.querySelector('.segment-distance')?.value || '';
+
+          if (centerInput) {
+            lineSegments.push({
+              center: centerInput,
+              mode: mode,
+              endpoint: endpointInput,
+              azimuth: azimuthInput,
+              distance: distanceInput
+            });
+          }
+        });
+
+        return lineSegments;
+      }
+
+      // Save project with a name
+      function saveProject(projectName) {
+        if (!projectName || projectName.trim().length === 0) {
+          showMessage('Please enter a project name', true);
+          return false;
+        }
+
+        const projects = getAllProjects();
+        const formData = getCurrentFormData();
+
+        // Check if project name already exists
+        const existingIndex = projects.findIndex(p => p.name.toLowerCase() === projectName.toLowerCase());
+
+        if (existingIndex >= 0) {
+          // Ask for confirmation or just replace
+          if (confirm(`Project "${projectName}" already exists. Do you want to overwrite it?`)) {
+            projects[existingIndex] = {
+              name: projectName,
+              data: formData,
+              timestamp: new Date().toISOString()
+            };
+          } else {
+            return false;
+          }
+        } else {
+          projects.push({
+            name: projectName,
+            data: formData,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        // Sort projects by name
+        projects.sort((a, b) => a.name.localeCompare(b.name));
+        saveProjectsToStorage(projects);
+
+        // Show feedback
+        showMessage(`Project "${projectName}" saved successfully!`, false);
+        showToast(`✨ Project "${projectName}" saved!`, true, 2500);
+        refreshProjectsDropdown();
+
+        return true;
+      }
+
+      // Delete project
+      function deleteProject(projectName, event) {
+        event.stopPropagation();
+
+        if (confirm(`Are you sure you want to delete "${projectName}"?`)) {
+          let projects = getAllProjects();
+          projects = projects.filter(p => p.name !== projectName);
+          saveProjectsToStorage(projects);
+          refreshProjectsDropdown();
+          showMessage(`Project "${projectName}" deleted.`, false);
+          showToast(`🗑️ Project "${projectName}" deleted.`, true, 2000);
+        }
+      }
+
+      // Refresh the projects dropdown
+      function refreshProjectsDropdown() {
+        const projects = getAllProjects();
+        const dropdown = document.getElementById('projectDropdown');
+        dropdown.innerHTML = '';
+
+        if (projects.length === 0) {
+          dropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 14px;">No saved projects yet</div>';
+          return;
+        }
+
+        projects.forEach(project => {
+          const item = document.createElement('div');
+          item.className = 'project-item';
+          item.innerHTML = `
+            <span class="project-item-name">${escapeHtml(project.name)}</span>
+            <span class="project-item-delete" onclick="deleteProject('${escapeHtml(project.name)}', event)">×</span>
+          `;
+          item.addEventListener('click', function(e) {
+            if (e.target.className === 'project-item-delete') return;
+            loadFormData(project.data);
+            document.getElementById('projectSearch').value = '';
+            dropdown.classList.remove('show');
+          });
+          dropdown.appendChild(item);
+        });
+      }
+
+      // Filter projects by search term
+      function filterProjects(searchTerm) {
+        const projects = getAllProjects();
+        const dropdown = document.getElementById('projectDropdown');
+        dropdown.innerHTML = '';
+
+        const filtered = projects.filter(p =>
+          p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (filtered.length === 0) {
+          dropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 14px;">No projects match your search</div>';
+          return;
+        }
+
+        filtered.forEach(project => {
+          const item = document.createElement('div');
+          item.className = 'project-item';
+          item.innerHTML = `
+            <span class="project-item-name">${escapeHtml(project.name)}</span>
+            <span class="project-item-delete" onclick="deleteProject('${escapeHtml(project.name)}', event)">×</span>
+          `;
+          item.addEventListener('click', function(e) {
+            if (e.target.className === 'project-item-delete') return;
+            loadFormData(project.data);
+            document.getElementById('projectSearch').value = '';
+            dropdown.classList.remove('show');
+          });
+          dropdown.appendChild(item);
+        });
+      }
+
+      // Escape HTML to prevent XSS
+      function escapeHtml(text) {
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      }
+    </script>
+  </body>
+</html>
