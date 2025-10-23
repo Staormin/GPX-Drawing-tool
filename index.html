@@ -1477,7 +1477,7 @@
             gap: 16px;
             padding: 16px;
             height: 100%;
-            overflow-y: auto;
+            overflow: visible;
             padding-bottom: 96px; /* space for sticky footer buttons */
         }
 
@@ -2099,6 +2099,39 @@
             </div>
             <div class="modal-actions">
                 <button type="button" class="modal-btn modal-btn-secondary" id="cancelPointBtn">Cancel</button>
+                <button type="submit" class="modal-btn modal-btn-primary">Add Point</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Point On Segment Modal -->
+<div class="modal-overlay" id="addPointOnSegmentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="addPointOnSegmentModalTitle">Add Point on Segment</h2>
+        </div>
+        <form id="addPointOnSegmentForm" class="modal-form">
+            <div class="modal-form-group">
+                <label for="pointOnSegmentName">Point Name (optional)</label>
+                <input type="text" id="pointOnSegmentName" placeholder="e.g., Waypoint, Landmark"/>
+            </div>
+            <div class="modal-form-group">
+                <label for="distanceFromSelect">Distance From</label>
+                <select id="distanceFromSelect">
+                    <option value="start" selected>Start</option>
+                    <option value="end">End</option>
+                </select>
+            </div>
+            <div class="modal-form-group">
+                <label for="distanceOnSegment">Distance (km)</label>
+                <div style="display: flex; gap: 8px; align-items: flex-end;">
+                    <input type="number" id="distanceOnSegment" placeholder="0.0" step="0.01" min="0" style="flex: 1;"/>
+                    <button type="button" class="modal-btn modal-btn-secondary" id="midpointBtn" style="white-space: nowrap;">Midpoint</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-btn-secondary" id="cancelAddPointOnSegmentBtn">Cancel</button>
                 <button type="submit" class="modal-btn modal-btn-primary">Add Point</button>
             </div>
         </form>
@@ -3167,13 +3200,34 @@
             } else if (segment.mode === 'intersection') {
                 modeLabel = 'Intersection';
             }
+            // Calculate endpoint and distance
+            let endpoint;
+            if (segment.mode === 'coordinate') {
+                endpoint = segment.endpoint;
+            } else if (segment.mode === 'azimuth') {
+                endpoint = destinationPoint(
+                    segment.center.lat,
+                    segment.center.lon,
+                    segment.distance,
+                    segment.azimuth
+                );
+            } else if (segment.mode === 'intersection') {
+                endpoint = segment.endpoint;
+            }
+            const segmentDistance = calculateDistance(
+                segment.center.lat,
+                segment.center.lon,
+                endpoint.lat,
+                endpoint.lon
+            );
             html += `
             <div class="layer-item" data-type="lineSegment" data-id="${segment.id}">
               <div class="layer-item-info">
                 <div class="layer-item-name">➖ ${escapeHtml(segment.name)}</div>
-                <div class="layer-item-type">Line Segment • ${modeLabel}</div>
+                <div class="layer-item-type">Line Segment • ${modeLabel} • ${segmentDistance.toFixed(2)} km</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="openAddPointOnSegmentModal(${segment.id})">Add point on</button>
                 <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
                 <button type="button" class="layer-action-btn delete" onclick="removeLayer('lineSegment', ${segment.id})">Delete</button>
               </div>
@@ -3322,6 +3376,16 @@
         if (el) el.classList.remove('show');
     }
 
+    function openAddPointOnSegmentModal(segmentId) {
+        // Reset form
+        document.getElementById('addPointOnSegmentForm').reset();
+        document.getElementById('addPointOnSegmentForm').dataset.segmentId = segmentId;
+        document.getElementById('distanceFromSelect').value = 'start';
+        document.getElementById('distanceOnSegment').value = '';
+        document.getElementById('pointOnSegmentName').value = '';
+        openModal('addPointOnSegmentModal');
+    }
+
     // Show/hide single element and lists
     function show(el) {
         if (!el) return;
@@ -3365,12 +3429,17 @@
     }
 
     // Load form data from saved project
-    function loadFormData(data) {
+    function loadFormData(data, projectName = null) {
         // Load layers
         if (data.layers) {
             layers = JSON.parse(JSON.stringify(data.layers)); // Deep copy
             updateLayersPanel();
             updateMapPreview();
+        }
+
+        // Save as last loaded project if name is provided
+        if (projectName) {
+            localStorage.setItem('gpxCircle_lastLoadedProject', projectName);
         }
     }
 
@@ -3401,7 +3470,7 @@
     function loadProjectFromModal(index) {
         const projects = getAllProjects();
         if (projects[index]) {
-            loadFormData(projects[index].data);
+            loadFormData(projects[index].data, projects[index].name);
             closeModal('loadProjectModal');
             showMessage(`Project "${projects[index].name}" loaded successfully!`);
         }
@@ -3423,6 +3492,16 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Initialize map
         setTimeout(initMap, 100);
+
+        // Auto-load last loaded project
+        const lastLoadedProject = localStorage.getItem('gpxCircle_lastLoadedProject');
+        if (lastLoadedProject) {
+            const projects = getAllProjects();
+            const projectIndex = projects.findIndex(p => p.name === lastLoadedProject);
+            if (projectIndex !== -1) {
+                loadFormData(projects[projectIndex].data, projects[projectIndex].name);
+            }
+        }
 
         // ===== ADDRESS SEARCH =====
         const addressSearch = document.getElementById('addressSearch');
@@ -3917,6 +3996,140 @@
                 if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                     e.preventDefault();
                     pointForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
+
+        // Cancel Add Point On Segment button
+        const cancelAddPointOnSegmentBtn = document.getElementById('cancelAddPointOnSegmentBtn');
+        if (cancelAddPointOnSegmentBtn) {
+            cancelAddPointOnSegmentBtn.addEventListener('click', function () {
+                closeModal('addPointOnSegmentModal');
+            });
+        }
+
+        // Midpoint button for Add Point On Segment
+        const midpointBtn = document.getElementById('midpointBtn');
+        if (midpointBtn) {
+            midpointBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const segmentId = parseInt(document.getElementById('addPointOnSegmentForm').dataset.segmentId);
+                const segment = layers.lineSegments.find(s => s.id === segmentId);
+                if (segment) {
+                    // Calculate segment endpoint
+                    let segmentEndpoint;
+                    if (segment.mode === 'coordinate') {
+                        segmentEndpoint = segment.endpoint;
+                    } else if (segment.mode === 'azimuth') {
+                        segmentEndpoint = destinationPoint(
+                            segment.center.lat,
+                            segment.center.lon,
+                            segment.distance,
+                            segment.azimuth
+                        );
+                    } else if (segment.mode === 'intersection') {
+                        segmentEndpoint = segment.endpoint;
+                    }
+                    // Calculate segment length using Web Mercator projection
+                    const startProj = mercatorProject(segment.center.lat, segment.center.lon);
+                    const endProj = mercatorProject(segmentEndpoint.lat, segmentEndpoint.lon);
+                    const dx = endProj.x - startProj.x;
+                    const dy = endProj.y - startProj.y;
+                    const segmentLengthMeters = Math.sqrt(dx * dx + dy * dy);
+                    const segmentLengthKm = segmentLengthMeters / 1000;
+                    const midDistance = segmentLengthKm / 2;
+                    document.getElementById('distanceOnSegment').value = midDistance.toFixed(2);
+                }
+            });
+        }
+
+        // Add Point On Segment Form submission
+        const addPointOnSegmentForm = document.getElementById('addPointOnSegmentForm');
+        if (addPointOnSegmentForm) {
+            addPointOnSegmentForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const segmentId = parseInt(addPointOnSegmentForm.dataset.segmentId);
+                const segment = layers.lineSegments.find(s => s.id === segmentId);
+                if (!segment) {
+                    alert('Segment not found');
+                    return;
+                }
+
+                let name = document.getElementById('pointOnSegmentName').value.trim();
+                const distanceFrom = document.getElementById('distanceFromSelect').value;
+                const distance = parseFloat(document.getElementById('distanceOnSegment').value);
+
+                if (isNaN(distance) || distance < 0) {
+                    alert('Invalid distance. Please enter a positive number.');
+                    return;
+                }
+
+                // Calculate the endpoint of the segment
+                let segmentEndpoint;
+                if (segment.mode === 'coordinate') {
+                    segmentEndpoint = segment.endpoint;
+                } else if (segment.mode === 'azimuth') {
+                    segmentEndpoint = destinationPoint(
+                        segment.center.lat,
+                        segment.center.lon,
+                        segment.distance,
+                        segment.azimuth
+                    );
+                } else if (segment.mode === 'intersection') {
+                    segmentEndpoint = segment.endpoint;
+                }
+
+                // Project start and end points to Web Mercator
+                const startProj = mercatorProject(segment.center.lat, segment.center.lon);
+                const endProj = mercatorProject(segmentEndpoint.lat, segmentEndpoint.lon);
+
+                // Calculate segment length in Web Mercator space (in meters)
+                const dx = endProj.x - startProj.x;
+                const dy = endProj.y - startProj.y;
+                const segmentLengthMeters = Math.sqrt(dx * dx + dy * dy);
+                const segmentLengthKm = segmentLengthMeters / 1000;
+
+                // Validate distance is not greater than segment length
+                if (distance > segmentLengthKm) {
+                    alert('Distance exceeds segment length (' + segmentLengthKm.toFixed(2) + ' km)');
+                    return;
+                }
+
+                // Calculate point position on segment using Web Mercator interpolation
+                let pointOnSegment;
+                const distanceMeters = distance * 1000;
+
+                if (distanceFrom === 'start') {
+                    // Interpolate from start point
+                    const fraction = distanceMeters / segmentLengthMeters;
+                    const projX = startProj.x + fraction * dx;
+                    const projY = startProj.y + fraction * dy;
+                    pointOnSegment = mercatorUnproject(projX, projY);
+                } else {
+                    // Interpolate from end point
+                    const fraction = distanceMeters / segmentLengthMeters;
+                    const projX = endProj.x - fraction * dx;
+                    const projY = endProj.y - fraction * dy;
+                    pointOnSegment = mercatorUnproject(projX, projY);
+                }
+
+                if (!name) {
+                    name = autogenerateName('point');
+                }
+
+                addPointLayer(name, pointOnSegment);
+                updateLayersPanel();
+                updateMapPreview();
+                closeModal('addPointOnSegmentModal');
+                addPointOnSegmentForm.reset();
+                addPointOnSegmentForm.removeAttribute('data-segmentId');
+            });
+
+            // Allow form submission by pressing Enter
+            addPointOnSegmentForm.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    addPointOnSegmentForm.dispatchEvent(new Event('submit'));
                 }
             });
         }
