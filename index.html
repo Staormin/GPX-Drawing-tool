@@ -1379,6 +1379,12 @@
             background: #0b1020;
         }
 
+        /* Remove grab cursor from map interaction */
+        .leaflet-grab,
+        .leaflet-grab:active {
+            cursor: default !important;
+        }
+
         /* Sidebar */
         .sidebar {
             position: fixed;
@@ -2685,6 +2691,33 @@
 
             mapInitialized = true;
             console.log('IGN Scan25 layer loaded');
+
+            // Add right-click context menu to copy coordinates
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+
+                    // Get map container offset
+                    const rect = mapContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // Convert pixel position to lat/lng using Leaflet's containerPointToLatLng
+                    const latlng = map.containerPointToLatLng(L.point(x, y));
+
+                    const lat = latlng.lat.toFixed(6);
+                    const lon = latlng.lng.toFixed(6);
+                    const coordinateStr = `${lat}, ${lon}`;
+
+                    console.log('Right-click coordinates:', coordinateStr);
+
+                    // Fill in the coordinate input and open modal
+                    document.getElementById('coordinateValue').value = coordinateStr;
+                    document.getElementById('coordinateName').value = ''; // Clear name field
+                    openModal('savedCoordinatesModal');
+                });
+            }
 
             // Invalidate size to ensure map renders correctly
             setTimeout(() => {
