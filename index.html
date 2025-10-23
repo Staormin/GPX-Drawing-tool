@@ -723,6 +723,52 @@
             }
         }
 
+        /* Dropdown menu for save button */
+        .dropdown-menu-container {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            margin-bottom: 8px;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .dropdown-item:active {
+            background-color: rgba(16, 185, 129, 0.3);
+        }
+
         /* ===== LAYERS PANEL ===== */
         .layers-panel {
             background: var(--bg-light);
@@ -1813,11 +1859,19 @@
                     <button type="button" class="btn-action" id="manageSavedCoordinatesBtn" title="Manage Coordinates">
                         🗂️ Coords
                     </button>
-                    <button type="button" class="btn-save-project" id="saveProjectBtn" title="Save Project">
-                        💾 Save
-                    </button>
+                    <div class="dropdown-menu-container">
+                        <button type="button" class="btn-save-project" id="saveProjectBtn" title="Save or Export Project">
+                            💾 Save
+                        </button>
+                        <div class="dropdown-menu" id="saveDropdownMenu">
+                            <button type="button" class="dropdown-item" id="saveProjectOption">Save Project</button>
+                            <button type="button" class="dropdown-item" id="exportDataOption">Export JSON</button>
+                            <button type="button" class="dropdown-item" id="importDataOption">Import JSON</button>
+                        </div>
+                    </div>
                     <button type="submit" class="btn-generate" title="Download GPX">📥 GPX</button>
                 </div>
+                <input type="file" id="importFileInput" style="display: none;" accept=".json" />
             </form>
 
             <div id="output" class="output">
@@ -3224,10 +3278,25 @@
             });
         }
 
-        // Setup save project button
+        // Setup save project button (toggle dropdown)
+        const dropdownMenu = document.getElementById('saveDropdownMenu');
         if (saveProjectBtn) {
             saveProjectBtn.addEventListener('click', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+        }
+
+        // Setup dropdown menu items
+        const saveProjectOption = document.getElementById('saveProjectOption');
+        const exportDataOption = document.getElementById('exportDataOption');
+        const importDataOption = document.getElementById('importDataOption');
+
+        if (saveProjectOption) {
+            saveProjectOption.addEventListener('click', function (e) {
+                e.preventDefault();
+                dropdownMenu.classList.remove('show');
 
                 // Check if there are any elements added
                 if (layers.circles.length === 0 && layers.lineSegments.length === 0 && layers.points.length === 0) {
@@ -3254,6 +3323,43 @@
                 openModal('filenameModal');
             });
         }
+
+        if (exportDataOption) {
+            exportDataOption.addEventListener('click', function (e) {
+                e.preventDefault();
+                dropdownMenu.classList.remove('show');
+                exportDataAsJSON();
+                showMessage('Data exported successfully!');
+            });
+        }
+
+        if (importDataOption) {
+            importDataOption.addEventListener('click', function (e) {
+                e.preventDefault();
+                dropdownMenu.classList.remove('show');
+                document.getElementById('importFileInput').click();
+            });
+        }
+
+        // Handle file import
+        const importFileInput = document.getElementById('importFileInput');
+        if (importFileInput) {
+            importFileInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    importDataFromJSON(file);
+                    // Reset input
+                    e.target.value = '';
+                }
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.dropdown-menu-container')) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
 
         // Load projects on page load
         refreshProjectsDropdown();
@@ -3824,6 +3930,72 @@
             Math.abs(c.lat - lat) < 0.0001 && Math.abs(c.lon - lon) < 0.0001
         );
         return coord ? coord.name : null;
+    }
+
+    // Export all data as JSON
+    function exportDataAsJSON() {
+        const exportData = {
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            circles: layers.circles,
+            lineSegments: layers.lineSegments,
+            points: layers.points,
+            savedCoordinates: savedCoordinates
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `gpx-circle-export-${getTimestamp()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Import data from JSON
+    function importDataFromJSON(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importData = JSON.parse(e.target.result);
+
+                if (!importData.version) {
+                    alert('Invalid export file format');
+                    return;
+                }
+
+                // Import circles
+                if (importData.circles && Array.isArray(importData.circles)) {
+                    layers.circles = importData.circles;
+                }
+
+                // Import line segments
+                if (importData.lineSegments && Array.isArray(importData.lineSegments)) {
+                    layers.lineSegments = importData.lineSegments;
+                }
+
+                // Import points
+                if (importData.points && Array.isArray(importData.points)) {
+                    layers.points = importData.points;
+                }
+
+                // Import saved coordinates
+                if (importData.savedCoordinates && Array.isArray(importData.savedCoordinates)) {
+                    savedCoordinates = importData.savedCoordinates;
+                    localStorage.setItem('gpxCircle_savedCoordinates', JSON.stringify(savedCoordinates));
+                }
+
+                // Refresh UI
+                updateLayersPanel();
+                updateMapPreview();
+                alert('Data imported successfully!');
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Error importing data: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
     }
 
     // Update filename display
