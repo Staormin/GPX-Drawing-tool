@@ -1849,6 +1849,80 @@
             caret-color: var(--text);
             transition: background-color 9999s ease-out 0s;
         }
+
+        /* Navigation Bar Styles */
+        .navigation-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #1a1a1a;
+            border-top: 2px solid #cbd5e1;
+            padding: 12px 20px;
+            z-index: 1000;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .navigation-bar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .navigation-instructions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #f1f5f9;
+            font-size: 14px;
+        }
+
+        .navigation-icon {
+            font-size: 20px;
+            display: inline-block;
+        }
+
+        .navigation-text {
+            line-height: 1.4;
+        }
+
+        .navigation-text strong {
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 18px;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .navigation-exit-btn {
+            padding: 8px 16px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .navigation-exit-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .navigation-exit-btn:active {
+            background-color: #b91c1c;
+        }
+
+        /* Adjust map to account for navigation bar */
+        body.navigation-active .map-section {
+            padding-bottom: 60px;
+        }
     </style>
 </head>
 <body>
@@ -1970,6 +2044,17 @@
         <div class="map-section">
             <div id="map"></div>
         </div>
+    </div>
+</div>
+
+<!-- Navigation Mode Bar -->
+<div id="navigationBar" class="navigation-bar" style="display: none;">
+    <div class="navigation-bar-content">
+        <div class="navigation-instructions">
+            <span class="navigation-icon">🧭</span>
+            <span class="navigation-text">Use <strong>← →</strong> arrow keys to navigate • Press <strong>ESC</strong> to exit</span>
+        </div>
+        <button id="exitNavigationBtn" type="button" class="navigation-exit-btn">Exit Navigation</button>
     </div>
 </div>
 
@@ -2877,6 +2962,15 @@
         points: []
     };
 
+    // ===== NAVIGATION MODE =====
+    let navigateMode = {
+        active: false,
+        elementType: null,  // 'circle' or 'lineSegment'
+        elementId: null,
+        progress: 0,  // For segments: 0-1 for position along path, direction: 1 for forward, -1 for backward
+        anglePosition: 0  // For circles: angle in degrees (0-360)
+    };
+
     // ===== SAVED COORDINATES MANAGEMENT =====
     // Data structure for saved coordinates
     let savedCoordinates = [];
@@ -3185,6 +3279,7 @@
                 <div class="layer-item-type">Circle • ${circle.radius} km radius</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="startNavigateMode('circle', ${circle.id})">Navigate</button>
                 <button type="button" class="layer-action-btn" onclick="editCircleLayer(${circle.id})">Edit</button>
                 <button type="button" class="layer-action-btn delete" onclick="removeLayer('circle', ${circle.id})">Delete</button>
               </div>
@@ -3227,6 +3322,7 @@
                 <div class="layer-item-type">Line Segment • ${modeLabel} • ${segmentDistance.toFixed(2)} km</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="startNavigateMode('lineSegment', ${segment.id})">Navigate</button>
                 <button type="button" class="layer-action-btn" onclick="openAddPointOnSegmentModal(${segment.id})">Add point on</button>
                 <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
                 <button type="button" class="layer-action-btn delete" onclick="removeLayer('lineSegment', ${segment.id})">Delete</button>
@@ -3386,6 +3482,210 @@
         openModal('addPointOnSegmentModal');
     }
 
+    // ===== NAVIGATION MODE =====
+    function startNavigateMode(elementType, elementId) {
+        navigateMode.active = true;
+        navigateMode.elementType = elementType;
+        navigateMode.elementId = elementId;
+        navigateMode.progress = 0;
+        navigateMode.anglePosition = 0;
+
+        // Hide sidebar and show navigation bar
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.remove('open');
+        }
+        const navigationBar = document.getElementById('navigationBar');
+        if (navigationBar) {
+            navigationBar.style.display = 'flex';
+        }
+        document.body.classList.add('navigation-active');
+
+        console.log('Navigation mode started for', elementType, elementId);
+    }
+
+    function exitNavigateMode() {
+        navigateMode.active = false;
+        navigateMode.elementType = null;
+        navigateMode.elementId = null;
+
+        // Show sidebar and hide navigation bar
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.add('open');
+        }
+        const navigationBar = document.getElementById('navigationBar');
+        if (navigationBar) {
+            navigationBar.style.display = 'none';
+        }
+        document.body.classList.remove('navigation-active');
+
+        console.log('Navigation mode exited');
+    }
+
+    function getNavigationMovement() {
+        // Calculate movement distance based on zoom level
+        // Higher zoom = smaller movement, lower zoom = larger movement
+        const zoomLevel = map.getZoom();
+        // Very fast exponential scaling inversely related to zoom level
+        // At zoom 5: ~5000km per step
+        // At zoom 10: ~156km per step
+        // At zoom 15: ~5km per step
+        // At zoom 18: ~0.6km per step
+        const baseDistance = Math.pow(2, 11 - zoomLevel) * 5;
+        return Math.max(baseDistance, 0.01); // Minimum 0.01km
+    }
+
+    function calculateSegmentLength() {
+        const segment = layers.lineSegments.find(s => s.id === navigateMode.elementId);
+        if (!segment) return 1;
+
+        let segmentEndpoint;
+        if (segment.mode === 'coordinate') {
+            segmentEndpoint = segment.endpoint;
+        } else if (segment.mode === 'azimuth') {
+            segmentEndpoint = destinationPoint(
+                segment.center.lat,
+                segment.center.lon,
+                segment.distance,
+                segment.azimuth
+            );
+        } else if (segment.mode === 'intersection') {
+            segmentEndpoint = segment.endpoint;
+        }
+
+        const startProj = mercatorProject(segment.center.lat, segment.center.lon);
+        const endProj = mercatorProject(segmentEndpoint.lat, segmentEndpoint.lon);
+        const dx = endProj.x - startProj.x;
+        const dy = endProj.y - startProj.y;
+        const segmentLengthMeters = Math.sqrt(dx * dx + dy * dy);
+        return segmentLengthMeters / 1000; // return in km
+    }
+
+    function updateNavigationPosition() {
+        if (!navigateMode.active) return;
+
+        if (navigateMode.elementType === 'circle') {
+            navigateCircle();
+        } else if (navigateMode.elementType === 'lineSegment') {
+            navigateSegment();
+        }
+    }
+
+    function updateCirclePosition() {
+        const circle = layers.circles.find(c => c.id === navigateMode.elementId);
+        if (!circle) {
+            exitNavigateMode();
+            return;
+        }
+
+        // Calculate position on circle perimeter based on current angle
+        const radians = toRadians(navigateMode.anglePosition);
+        const degreesPerKm = 1 / (111 * Math.cos(toRadians(circle.center.lat)));
+        const newLat = circle.center.lat + (circle.radius / 111) * Math.cos(radians);
+        const newLon = circle.center.lon + (circle.radius * degreesPerKm) * Math.sin(radians);
+
+        map.setView([newLat, newLon], map.getZoom(), {animate: false});
+    }
+
+    function navigateCircle() {
+        const circle = layers.circles.find(c => c.id === navigateMode.elementId);
+        if (!circle) {
+            exitNavigateMode();
+            return;
+        }
+
+        const movement = getNavigationMovement(); // in km
+        // Convert km to degrees approximately (1 degree ≈ 111 km at equator, varies with latitude)
+        const degreesPerKm = 1 / (111 * Math.cos(toRadians(circle.center.lat)));
+        const angleDelta = (movement * degreesPerKm / circle.radius) * 180 / Math.PI;
+
+        navigateMode.anglePosition = (navigateMode.anglePosition + angleDelta) % 360;
+
+        updateCirclePosition();
+    }
+
+    function updateSegmentPosition() {
+        const segment = layers.lineSegments.find(s => s.id === navigateMode.elementId);
+        if (!segment) {
+            exitNavigateMode();
+            return;
+        }
+
+        // Calculate segment endpoint
+        let segmentEndpoint;
+        if (segment.mode === 'coordinate') {
+            segmentEndpoint = segment.endpoint;
+        } else if (segment.mode === 'azimuth') {
+            segmentEndpoint = destinationPoint(
+                segment.center.lat,
+                segment.center.lon,
+                segment.distance,
+                segment.azimuth
+            );
+        } else if (segment.mode === 'intersection') {
+            segmentEndpoint = segment.endpoint;
+        }
+
+        // Calculate segment length using Web Mercator
+        const startProj = mercatorProject(segment.center.lat, segment.center.lon);
+        const endProj = mercatorProject(segmentEndpoint.lat, segmentEndpoint.lon);
+        const dx = endProj.x - startProj.x;
+        const dy = endProj.y - startProj.y;
+
+        // Calculate position on segment using Web Mercator interpolation
+        const fraction = navigateMode.progress;
+        const projX = startProj.x + fraction * dx;
+        const projY = startProj.y + fraction * dy;
+        const pointOnSegment = mercatorUnproject(projX, projY);
+
+        map.setView([pointOnSegment.lat, pointOnSegment.lon], map.getZoom(), {animate: false});
+    }
+
+    function navigateSegment() {
+        const segment = layers.lineSegments.find(s => s.id === navigateMode.elementId);
+        if (!segment) {
+            exitNavigateMode();
+            return;
+        }
+
+        // Calculate segment endpoint
+        let segmentEndpoint;
+        if (segment.mode === 'coordinate') {
+            segmentEndpoint = segment.endpoint;
+        } else if (segment.mode === 'azimuth') {
+            segmentEndpoint = destinationPoint(
+                segment.center.lat,
+                segment.center.lon,
+                segment.distance,
+                segment.azimuth
+            );
+        } else if (segment.mode === 'intersection') {
+            segmentEndpoint = segment.endpoint;
+        }
+
+        // Calculate segment length using Web Mercator
+        const startProj = mercatorProject(segment.center.lat, segment.center.lon);
+        const endProj = mercatorProject(segmentEndpoint.lat, segmentEndpoint.lon);
+        const dx = endProj.x - startProj.x;
+        const dy = endProj.y - startProj.y;
+        const segmentLengthMeters = Math.sqrt(dx * dx + dy * dy);
+        const segmentLengthKm = segmentLengthMeters / 1000;
+
+        const movement = getNavigationMovement(); // in km
+        let progressDelta = movement / segmentLengthKm;
+
+        // Update progress and handle direction reversal at endpoints
+        navigateMode.progress += progressDelta;
+        if (navigateMode.progress >= 1) {
+            navigateMode.progress = 1 - (navigateMode.progress - 1);
+        } else if (navigateMode.progress < 0) {
+            navigateMode.progress = -navigateMode.progress;
+        }
+
+        updateSegmentPosition();
+    }
+
     // Show/hide single element and lists
     function show(el) {
         if (!el) return;
@@ -3490,18 +3790,20 @@
     // ===== INITIALIZATION =====
     // Single consolidated initialization on page load
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize map
-        setTimeout(initMap, 100);
+        // Initialize map and then load last project
+        setTimeout(function() {
+            initMap();
 
-        // Auto-load last loaded project
-        const lastLoadedProject = localStorage.getItem('gpxCircle_lastLoadedProject');
-        if (lastLoadedProject) {
-            const projects = getAllProjects();
-            const projectIndex = projects.findIndex(p => p.name === lastLoadedProject);
-            if (projectIndex !== -1) {
-                loadFormData(projects[projectIndex].data, projects[projectIndex].name);
+            // Auto-load last loaded project
+            const lastLoadedProject = localStorage.getItem('gpxCircle_lastLoadedProject');
+            if (lastLoadedProject) {
+                const projects = getAllProjects();
+                const projectIndex = projects.findIndex(p => p.name === lastLoadedProject);
+                if (projectIndex !== -1) {
+                    loadFormData(projects[projectIndex].data, projects[projectIndex].name);
+                }
             }
-        }
+        }, 100);
 
         // ===== ADDRESS SEARCH =====
         const addressSearch = document.getElementById('addressSearch');
@@ -4222,8 +4524,53 @@
             });
         }
 
+        // ===== NAVIGATION MODE BUTTON =====
+        const exitNavigationBtn = document.getElementById('exitNavigationBtn');
+        if (exitNavigationBtn) {
+            exitNavigationBtn.addEventListener('click', function () {
+                exitNavigateMode();
+            });
+        }
+
         // Close modals on ESC key press
         document.addEventListener('keydown', function (event) {
+            // Handle navigation mode keys
+            if (navigateMode.active) {
+                if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    updateNavigationPosition();
+                } else if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    if (navigateMode.elementType === 'lineSegment') {
+                        const movement = getNavigationMovement();
+                        const segmentLength = calculateSegmentLength();
+                        let progressDelta = movement / segmentLength;
+
+                        // Update progress and handle direction reversal at endpoints
+                        navigateMode.progress -= progressDelta;
+                        if (navigateMode.progress >= 1) {
+                            navigateMode.progress = 1 - (navigateMode.progress - 1);
+                        } else if (navigateMode.progress < 0) {
+                            navigateMode.progress = -navigateMode.progress;
+                        }
+                        updateSegmentPosition();
+                    } else if (navigateMode.elementType === 'circle') {
+                        const movement = getNavigationMovement();
+                        const circle = layers.circles.find(c => c.id === navigateMode.elementId);
+                        if (circle) {
+                            const degreesPerKm = 1 / (111 * Math.cos(toRadians(circle.center.lat)));
+                            const angleDelta = (movement * degreesPerKm / circle.radius) * 180 / Math.PI;
+                            navigateMode.anglePosition = (navigateMode.anglePosition - angleDelta + 360) % 360;
+                            updateCirclePosition();
+                        }
+                    }
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    exitNavigateMode();
+                    return; // Don't process other Escape handlers
+                }
+            }
+
             if (event.key === 'Escape') {
                 const circleModal = document.getElementById('circleModal');
                 const lineSegmentModal = document.getElementById('lineSegmentModal');
