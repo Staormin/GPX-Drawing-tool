@@ -229,35 +229,23 @@
         }
 
         .btn-generate {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.25);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-generate::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            padding: 16px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 15px;
+            border: none;
         }
 
         .btn-generate:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 102, 204, 0.35);
-        }
-
-        .btn-generate:hover::before {
-            left: 100%;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
         }
 
         .btn-generate:active {
-            transform: translateY(-1px);
         }
 
         .btn-generate:disabled {
@@ -464,11 +452,9 @@
         .btn-remove-segment:hover {
             background: transparent;
             color: #dc2626;
-            transform: scale(1.15);
         }
 
         .btn-remove-segment:active {
-            transform: scale(0.95);
         }
 
         .segment-input-group {
@@ -548,12 +534,10 @@
         }
 
         .btn-add-segment:hover {
-            transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
         }
 
         .btn-add-segment:active {
-            transform: translateY(0);
         }
 
         /* Top bar with title and project selector */
@@ -779,12 +763,10 @@
         }
 
         .btn-save-project:hover {
-            transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
         }
 
         .btn-save-project:active {
-            transform: translateY(-1px);
         }
 
         .button-group {
@@ -803,6 +785,14 @@
         /* Dropdown menu for save button */
         .dropdown-menu-container {
             position: relative;
+            flex: 1;
+            display: flex;
+            min-width: 0;
+        }
+
+        .dropdown-menu-container .btn-save-project {
+            flex: 1;
+            min-width: 0;
         }
 
         .dropdown-menu {
@@ -881,7 +871,7 @@
 
         /* ===== ACTION BUTTONS ===== */
         .btn-action {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
             color: white;
             padding: 12px 20px;
             border-radius: 12px;
@@ -889,7 +879,7 @@
             font-weight: 600;
             font-size: 15px;
             border: none;
-            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.25);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -897,11 +887,9 @@
         }
 
         .btn-action:hover {
-            opacity: 0.9;
         }
 
         .btn-action:active {
-            opacity: 0.8;
         }
 
         .btn-action-icon {
@@ -1102,7 +1090,6 @@
         }
 
         .layers-actions .btn-action:active {
-            transform: scale(0.96);
         }
 
         .layers-panel {
@@ -1466,9 +1453,9 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -320px;
+            left: -640px;
             height: 100vh;
-            width: 320px;
+            width: 640px;
             background: var(--panel);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
@@ -1504,6 +1491,19 @@
             text-transform: uppercase;
             color: var(--muted);
             margin: 0 0 8px 4px;
+        }
+
+        #formMount {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #formMount #layersPanel {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         /* Toggle Button - positioned on the right edge of sidebar */
@@ -1570,17 +1570,15 @@
         .btn-save-project:active,
         .btn-generate:active,
         .modal-btn:active {
-            transform: translateY(1px) scale(0.98);
         }
 
         /* Primary emphasis */
-        .btn-generate, .modal-btn-primary {
+        .modal-btn-primary {
             background: linear-gradient(180deg, var(--accent), var(--accent-600));
             border-color: transparent;
         }
 
-        .btn-generate:hover, .modal-btn-primary:hover {
-            filter: brightness(1.06);
+        .modal-btn-primary:hover {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
         }
 
@@ -1627,6 +1625,7 @@
         .modal textarea:placeholder-shown {
             border-color: var(--panel-border);
         }
+
         .modal input:not(:placeholder-shown),
         .modal textarea:not(:placeholder-shown) {
             border-color: var(--accent);
@@ -1713,6 +1712,7 @@
         #projectSearch::-ms-input-placeholder {
             color: var(--muted) !important;
         }
+
         #projectSearch:not(:placeholder-shown) {
             border-color: var(--accent);
             background: rgba(2, 6, 23, 0.82);
@@ -1788,6 +1788,7 @@
             font-size: 13px;
             padding: 10px 12px;
         }
+
         /* Readable inputs inside sidebar */
         .sidebar input[type="text"],
         .sidebar input[type="number"],
@@ -1823,6 +1824,7 @@
         .sidebar textarea:placeholder-shown {
             border-color: var(--panel-border);
         }
+
         .sidebar input:not(:placeholder-shown),
         .sidebar textarea:not(:placeholder-shown) {
             border-color: var(--accent);
@@ -1943,7 +1945,8 @@
                         🗂️ Coords
                     </button>
                     <div class="dropdown-menu-container">
-                        <button type="button" class="btn-save-project" id="saveProjectBtn" title="Save or Export Project">
+                        <button type="button" class="btn-save-project" id="saveProjectBtn"
+                                title="Save or Export Project">
                             💾 Save
                         </button>
                         <div class="dropdown-menu" id="saveDropdownMenu">
@@ -1955,7 +1958,7 @@
                     </div>
                     <button type="submit" class="btn-generate" title="Download GPX">📥 GPX</button>
                 </div>
-                <input type="file" id="importFileInput" style="display: none;" accept=".json" />
+                <input type="file" id="importFileInput" style="display: none;" accept=".json"/>
             </form>
 
             <div id="output" class="output">
@@ -2163,7 +2166,8 @@
             <h2>Load Project</h2>
         </div>
         <div class="modal-form">
-            <div class="projects-list" id="projectsList" style="max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px;">
+            <div class="projects-list" id="projectsList"
+                 style="max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px;">
                 <div class="layers-empty">No projects saved yet.</div>
             </div>
         </div>
@@ -2790,7 +2794,7 @@
             // Add right-click context menu to copy coordinates
             const mapContainer = document.getElementById('map');
             if (mapContainer) {
-                mapContainer.addEventListener('contextmenu', function(e) {
+                mapContainer.addEventListener('contextmenu', function (e) {
                     e.preventDefault();
 
                     // Get map container offset
@@ -4266,7 +4270,7 @@
     // Import data from JSON
     function importDataFromJSON(file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             try {
                 const importData = JSON.parse(e.target.result);
 
