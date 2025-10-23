@@ -1840,8 +1840,8 @@
         </div>
         <form id="circleForm" class="modal-form">
             <div class="modal-form-group">
-                <label for="circleName">Circle Name</label>
-                <input type="text" id="circleName" placeholder="e.g., Search Area, Zone 1" required/>
+                <label for="circleName">Circle Name (optional)</label>
+                <input type="text" id="circleName" placeholder="e.g., Search Area, Zone 1"/>
             </div>
             <div class="modal-form-group">
                 <label for="circleCenter">Center Coordinates</label>
@@ -1873,8 +1873,8 @@
         </div>
         <form id="lineSegmentForm" class="modal-form">
             <div class="modal-form-group">
-                <label for="lineSegmentName">Line Segment Name</label>
-                <input type="text" id="lineSegmentName" placeholder="e.g., Path 1, Route A" required/>
+                <label for="lineSegmentName">Line Segment Name (optional)</label>
+                <input type="text" id="lineSegmentName" placeholder="e.g., Path 1, Route A"/>
             </div>
             <div class="modal-form-group">
                 <label for="lineSegmentCenter">Center Coordinates</label>
@@ -1943,8 +1943,8 @@
         </div>
         <form id="pointForm" class="modal-form">
             <div class="modal-form-group">
-                <label for="pointName">Point Name</label>
-                <input type="text" id="pointName" placeholder="e.g., Waypoint 1, Landmark" required/>
+                <label for="pointName">Point Name (optional)</label>
+                <input type="text" id="pointName" placeholder="e.g., Waypoint 1, Landmark"/>
             </div>
             <div class="modal-form-group">
                 <label for="pointCoordinates">Coordinates</label>
@@ -3286,7 +3286,7 @@
         if (circleForm) {
             circleForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const name = document.getElementById('circleName').value.trim();
+                let name = document.getElementById('circleName').value.trim();
                 const centerStr = document.getElementById('circleCenter').value.trim();
                 const radiusStr = document.getElementById('circleRadius').value.trim();
 
@@ -3301,6 +3301,11 @@
                 if (isNaN(radius) || radius <= 0) {
                     alert('Invalid radius. Please enter a positive number.');
                     return;
+                }
+
+                // Autogenerate name if empty
+                if (!name) {
+                    name = autogenerateName('circle');
                 }
 
                 const center = {lat: centerParts[0], lon: centerParts[1]};
@@ -3364,7 +3369,7 @@
         if (lineSegmentForm) {
             lineSegmentForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const name = document.getElementById('lineSegmentName').value.trim();
+                let name = document.getElementById('lineSegmentName').value.trim();
                 const centerStr = document.getElementById('lineSegmentCenter').value.trim();
                 const mode = document.getElementById('lineSegmentMode').value;
 
@@ -3425,6 +3430,21 @@
                     endpoint = endpointFromIntersection(center.lat, center.lon, intersectionPoint.lat, intersectionPoint.lon, intersectionDistance);
                 }
 
+                // Autogenerate name if empty
+                if (!name) {
+                    if (mode === 'coordinate') {
+                        const startName = getSavedCoordinateName(center.lat, center.lon);
+                        const endName = getSavedCoordinateName(endpoint.lat, endpoint.lon);
+                        if (startName && endName) {
+                            name = `${startName} => ${endName}`;
+                        } else {
+                            name = autogenerateName('lineSegment', {mode});
+                        }
+                    } else {
+                        name = autogenerateName('lineSegment', {mode});
+                    }
+                }
+
                 const editId = lineSegmentForm.dataset.editId;
 
                 if (editId) {
@@ -3480,7 +3500,7 @@
         if (pointForm) {
             pointForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const name = document.getElementById('pointName').value.trim();
+                let name = document.getElementById('pointName').value.trim();
                 const coordinatesStr = document.getElementById('pointCoordinates').value.trim();
 
                 // Parse coordinates
@@ -3491,6 +3511,18 @@
                 }
 
                 const coordinates = {lat: coordinateParts[0], lon: coordinateParts[1]};
+
+                // Autogenerate name if empty
+                if (!name) {
+                    // Try to use saved coordinate name if available
+                    const savedName = getSavedCoordinateName(coordinates.lat, coordinates.lon);
+                    if (savedName) {
+                        name = savedName;
+                    } else {
+                        name = autogenerateName('point');
+                    }
+                }
+
                 const editId = pointForm.dataset.editId;
 
                 if (editId) {
@@ -3764,6 +3796,34 @@
                 : `${timestamp}_circles_${centersCount}centers_${radiiStr}.gpx`;
 
         return filename;
+    }
+
+    // Autogenerate element name based on context
+    function autogenerateName(type, context = {}) {
+        if (type === 'circle') {
+            const count = layers.circles.length + 1;
+            return `Circle ${count}`;
+        } else if (type === 'lineSegment') {
+            // For line segments with saved coordinates
+            if (context.mode === 'coordinate' && context.startName && context.endName) {
+                return `${context.startName} => ${context.endName}`;
+            }
+            // Generic naming
+            const count = layers.lineSegments.length + 1;
+            return `Line ${count}`;
+        } else if (type === 'point') {
+            const count = layers.points.length + 1;
+            return `Point ${count}`;
+        }
+        return '';
+    }
+
+    // Get saved coordinate name by coordinates
+    function getSavedCoordinateName(lat, lon) {
+        const coord = savedCoordinates.find(c =>
+            Math.abs(c.lat - lat) < 0.0001 && Math.abs(c.lon - lon) < 0.0001
+        );
+        return coord ? coord.name : null;
     }
 
     // Update filename display
