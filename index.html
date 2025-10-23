@@ -1419,15 +1419,15 @@
             </div>
             <div class="input-hint">Latitude, Longitude</div>
           </div>
-          <div id="azimuthMode" class="modal-form-group" style="display: none;">
+          <div class="modal-form-group azimuth-mode" style="display: none;">
             <label for="lineSegmentAzimuth">Azimuth (degrees)</label>
             <input type="text" id="lineSegmentAzimuth" placeholder="45" />
           </div>
-          <div id="azimuthMode" class="modal-form-group" style="display: none;">
+          <div class="modal-form-group azimuth-mode" style="display: none;">
             <label for="lineSegmentDistance">Distance (km)</label>
             <input type="text" id="lineSegmentDistance" placeholder="5.0" />
           </div>
-          <div id="intersectionMode" class="modal-form-group" style="display: none;">
+          <div class="modal-form-group intersection-mode" style="display: none;">
             <label for="lineSegmentIntersectionPoint">Intersection Point</label>
             <div class="coordinate-input-wrapper">
               <input type="text" id="lineSegmentIntersectionPoint" placeholder="48.9, 2.4" />
@@ -1435,7 +1435,7 @@
             </div>
             <div class="input-hint">Latitude, Longitude - Line will pass through this point</div>
           </div>
-          <div id="intersectionMode" class="modal-form-group" style="display: none;">
+          <div class="modal-form-group intersection-mode" style="display: none;">
             <label for="lineSegmentIntersectionDistance">Distance (km)</label>
             <input type="text" id="lineSegmentIntersectionDistance" placeholder="5.0" />
             <div class="input-hint">Total length of the line segment</div>
@@ -2548,7 +2548,7 @@
         document.getElementById('circleForm').dataset.editId = id;
 
         // Show modal
-        document.getElementById('circleModal').classList.add('show');
+        openModal('circleModal');
       }
 
       // Edit line segment layer
@@ -2583,7 +2583,7 @@
         document.getElementById('lineSegmentForm').dataset.editId = id;
 
         // Show modal
-        document.getElementById('lineSegmentModal').classList.add('show');
+        openModal('lineSegmentModal');
       }
 
       // Edit point layer
@@ -2604,27 +2604,31 @@
         document.getElementById('pointForm').dataset.editId = id;
 
         // Show modal
-        document.getElementById('pointModal').classList.add('show');
+        openModal('pointModal');
       }
 
       // Helper to update line segment mode fields visibility
       function updateLineSegmentModeFields(mode) {
-        const coordinateMode = document.querySelector('div[id="coordinateMode"]');
-        const azimuthMode = document.querySelectorAll('div[id="azimuthMode"]');
-        const intersectionMode = document.querySelectorAll('div[id="intersectionMode"]');
+        const coordinateMode = document.getElementById('coordinateMode');
+        const azimuthMode = document.querySelectorAll('.azimuth-mode');
+        const intersectionMode = document.querySelectorAll('.intersection-mode');
 
-        if (mode === 'coordinate') {
-          coordinateMode.style.display = 'block';
-          azimuthMode.forEach(el => el.style.display = 'none');
-          intersectionMode.forEach(el => el.style.display = 'none');
-        } else if (mode === 'azimuth') {
-          coordinateMode.style.display = 'none';
-          azimuthMode.forEach(el => el.style.display = 'block');
-          intersectionMode.forEach(el => el.style.display = 'none');
-        } else if (mode === 'intersection') {
-          coordinateMode.style.display = 'none';
-          azimuthMode.forEach(el => el.style.display = 'none');
-          intersectionMode.forEach(el => el.style.display = 'block');
+        switch (mode) {
+          case 'coordinate':
+            show(coordinateMode);
+            hideAll(azimuthMode);
+            hideAll(intersectionMode);
+            break;
+          case 'azimuth':
+            hide(coordinateMode);
+            showAll(azimuthMode);
+            hideAll(intersectionMode);
+            break;
+          case 'intersection':
+            hide(coordinateMode);
+            hideAll(azimuthMode);
+            showAll(intersectionMode);
+            break;
         }
       }
 
@@ -2634,6 +2638,23 @@
         div.textContent = text;
         return div.innerHTML;
       }
+
+      // ===== UI HELPERS: MODALS & VISIBILITY =====
+      // Open/close modal by element id
+      function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('show');
+      }
+      function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+      }
+
+      // Show/hide single element and lists
+      function show(el) { if (!el) return; el.style.display = 'block'; }
+      function hide(el) { if (!el) return; el.style.display = 'none'; }
+      function showAll(list) { if (!list) return; list.forEach(show); }
+      function hideAll(list) { if (!list) return; list.forEach(hide); }
 
       // ===== PROJECT MANAGEMENT: CONSTANTS & HELPER FUNCTIONS =====
       const PROJECTS_STORAGE_KEY = 'gpxCircleProjects';
@@ -2729,7 +2750,7 @@
             document.getElementById('filenameModalTitle').textContent = 'Save Project';
             document.getElementById('confirmFilenameBtn').textContent = 'Save';
             document.getElementById('filenameForm').dataset.action = 'save';
-            document.getElementById('filenameModal').classList.add('show');
+            openModal('filenameModal');
           });
         }
 
@@ -2747,7 +2768,7 @@
             document.getElementById('circleForm').removeAttribute('data-editId');
             document.getElementById('circleModalTitle').textContent = 'Add Circle';
             document.querySelector('#circleForm .modal-btn-primary').textContent = 'Add Circle';
-            document.getElementById('circleModal').classList.add('show');
+            openModal('circleModal');
           });
         }
 
@@ -2755,7 +2776,7 @@
         const cancelCircleBtn = document.getElementById('cancelCircleBtn');
         if (cancelCircleBtn) {
           cancelCircleBtn.addEventListener('click', function () {
-            document.getElementById('circleModal').classList.remove('show');
+            closeModal('circleModal');
           });
         }
 
@@ -2799,7 +2820,7 @@
 
             updateLayersPanel();
             updateMapPreview();
-            document.getElementById('circleModal').classList.remove('show');
+            closeModal('circleModal');
             circleForm.reset();
             circleForm.removeAttribute('data-editId');
           });
@@ -2817,7 +2838,7 @@
             document.querySelector('#lineSegmentForm .modal-btn-primary').textContent = 'Add Line Segment';
             document.getElementById('lineSegmentMode').value = 'coordinate';
             updateLineSegmentModeFields('coordinate');
-            document.getElementById('lineSegmentModal').classList.add('show');
+            openModal('lineSegmentModal');
           });
         }
 
@@ -2825,7 +2846,7 @@
         const cancelLineSegmentBtn = document.getElementById('cancelLineSegmentBtn');
         if (cancelLineSegmentBtn) {
           cancelLineSegmentBtn.addEventListener('click', function () {
-            document.getElementById('lineSegmentModal').classList.remove('show');
+            closeModal('lineSegmentModal');
           });
         }
 
@@ -2925,7 +2946,7 @@
 
             updateLayersPanel();
             updateMapPreview();
-            document.getElementById('lineSegmentModal').classList.remove('show');
+            closeModal('lineSegmentModal');
             lineSegmentForm.reset();
             lineSegmentForm.removeAttribute('data-editId');
           });
@@ -2941,7 +2962,7 @@
             document.getElementById('pointForm').removeAttribute('data-editId');
             document.getElementById('pointModalTitle').textContent = 'Add Point';
             document.querySelector('#pointForm .modal-btn-primary').textContent = 'Add Point';
-            document.getElementById('pointModal').classList.add('show');
+            openModal('pointModal');
           });
         }
 
@@ -2949,7 +2970,7 @@
         const cancelPointBtn = document.getElementById('cancelPointBtn');
         if (cancelPointBtn) {
           cancelPointBtn.addEventListener('click', function () {
-            document.getElementById('pointModal').classList.remove('show');
+            closeModal('pointModal');
           });
         }
 
@@ -2985,7 +3006,7 @@
 
             updateLayersPanel();
             updateMapPreview();
-            document.getElementById('pointModal').classList.remove('show');
+            closeModal('pointModal');
             pointForm.reset();
             pointForm.removeAttribute('data-editId');
           });
@@ -3032,14 +3053,14 @@
         const manageSavedCoordinatesBtn = document.getElementById('manageSavedCoordinatesBtn');
         if (manageSavedCoordinatesBtn) {
           manageSavedCoordinatesBtn.addEventListener('click', function () {
-            document.getElementById('savedCoordinatesModal').classList.add('show');
+            openModal('savedCoordinatesModal');
           });
         }
 
         const cancelSavedCoordinatesBtn = document.getElementById('cancelSavedCoordinatesBtn');
         if (cancelSavedCoordinatesBtn) {
           cancelSavedCoordinatesBtn.addEventListener('click', function () {
-            document.getElementById('savedCoordinatesModal').classList.remove('show');
+            closeModal('savedCoordinatesModal');
           });
         }
 
@@ -3047,7 +3068,7 @@
         const cancelFilenameBtn = document.getElementById('cancelFilenameBtn');
         if (cancelFilenameBtn) {
           cancelFilenameBtn.addEventListener('click', function () {
-            document.getElementById('filenameModal').classList.remove('show');
+            closeModal('filenameModal');
           });
         }
 
@@ -3061,15 +3082,15 @@
             const savedCoordinatesModal = document.getElementById('savedCoordinatesModal');
 
             if (circleModal && circleModal.classList.contains('show')) {
-              circleModal.classList.remove('show');
+              closeModal('circleModal');
             } else if (lineSegmentModal && lineSegmentModal.classList.contains('show')) {
-              lineSegmentModal.classList.remove('show');
+              closeModal('lineSegmentModal');
             } else if (pointModal && pointModal.classList.contains('show')) {
-              pointModal.classList.remove('show');
+              closeModal('pointModal');
             } else if (savedCoordinatesModal && savedCoordinatesModal.classList.contains('show')) {
-              savedCoordinatesModal.classList.remove('show');
+              closeModal('savedCoordinatesModal');
             } else if (filenameModal && filenameModal.classList.contains('show')) {
-              filenameModal.classList.remove('show');
+              closeModal('filenameModal');
             }
           }
         });
@@ -3107,7 +3128,7 @@
                 false
               );
 
-              document.getElementById('filenameModal').classList.remove('show');
+              closeModal('filenameModal');
             } else if (action === 'save') {
               // Save project
               let projectName = filename;
@@ -3116,7 +3137,7 @@
               }
 
               saveProject(projectName);
-              document.getElementById('filenameModal').classList.remove('show');
+              closeModal('filenameModal');
             }
           });
         }
@@ -3125,17 +3146,17 @@
         document.addEventListener('click', function (e) {
           const circleModal = document.getElementById('circleModal');
           if (e.target === circleModal) {
-            circleModal.classList.remove('show');
+            closeModal('circleModal');
           }
 
           const lineSegmentModal = document.getElementById('lineSegmentModal');
           if (e.target === lineSegmentModal) {
-            lineSegmentModal.classList.remove('show');
+            closeModal('lineSegmentModal');
           }
 
           const filenameModal = document.getElementById('filenameModal');
           if (e.target === filenameModal) {
-            filenameModal.classList.remove('show');
+            closeModal('filenameModal');
           }
         });
       });
@@ -3521,7 +3542,7 @@
           document.getElementById('filenameModalTitle').textContent = 'Download GPX File';
           document.getElementById('confirmFilenameBtn').textContent = 'Download';
           document.getElementById('filenameForm').dataset.action = 'download';
-          document.getElementById('filenameModal').classList.add('show');
+          openModal('filenameModal');
         } catch (error) {
           showMessage('Error generating GPX file: ' + error.message, true);
         }
