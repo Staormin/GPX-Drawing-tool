@@ -670,7 +670,7 @@
 
         .project-item-name {
             flex: 1;
-            color: #1f2937;
+            color: var(--text);
             font-size: 14px;
         }
 
@@ -686,6 +686,83 @@
         .project-item-delete:hover {
             background: rgba(239, 68, 68, 0.1);
             transform: scale(1.1);
+        }
+
+        /* Address Search Styling */
+        .address-search-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .address-search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            color: #1f2937;
+            transition: all 0.2s ease;
+        }
+
+        .address-search-input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .address-search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .address-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .address-dropdown.show {
+            display: block;
+        }
+
+        .address-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            color: #1f2937;
+        }
+
+        .address-item:last-child {
+            border-bottom: none;
+        }
+
+        .address-item:hover {
+            background: rgba(0, 102, 204, 0.08);
+        }
+
+        .address-item-main {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .address-item-secondary {
+            font-size: 12px;
+            color: #94a3b8;
         }
 
         .btn-save-project {
@@ -1780,6 +1857,18 @@
             <!-- Project selector will be moved here -->
         </div>
         <div class="sidebar-section">
+            <div class="address-search-wrapper">
+                <input
+                        type="text"
+                        id="addressSearch"
+                        class="address-search-input"
+                        placeholder="🔍 Search address..."
+                        autocomplete="off"
+                />
+                <div class="address-dropdown" id="addressDropdown"></div>
+            </div>
+        </div>
+        <div class="sidebar-section">
             <div class="sidebar-section-title">Drawing Tools</div>
             <!-- The entire form (gpxForm) including buttons and layersPanel will be moved below into formMount -->
         </div>
@@ -1798,18 +1887,6 @@
 <div class="container">
     <div class="top-bar">
         <h1>GPX Drawing tool</h1>
-        <!-- Project Selector -->
-        <div class="project-selector">
-            <div class="project-search-wrapper">
-                <input
-                        type="text"
-                        id="projectSearch"
-                        placeholder="Load project"
-                        autocomplete="off"
-                />
-                <div class="project-dropdown" id="projectDropdown"></div>
-            </div>
-        </div>
     </div>
     <div class="content-wrapper">
         <div class="form-section">
@@ -1870,6 +1947,7 @@
                             💾 Save
                         </button>
                         <div class="dropdown-menu" id="saveDropdownMenu">
+                            <button type="button" class="dropdown-item" id="loadProjectOption">Load Project</button>
                             <button type="button" class="dropdown-item" id="saveProjectOption">Save Project</button>
                             <button type="button" class="dropdown-item" id="exportDataOption">Export JSON</button>
                             <button type="button" class="dropdown-item" id="importDataOption">Import JSON</button>
@@ -2074,6 +2152,23 @@
 
         <div class="modal-actions" style="margin-top: 20px;">
             <button type="button" class="modal-btn modal-btn-secondary" id="cancelSavedCoordinatesBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Load Project Modal -->
+<div class="modal-overlay" id="loadProjectModal">
+    <div class="modal" style="max-width: 600px; max-height: 80vh; overflow: auto;">
+        <div class="modal-header">
+            <h2>Load Project</h2>
+        </div>
+        <div class="modal-form">
+            <div class="projects-list" id="projectsList" style="max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px;">
+                <div class="layers-empty">No projects saved yet.</div>
+            </div>
+        </div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button type="button" class="modal-btn modal-btn-secondary" id="cancelLoadProjectBtn">Close</button>
         </div>
     </div>
 </div>
@@ -3275,38 +3370,144 @@
         }
     }
 
+    // Populate projects list in modal
+    function populateProjectsList() {
+        const projectsList = document.getElementById('projectsList');
+        const projects = getAllProjects();
+
+        if (projects.length === 0) {
+            projectsList.innerHTML = '<div class="layers-empty">No projects saved yet.</div>';
+            return;
+        }
+
+        projectsList.innerHTML = projects.map((project, index) => `
+            <div class="project-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #3d5466; cursor: pointer;">
+                <div class="project-item-name" style="flex: 1; color: #f1f5f9; font-size: 14px;" onclick="loadProjectFromModal('${index}')">
+                    <strong>${project.name}</strong>
+                    <div style="font-size: 12px; color: #cbd5e1; margin-top: 4px;">
+                        ${project.data.layers.circles.length} circles • ${project.data.layers.lineSegments.length} lines • ${project.data.layers.points.length} points
+                    </div>
+                </div>
+                <button type="button" class="project-item-delete" onclick="deleteProjectFromModal('${index}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px 8px;">×</button>
+            </div>
+        `).join('');
+    }
+
+    // Load project from modal
+    function loadProjectFromModal(index) {
+        const projects = getAllProjects();
+        if (projects[index]) {
+            loadFormData(projects[index].data);
+            closeModal('loadProjectModal');
+            showMessage(`Project "${projects[index].name}" loaded successfully!`);
+        }
+    }
+
+    // Delete project from modal
+    function deleteProjectFromModal(index) {
+        const projects = getAllProjects();
+        if (projects[index] && confirm(`Are you sure you want to delete the project "${projects[index].name}"?`)) {
+            projects.splice(index, 1);
+            saveProjectsToStorage(projects);
+            populateProjectsList();
+            showMessage(`Project deleted successfully!`);
+        }
+    }
+
     // ===== INITIALIZATION =====
     // Single consolidated initialization on page load
     document.addEventListener('DOMContentLoaded', function () {
         // Initialize map
         setTimeout(initMap, 100);
 
-        // Setup project search
-        const projectSearch = document.getElementById('projectSearch');
-        const projectDropdown = document.getElementById('projectDropdown');
-        const saveProjectBtn = document.getElementById('saveProjectBtn');
+        // ===== ADDRESS SEARCH =====
+        const addressSearch = document.getElementById('addressSearch');
+        const addressDropdown = document.getElementById('addressDropdown');
+        let addressSearchTimeout;
 
-        if (projectSearch && projectDropdown) {
-            // Show dropdown on focus
-            projectSearch.addEventListener('focus', function () {
-                refreshProjectsDropdown();
-                projectDropdown.classList.add('show');
+        if (addressSearch && addressDropdown) {
+            // Search for addresses using IGN Geoplateforme Autocomplete API
+            async function searchAddresses(query) {
+                if (query.trim().length < 3) {
+                    addressDropdown.innerHTML = '';
+                    addressDropdown.classList.remove('show');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `https://data.geopf.fr/geocodage/completion?text=${encodeURIComponent(query)}&limit=8`
+                    );
+                    const results = await response.json();
+
+                    if (!results.results || results.results.length === 0) {
+                        addressDropdown.innerHTML = '<div class="address-item" style="color: #94a3b8;">No results found in France</div>';
+                    } else {
+                        addressDropdown.innerHTML = results.results
+                            .map(result => {
+                                // Extract address parts from Geoplateforme response
+                                const main = result.fulltext;
+                                const secondary = result.kind ? `${result.kind}` : '';
+
+                                // Get coordinates (x = longitude, y = latitude)
+                                const lat = result.y;
+                                const lon = result.x;
+
+                                return `
+                                    <div class="address-item" data-lat="${lat}" data-lon="${lon}">
+                                        <div class="address-item-main">${main}</div>
+                                        <div class="address-item-secondary">${secondary}</div>
+                                    </div>
+                                `;
+                            })
+                            .join('');
+
+                        // Add click listeners
+                        addressDropdown.querySelectorAll('.address-item').forEach(item => {
+                            item.addEventListener('click', function () {
+                                const lat = parseFloat(this.dataset.lat);
+                                const lon = parseFloat(this.dataset.lon);
+
+                                // Center map on selected address
+                                if (map && !isNaN(lat) && !isNaN(lon)) {
+                                    map.setView([lat, lon], 13);
+                                }
+
+                                // Clear search
+                                addressSearch.value = '';
+                                addressDropdown.innerHTML = '';
+                                addressDropdown.classList.remove('show');
+                            });
+                        });
+                    }
+
+                    addressDropdown.classList.add('show');
+                } catch (error) {
+                    console.error('Address search error:', error);
+                    addressDropdown.innerHTML = '<div class="address-item" style="color: #ef4444;">Search error</div>';
+                    addressDropdown.classList.add('show');
+                }
+            }
+
+            // Input handler with debouncing
+            addressSearch.addEventListener('input', function (e) {
+                clearTimeout(addressSearchTimeout);
+                addressSearchTimeout = setTimeout(() => {
+                    searchAddresses(e.target.value);
+                }, 300);
             });
 
-            // Filter on input
-            projectSearch.addEventListener('input', function (e) {
-                if (e.target.value.trim().length === 0) {
-                    refreshProjectsDropdown();
-                } else {
-                    filterProjects(e.target.value);
+            // Show dropdown on focus
+            addressSearch.addEventListener('focus', function () {
+                if (this.value.trim().length >= 3) {
+                    addressDropdown.classList.add('show');
                 }
-                projectDropdown.classList.add('show');
             });
 
             // Hide dropdown when clicking outside
             document.addEventListener('click', function (e) {
-                if (!e.target.closest('.project-search-wrapper')) {
-                    projectDropdown.classList.remove('show');
+                if (!e.target.closest('.address-search-wrapper')) {
+                    addressDropdown.classList.remove('show');
                 }
             });
         }
@@ -3322,9 +3523,20 @@
         }
 
         // Setup dropdown menu items
+        const loadProjectOption = document.getElementById('loadProjectOption');
         const saveProjectOption = document.getElementById('saveProjectOption');
         const exportDataOption = document.getElementById('exportDataOption');
         const importDataOption = document.getElementById('importDataOption');
+
+        if (loadProjectOption) {
+            loadProjectOption.addEventListener('click', function (e) {
+                e.preventDefault();
+                dropdownMenu.classList.remove('show');
+                openModal('loadProjectModal');
+                // Populate projects list
+                populateProjectsList();
+            });
+        }
 
         if (saveProjectOption) {
             saveProjectOption.addEventListener('click', function (e) {
@@ -3393,9 +3605,6 @@
                 dropdownMenu.classList.remove('show');
             }
         });
-
-        // Load projects on page load
-        refreshProjectsDropdown();
 
         // ===== LAYERS MODAL EVENT LISTENERS =====
         // Add Circle button
@@ -3788,6 +3997,14 @@
             });
         }
 
+        // ===== LOAD PROJECT MODAL EVENT LISTENERS =====
+        const cancelLoadProjectBtn = document.getElementById('cancelLoadProjectBtn');
+        if (cancelLoadProjectBtn) {
+            cancelLoadProjectBtn.addEventListener('click', function () {
+                closeModal('loadProjectModal');
+            });
+        }
+
         // Close modals on ESC key press
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
@@ -3796,6 +4013,7 @@
                 const pointModal = document.getElementById('pointModal');
                 const filenameModal = document.getElementById('filenameModal');
                 const savedCoordinatesModal = document.getElementById('savedCoordinatesModal');
+                const loadProjectModal = document.getElementById('loadProjectModal');
 
                 if (circleModal && circleModal.classList.contains('show')) {
                     closeModal('circleModal');
@@ -3807,6 +4025,8 @@
                     closeModal('savedCoordinatesModal');
                 } else if (filenameModal && filenameModal.classList.contains('show')) {
                     closeModal('filenameModal');
+                } else if (loadProjectModal && loadProjectModal.classList.contains('show')) {
+                    closeModal('loadProjectModal');
                 }
             }
         });
@@ -3891,6 +4111,11 @@
             const savedCoordinatesModal = document.getElementById('savedCoordinatesModal');
             if (e.target === savedCoordinatesModal) {
                 closeModal('savedCoordinatesModal');
+            }
+
+            const loadProjectModal = document.getElementById('loadProjectModal');
+            if (e.target === loadProjectModal) {
+                closeModal('loadProjectModal');
             }
         });
     });
@@ -4074,7 +4299,15 @@
                 // Refresh UI
                 updateLayersPanel();
                 updateMapPreview();
-                alert('Data imported successfully!');
+
+                // Prompt for project name and save as new project
+                const projectName = prompt('Enter a name for this imported project:');
+                if (projectName && projectName.trim().length > 0) {
+                    saveProject(projectName);
+                } else if (projectName !== null) {
+                    alert('Project name is required to save the import');
+                }
+
             } catch (error) {
                 console.error('Import error:', error);
                 alert('Error importing data: ' + error.message);
@@ -4460,8 +4693,13 @@
 
     // Refresh the projects dropdown
     function refreshProjectsDropdown() {
-        const projects = getAllProjects();
         const dropdown = document.getElementById('projectDropdown');
+        // Check if the dropdown element exists (it may not if using modal instead)
+        if (!dropdown) {
+            return;
+        }
+
+        const projects = getAllProjects();
         dropdown.innerHTML = '';
 
         if (projects.length === 0) {
@@ -4479,7 +4717,10 @@
             item.addEventListener('click', function (e) {
                 if (e.target.className === 'project-item-delete') return;
                 loadFormData(project.data);
-                document.getElementById('projectSearch').value = '';
+                const projectSearch = document.getElementById('projectSearch');
+                if (projectSearch) {
+                    projectSearch.value = '';
+                }
                 dropdown.classList.remove('show');
             });
             dropdown.appendChild(item);
