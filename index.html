@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPX Drawing tool</title>
+    <!-- Geoportail (IGN) mapping -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Geoportail plugin for Leaflet -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geoportal-leaflet@0.13.0/dist/gp-leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/geoportal-leaflet@0.13.0/dist/gp-leaflet-full.js"></script>
     <style>
       /* ===== CSS Variables ===== */
       :root {
@@ -1025,6 +1029,239 @@
         color: var(--error);
         background-color: rgba(239, 68, 68, 0.1);
       }
+
+      /* ===== SAVED COORDINATES SECTION ===== */
+      .saved-coordinates-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid var(--border);
+      }
+
+      .saved-coordinates-form {
+        background: var(--bg-lighter);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .saved-coordinates-form .modal-form-group {
+        gap: 6px;
+      }
+
+      .saved-coordinates-form .modal-form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .saved-coordinates-form .modal-form-group input {
+        font-size: 13px;
+        padding: 10px;
+      }
+
+      .saved-coordinates-form #saveCoordinateBtn {
+        width: 100%;
+        margin-top: 4px;
+      }
+
+      .saved-coordinates-list {
+        background: var(--bg-lighter);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        max-height: 250px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .saved-coordinate-item {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+      }
+
+      .saved-coordinate-item:hover {
+        background: var(--bg-light);
+        border-color: var(--primary);
+      }
+
+      .saved-coordinate-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .saved-coordinate-item-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .saved-coordinate-item-value {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .saved-coordinate-item-actions {
+        display: flex;
+        gap: 6px;
+        margin-left: 10px;
+        flex-shrink: 0;
+      }
+
+      .coordinate-action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--primary);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+
+      .coordinate-action-btn:hover {
+        background-color: rgba(0, 102, 204, 0.1);
+        color: var(--primary-dark);
+      }
+
+      .coordinate-action-btn.delete {
+        color: var(--error);
+      }
+
+      .coordinate-action-btn.delete:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+      }
+
+      /* ===== COORDINATE INPUT WRAPPER ===== */
+      .coordinate-input-wrapper {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        position: relative;
+      }
+
+      .coordinate-input-wrapper input {
+        flex: 1;
+      }
+
+      .btn-load-coordinate {
+        background: none;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        min-height: 40px;
+        flex-shrink: 0;
+      }
+
+      .btn-load-coordinate:hover {
+        background-color: rgba(0, 102, 204, 0.1);
+        border-color: var(--primary);
+      }
+
+      .btn-load-coordinate:active {
+        background-color: rgba(0, 102, 204, 0.2);
+      }
+
+      /* ===== COORDINATE PICKER DROPDOWN ===== */
+      .coordinate-picker-dropdown {
+        position: fixed;
+        background: white;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        min-width: 280px;
+        max-width: 380px;
+        max-height: 320px;
+        overflow-y: auto;
+        display: none;
+        flex-direction: column;
+      }
+
+      .coordinate-picker-dropdown.show {
+        display: flex;
+      }
+
+      .coordinate-picker-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .coordinate-picker-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .coordinate-picker-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--bg-lighter);
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .coordinate-picker-item:hover {
+        background-color: var(--bg-lighter);
+      }
+
+      .coordinate-picker-item:last-child {
+        border-bottom: none;
+      }
+
+      .coordinate-picker-item-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 13px;
+      }
+
+      .coordinate-picker-item-value {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-family: monospace;
+      }
+
+      .coordinate-picker-empty {
+        padding: 24px 16px;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
@@ -1094,6 +1331,9 @@
             </div>
 
             <div class="button-group">
+              <button type="button" class="btn-action" id="manageSavedCoordinatesBtn">
+                🗂️ Manage Coordinates
+              </button>
               <button type="button" class="btn-save-project" id="saveProjectBtn">
                 💾 Save Project
               </button>
@@ -1126,7 +1366,10 @@
           </div>
           <div class="modal-form-group">
             <label for="circleCenter">Center Coordinates</label>
-            <input type="text" id="circleCenter" placeholder="48.8566, 2.3522" required />
+            <div class="coordinate-input-wrapper">
+              <input type="text" id="circleCenter" placeholder="48.8566, 2.3522" required />
+              <button type="button" class="btn-load-coordinate" onclick="showLoadCoordinateMenu('circleCenter')">📍</button>
+            </div>
             <div class="input-hint">Latitude, Longitude</div>
           </div>
           <div class="modal-form-group">
@@ -1154,7 +1397,10 @@
           </div>
           <div class="modal-form-group">
             <label for="lineSegmentCenter">Center Coordinates</label>
-            <input type="text" id="lineSegmentCenter" placeholder="48.8566, 2.3522" required />
+            <div class="coordinate-input-wrapper">
+              <input type="text" id="lineSegmentCenter" placeholder="48.8566, 2.3522" required />
+              <button type="button" class="btn-load-coordinate" onclick="showLoadCoordinateMenu('lineSegmentCenter')">📍</button>
+            </div>
             <div class="input-hint">Latitude, Longitude</div>
           </div>
           <div class="modal-form-group">
@@ -1167,7 +1413,10 @@
           </div>
           <div id="coordinateMode" class="modal-form-group">
             <label for="lineSegmentEndpoint">Endpoint Coordinates</label>
-            <input type="text" id="lineSegmentEndpoint" placeholder="48.9, 2.4" />
+            <div class="coordinate-input-wrapper">
+              <input type="text" id="lineSegmentEndpoint" placeholder="48.9, 2.4" />
+              <button type="button" class="btn-load-coordinate" onclick="showLoadCoordinateMenu('lineSegmentEndpoint')">📍</button>
+            </div>
             <div class="input-hint">Latitude, Longitude</div>
           </div>
           <div id="azimuthMode" class="modal-form-group" style="display: none;">
@@ -1180,7 +1429,10 @@
           </div>
           <div id="intersectionMode" class="modal-form-group" style="display: none;">
             <label for="lineSegmentIntersectionPoint">Intersection Point</label>
-            <input type="text" id="lineSegmentIntersectionPoint" placeholder="48.9, 2.4" />
+            <div class="coordinate-input-wrapper">
+              <input type="text" id="lineSegmentIntersectionPoint" placeholder="48.9, 2.4" />
+              <button type="button" class="btn-load-coordinate" onclick="showLoadCoordinateMenu('lineSegmentIntersectionPoint')">📍</button>
+            </div>
             <div class="input-hint">Latitude, Longitude - Line will pass through this point</div>
           </div>
           <div id="intersectionMode" class="modal-form-group" style="display: none;">
@@ -1209,7 +1461,10 @@
           </div>
           <div class="modal-form-group">
             <label for="pointCoordinates">Coordinates</label>
-            <input type="text" id="pointCoordinates" placeholder="48.8566, 2.3522" required />
+            <div class="coordinate-input-wrapper">
+              <input type="text" id="pointCoordinates" placeholder="48.8566, 2.3522" required />
+              <button type="button" class="btn-load-coordinate" onclick="showLoadCoordinateMenu('pointCoordinates')">📍</button>
+            </div>
             <div class="input-hint">Latitude, Longitude</div>
           </div>
           <div class="modal-actions">
@@ -1237,6 +1492,37 @@
             <button type="submit" class="modal-btn modal-btn-primary" id="confirmFilenameBtn">Download</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Saved Coordinates Modal -->
+    <div class="modal-overlay" id="savedCoordinatesModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Manage Saved Coordinates</h2>
+        </div>
+        <div class="modal-form">
+          <div class="modal-form-group">
+            <label for="coordinateName">Coordinate Name</label>
+            <input type="text" id="coordinateName" placeholder="e.g., Paris Center" />
+          </div>
+          <div class="modal-form-group">
+            <label for="coordinateValue">Latitude, Longitude</label>
+            <input type="text" id="coordinateValue" placeholder="48.8566, 2.3522" />
+          </div>
+          <button type="button" class="modal-btn modal-btn-primary" id="saveCoordinateBtn" style="width: 100%;">💾 Save Coordinate</button>
+
+          <div style="margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--border);">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Saved Coordinates</h3>
+            <div class="saved-coordinates-list" id="savedCoordinatesList">
+              <div class="layers-empty">No saved coordinates yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="modal-btn modal-btn-secondary" id="cancelSavedCoordinatesBtn">Close</button>
+        </div>
       </div>
     </div>
 
@@ -1276,27 +1562,249 @@
         };
       }
 
-      // Calculate endpoint from start point through intersection point with specified distance
-      function endpointFromIntersection(startLat, startLon, intersectLat, intersectLon, distance) {
-        // Calculate bearing from start point to intersection point
-        const φ1 = toRadians(startLat);
-        const λ1 = toRadians(startLon);
-        const φ2 = toRadians(intersectLat);
-        const λ2 = toRadians(intersectLon);
+      // Calculate bearing between two points
+      function calculateBearing(fromLat, fromLon, toLat, toLon) {
+        const φ1 = toRadians(fromLat);
+        const λ1 = toRadians(fromLon);
+        const φ2 = toRadians(toLat);
+        const λ2 = toRadians(toLon);
 
         const Δλ = λ2 - λ1;
 
-        // Calculate bearing using atan2
-        // Using the formula: atan2(sin(Δλ)*cos(φ2), cos(φ1)*sin(φ2) - sin(φ1)*cos(φ2)*cos(Δλ))
         const y = Math.sin(Δλ) * Math.cos(φ2);
         const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
         const bearing = toDegrees(Math.atan2(y, x));
 
-        // Normalize bearing to 0-360 range
-        const normalizedBearing = (bearing + 360) % 360;
+        return (bearing + 360) % 360;
+      }
 
-        // Use the bearing and distance to calculate the endpoint
-        return destinationPoint(startLat, startLon, distance, normalizedBearing);
+      // Calculate distance between two points (haversine)
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth's radius in km
+        const φ1 = toRadians(lat1);
+        const φ2 = toRadians(lat2);
+        const Δφ = toRadians(lat2 - lat1);
+        const Δλ = toRadians(lon2 - lon1);
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+      }
+
+      // Web Mercator projection helpers (EPSG:3857)
+      function mercatorProject(lat, lon) {
+        const R = 6378137; // meters
+        const λ = toRadians(lon);
+        let φ = toRadians(lat);
+        // Clamp latitude to prevent infinity at the poles
+        const maxLat = 85.05112878;
+        if (lat > maxLat) φ = toRadians(maxLat);
+        if (lat < -maxLat) φ = toRadians(-maxLat);
+        const x = R * λ;
+        const y = R * Math.log(Math.tan(Math.PI / 4 + φ / 2));
+        return { x, y };
+      }
+
+      function mercatorUnproject(x, y) {
+        const R = 6378137; // meters
+        const λ = x / R;
+        const φ = 2 * Math.atan(Math.exp(y / R)) - Math.PI / 2;
+        const lat = toDegrees(φ);
+        const lon = toDegrees(λ);
+        return { lat, lon };
+      }
+
+      // Helper: Convert lat/lon to 3D unit vector on sphere
+      function latLonToVector(lat, lon) {
+        const φ = toRadians(lat);
+        const λ = toRadians(lon);
+        return {
+          x: Math.cos(φ) * Math.cos(λ),
+          y: Math.cos(φ) * Math.sin(λ),
+          z: Math.sin(φ)
+        };
+      }
+
+      // Helper: Convert 3D unit vector to lat/lon
+      function vectorToLatLon(v) {
+        const lat = toDegrees(Math.asin(v.z));
+        const lon = toDegrees(Math.atan2(v.y, v.x));
+        return { lat, lon };
+      }
+
+      // Helper: Cross product of two vectors
+      function crossProduct(v1, v2) {
+        return {
+          x: v1.y * v2.z - v1.z * v2.y,
+          y: v1.z * v2.x - v1.x * v2.z,
+          z: v1.x * v2.y - v1.y * v2.x
+        };
+      }
+
+      // Helper: Magnitude of vector
+      function magnitude(v) {
+        return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+      }
+
+      // Helper: Normalize vector to unit length
+      function normalize(v) {
+        const mag = magnitude(v);
+        if (mag === 0) return v;
+        return { x: v.x / mag, y: v.y / mag, z: v.z / mag };
+      }
+
+      // Helper: Dot product of two vectors
+      function dotProduct(v1, v2) {
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+      }
+
+      // Helper: Rotate vector around an axis by angle (radians) using Rodrigues' formula
+      function rotateVector(v, axis, angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const ux = axis.x;
+        const uy = axis.y;
+        const uz = axis.z;
+
+        return {
+          x: v.x * (cos + ux * ux * (1 - cos)) + v.y * (ux * uy * (1 - cos) - uz * sin) + v.z * (ux * uz * (1 - cos) + uy * sin),
+          y: v.x * (uy * ux * (1 - cos) + uz * sin) + v.y * (cos + uy * uy * (1 - cos)) + v.z * (uy * uz * (1 - cos) - ux * sin),
+          z: v.x * (uz * ux * (1 - cos) - uy * sin) + v.y * (uz * uy * (1 - cos) + ux * sin) + v.z * (cos + uz * uz * (1 - cos))
+        };
+      }
+
+      // Calculate endpoint from start point through intersection point with specified distance
+      // Compute endpoint so that the straight line in Web Mercator from start to end passes through the intersection point,
+      // while the geodesic distance from start to end equals the provided distance.
+      function endpointFromIntersection(startLat, startLon, intersectLat, intersectLon, distanceKm) {
+        const D = distanceKm; // km
+
+        // Project to Web Mercator (meters)
+        const P0 = mercatorProject(startLat, startLon);
+        const Pi = mercatorProject(intersectLat, intersectLon);
+
+        let vx = Pi.x - P0.x;
+        let vy = Pi.y - P0.y;
+        let norm = Math.hypot(vx, vy);
+
+        // Fallback direction if start and intersection project to the same point
+        if (norm === 0) {
+          vx = 1; // east
+          vy = 0;
+          norm = 1;
+        }
+        const v = { x: vx / norm, y: vy / norm };
+
+        // s measured in meters along the projection ray from P0
+        const sIntersection = Math.hypot(Pi.x - P0.x, Pi.y - P0.y);
+
+        function endFromS(sMeters) {
+          const x = P0.x + sMeters * v.x;
+          const y = P0.y + sMeters * v.y;
+          return mercatorUnproject(x, y); // {lat, lon}
+        }
+
+        function f(sMeters) {
+          const end = endFromS(sMeters);
+          return calculateDistance(startLat, startLon, end.lat, end.lon) - D; // km
+        }
+
+        // If requested distance is exactly up to the intersection, return it
+        const dStartToInter = calculateDistance(startLat, startLon, intersectLat, intersectLon);
+        if (Math.abs(dStartToInter - D) < 1e-6) {
+          return { lat: intersectLat, lon: intersectLon };
+        }
+
+        // Bracket the root for s >= sIntersection
+        let sLow = sIntersection;
+        let fLow = f(sLow);
+
+        // If D is smaller than distance to intersection, no solution while keeping the line passing through the point
+        // The UI should prevent this; as a fallback, return the intersection to avoid incorrect direction.
+        if (fLow > 0) {
+          return { lat: intersectLat, lon: intersectLon };
+        }
+
+        // Increase sHigh until distance exceeds D (f >= 0)
+        let sHigh = sLow + 1000; // start with +1 km in projected meters
+        let fHigh = f(sHigh);
+        const MAX_S = 40000000; // ~40,000 km in meters, safe upper cap
+        let iter = 0;
+        while (fHigh < 0 && sHigh < MAX_S && iter < 60) {
+          sHigh *= 2;
+          fHigh = f(sHigh);
+          iter++;
+        }
+
+        // If still not bracketed, clamp to max
+        if (fHigh < 0) {
+          // Fall back to extend along the ray using destination point from current bearing
+          const pEnd = endFromS(sHigh);
+          return { lat: pEnd.lat, lon: pEnd.lon };
+        }
+
+        // Bisection to solve f(s)=0
+        let a = sLow, b = sHigh;
+        let fa = fLow, fb = fHigh;
+        for (let i = 0; i < 60; i++) {
+          const mid = 0.5 * (a + b);
+          const fm = f(mid);
+          if (Math.abs(fm) < 1e-6 || Math.abs(b - a) < 0.01) { // ~1 cm in projected space
+            const end = endFromS(mid);
+            return { lat: end.lat, lon: end.lon };
+          }
+          if (fm > 0) {
+            b = mid; fb = fm;
+          } else {
+            a = mid; fa = fm;
+          }
+        }
+        // Return best mid if not converged
+        const end = endFromS(0.5 * (a + b));
+        return { lat: end.lat, lon: end.lon };
+      }
+
+      // Generate points along a bearing line for specified total distance
+      function generateLinePoints(startLat, startLon, endLat, endLon, numPoints) {
+        const points = [];
+
+        // Use slerp to generate points between start and end
+        const startVec = latLonToVector(startLat, startLon);
+        const endVec = latLonToVector(endLat, endLon);
+
+        const dotProd = dotProduct(startVec, endVec);
+        const omega = Math.acos(Math.max(-1, Math.min(1, dotProd)));
+        const sinOmega = Math.sin(omega);
+
+        // Generate points using slerp interpolation
+        for (let i = 0; i <= numPoints; i++) {
+          const t = i / numPoints;
+
+          if (omega < 1e-10) {
+            // Points are too close, use linear interpolation
+            const lat = startLat + (endLat - startLat) * t;
+            const lon = startLon + (endLon - startLon) * t;
+            points.push({ lat, lon });
+          } else {
+            // Use slerp for proper great circle interpolation
+            const w0 = Math.sin((1 - t) * omega) / sinOmega;
+            const w1 = Math.sin(t * omega) / sinOmega;
+
+            const interpVec = {
+              x: w0 * startVec.x + w1 * endVec.x,
+              y: w0 * startVec.y + w1 * endVec.y,
+              z: w0 * startVec.z + w1 * endVec.z
+            };
+
+            const normalizedInterp = normalize(interpVec);
+            points.push(vectorToLatLon(normalizedInterp));
+          }
+        }
+
+        return points;
       }
 
       // Generate circle points
@@ -1383,9 +1891,26 @@
 
         segments.forEach((segment, segmentIndex) => {
           let endpoint;
+          let trackPoints = [];
 
           if (segment.mode === 'coordinate') {
             endpoint = segment.endpoint;
+            trackPoints = [segment.center, endpoint];
+
+            gpxTracks += `  <trk>
+    <name>Line Segment ${segmentIndex + 1}</name>
+    <type>LineSegment</type>
+    <trkseg>
+`;
+            trackPoints.forEach((point) => {
+              gpxTracks += `      <trkpt lat="${point.lat.toFixed(6)}" lon="${point.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+`;
+            });
+            gpxTracks += `    </trkseg>
+  </trk>
+`;
           } else if (segment.mode === 'azimuth') {
             // Calculate endpoint from azimuth and distance
             endpoint = destinationPoint(
@@ -1394,24 +1919,49 @@
               segment.distance,
               segment.azimuth
             );
-          } else if (segment.mode === 'intersection') {
-            // Endpoint is already calculated and stored
-            endpoint = segment.endpoint;
-          }
+            // Generate intermediate points for smooth curve
+            trackPoints = [];
+            const numPoints = 100;
+            for (let i = 0; i <= numPoints; i++) {
+              const distance = (i / numPoints) * segment.distance;
+              const point = destinationPoint(segment.center.lat, segment.center.lon, distance, segment.azimuth);
+              trackPoints.push(point);
+            }
 
-          gpxTracks += `  <trk>
+            gpxTracks += `  <trk>
     <name>Line Segment ${segmentIndex + 1}</name>
     <type>LineSegment</type>
     <trkseg>
-      <trkpt lat="${segment.center.lat.toFixed(6)}" lon="${segment.center.lon.toFixed(6)}">
+`;
+            trackPoints.forEach((point) => {
+              gpxTracks += `      <trkpt lat="${point.lat.toFixed(6)}" lon="${point.lon.toFixed(6)}">
         <ele>0</ele>
       </trkpt>
-      <trkpt lat="${endpoint.lat.toFixed(6)}" lon="${endpoint.lon.toFixed(6)}">
-        <ele>0</ele>
-      </trkpt>
-    </trkseg>
+`;
+            });
+            gpxTracks += `    </trkseg>
   </trk>
 `;
+          } else if (segment.mode === 'intersection') {
+            // Endpoint is already calculated and stored
+            endpoint = segment.endpoint;
+            trackPoints = [segment.center, endpoint];
+
+            gpxTracks += `  <trk>
+    <name>Line Segment ${segmentIndex + 1}</name>
+    <type>LineSegment</type>
+    <trkseg>
+`;
+            trackPoints.forEach((point) => {
+              gpxTracks += `      <trkpt lat="${point.lat.toFixed(6)}" lon="${point.lon.toFixed(6)}">
+        <ele>0</ele>
+      </trkpt>
+`;
+            });
+            gpxTracks += `    </trkseg>
+  </trk>
+`;
+          }
         });
 
         return gpxTracks;
@@ -1573,12 +2123,17 @@
           // Create map centered on default location (Paris)
           map = L.map('map').setView([48.8566, 2.3522], 12);
 
-          // Add OpenStreetMap tile layer
+          // Add OpenStreetMap as base layer (reliable and free)
+          // IGN Geoportail requires API key for direct tile access
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://www.ign.fr/">IGN</a>',
             maxZoom: 19,
           }).addTo(map);
+
+          // Note: For full IGN/Geoportail features, you would need:
+          // - An API key from Geoportail (https://geoservices.ign.fr/)
+          // - Or use the geoportal-leaflet plugin with proper authentication
 
           mapInitialized = true;
 
@@ -1589,7 +2144,17 @@
             }
           }, 100);
         } catch (error) {
-          console.error('Error initializing map:', error);
+          console.error('Error initializing Geoportail map:', error);
+          // Fallback to OpenStreetMap if Geoportail fails
+          try {
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              maxZoom: 19,
+            }).addTo(map);
+          } catch (fallbackError) {
+            console.error('Fallback map also failed:', fallbackError);
+          }
         }
       }
 
@@ -1607,6 +2172,235 @@
         lineSegments: [],
         points: []
       };
+
+      // ===== SAVED COORDINATES MANAGEMENT =====
+      // Data structure for saved coordinates
+      let savedCoordinates = [];
+
+      // Load saved coordinates from localStorage
+      function loadSavedCoordinates() {
+        const stored = localStorage.getItem('gpxCircle_savedCoordinates');
+        if (stored) {
+          try {
+            savedCoordinates = JSON.parse(stored);
+          } catch (e) {
+            console.error('Error loading saved coordinates:', e);
+            savedCoordinates = [];
+          }
+        }
+      }
+
+      // Save coordinates to localStorage
+      function persistSavedCoordinates() {
+        localStorage.setItem('gpxCircle_savedCoordinates', JSON.stringify(savedCoordinates));
+      }
+
+      // Add a new saved coordinate
+      function addSavedCoordinate(name, latitude, longitude) {
+        if (!name || name.trim() === '') {
+          alert('Please enter a coordinate name');
+          return false;
+        }
+
+        const coordinate = {
+          id: Date.now(),
+          name: name.trim(),
+          lat: latitude,
+          lon: longitude
+        };
+
+        savedCoordinates.push(coordinate);
+        persistSavedCoordinates();
+        renderSavedCoordinates();
+        return true;
+      }
+
+      // Delete a saved coordinate
+      function deleteSavedCoordinate(id) {
+        savedCoordinates = savedCoordinates.filter(coord => coord.id !== id);
+        persistSavedCoordinates();
+        renderSavedCoordinates();
+      }
+
+      // Render saved coordinates list
+      function renderSavedCoordinates() {
+        const list = document.getElementById('savedCoordinatesList');
+        if (savedCoordinates.length === 0) {
+          list.innerHTML = '<div class="layers-empty">No saved coordinates yet.</div>';
+          return;
+        }
+
+        list.innerHTML = savedCoordinates.map(coord => `
+          <div class="saved-coordinate-item">
+            <div class="saved-coordinate-item-info">
+              <div class="saved-coordinate-item-name">${coord.name}</div>
+              <div class="saved-coordinate-item-value">${coord.lat}, ${coord.lon}</div>
+            </div>
+            <div class="saved-coordinate-item-actions">
+              <button type="button" class="coordinate-action-btn delete" onclick="deleteSavedCoordinate(${coord.id})">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Current active coordinate picker
+      let activeCoordinatePicker = null;
+
+      // Show coordinate picker dropdown
+      function showLoadCoordinateMenu(targetFieldId) {
+        // Close any existing dropdown
+        if (activeCoordinatePicker) {
+          activeCoordinatePicker.remove();
+        }
+
+        if (savedCoordinates.length === 0) {
+          alert('No saved coordinates yet. Add one using the "Manage Coordinates" button.');
+          return;
+        }
+
+        // Find the button that was clicked
+        const button = event.target.closest('.btn-load-coordinate');
+        if (!button) return;
+
+        // Get the button's position
+        const rect = button.getBoundingClientRect();
+
+        // Create dropdown container
+        const dropdown = document.createElement('div');
+        dropdown.className = 'coordinate-picker-dropdown show';
+
+        // Position below button
+        let top = rect.bottom + 8;
+        let left = rect.left;
+
+        // Adjust if goes off right side
+        dropdown.style.position = 'fixed';
+        dropdown.style.top = top + 'px';
+        dropdown.style.left = left + 'px';
+
+        // Add header
+        const header = document.createElement('div');
+        header.className = 'coordinate-picker-header';
+        header.textContent = 'Select Coordinate';
+        dropdown.appendChild(header);
+
+        // Add items list
+        const list = document.createElement('div');
+        list.className = 'coordinate-picker-list';
+
+        savedCoordinates.forEach(coord => {
+          const item = document.createElement('div');
+          item.className = 'coordinate-picker-item';
+          item.innerHTML = `
+            <div class="coordinate-picker-item-name">${coord.name}</div>
+            <div class="coordinate-picker-item-value">${coord.lat}, ${coord.lon}</div>
+          `;
+          item.onclick = () => {
+            const targetInput = document.getElementById(targetFieldId);
+            if (targetInput) {
+              targetInput.value = `${coord.lat}, ${coord.lon}`;
+              targetInput.focus();
+            }
+            dropdown.remove();
+            activeCoordinatePicker = null;
+          };
+          list.appendChild(item);
+        });
+
+        dropdown.appendChild(list);
+
+        // Add to document
+        document.body.appendChild(dropdown);
+        activeCoordinatePicker = dropdown;
+
+        // Close dropdown when clicking outside
+        const closeDropdown = (e) => {
+          if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+            dropdown.remove();
+            activeCoordinatePicker = null;
+            document.removeEventListener('click', closeDropdown);
+            document.removeEventListener('keydown', closeOnEscape);
+          }
+        };
+
+        // Close dropdown on Escape
+        const closeOnEscape = (e) => {
+          if (e.key === 'Escape') {
+            dropdown.remove();
+            activeCoordinatePicker = null;
+            document.removeEventListener('click', closeDropdown);
+            document.removeEventListener('keydown', closeOnEscape);
+          }
+        };
+
+        setTimeout(() => {
+          document.addEventListener('click', closeDropdown);
+          document.addEventListener('keydown', closeOnEscape);
+        }, 0);
+      }
+
+      // Load a coordinate to the active input field or target field
+      function loadCoordinateToField(lat, lon) {
+        const activeInput = document.activeElement;
+
+        // Check if focused element is a coordinate input
+        if (activeInput && activeInput.id && (
+          activeInput.id === 'circleCenter' ||
+          activeInput.id === 'lineSegmentCenter' ||
+          activeInput.id === 'lineSegmentEndpoint' ||
+          activeInput.id === 'lineSegmentIntersectionPoint' ||
+          activeInput.id === 'pointCoordinates'
+        )) {
+          activeInput.value = `${lat}, ${lon}`;
+          activeInput.focus();
+          return;
+        }
+
+        // If no specific input is focused, show a dialog to select target
+        showCoordinateLoadDialog(lat, lon);
+      }
+
+      // Show dialog to select which input to load the coordinate into
+      function showCoordinateLoadDialog(lat, lon) {
+        const inputOptions = [
+          { id: 'circleCenter', label: 'Circle Center' },
+          { id: 'lineSegmentCenter', label: 'Line Segment Center' },
+          { id: 'lineSegmentEndpoint', label: 'Line Segment Endpoint' },
+          { id: 'lineSegmentIntersectionPoint', label: 'Intersection Point' },
+          { id: 'pointCoordinates', label: 'Point Coordinates' }
+        ];
+
+        const availableInputs = inputOptions.filter(opt => {
+          const input = document.getElementById(opt.id);
+          return input && !input.hidden && input.style.display !== 'none';
+        });
+
+        if (availableInputs.length === 0) {
+          alert('No coordinate input field available. Please open a form first.');
+          return;
+        }
+
+        if (availableInputs.length === 1) {
+          document.getElementById(availableInputs[0].id).value = `${lat}, ${lon}`;
+          return;
+        }
+
+        // Create a simple selection UI
+        let message = 'Select where to load this coordinate:\n\n';
+        availableInputs.forEach((opt, idx) => {
+          message += `${idx + 1}. ${opt.label}\n`;
+        });
+
+        const choice = prompt(message + '\nEnter the number (1-' + availableInputs.length + '):');
+        if (choice) {
+          const selectedIndex = parseInt(choice) - 1;
+          if (selectedIndex >= 0 && selectedIndex < availableInputs.length) {
+            const selectedInput = document.getElementById(availableInputs[selectedIndex].id);
+            selectedInput.value = `${lat}, ${lon}`;
+            selectedInput.focus();
+          }
+        }
+      }
 
       // Add a new circle to layers
       function addCircleLayer(name, center, radius) {
@@ -2098,6 +2892,13 @@
                 return;
               }
 
+              // Validate that the specified distance reaches at least up to the intersection point
+              const minDist = calculateDistance(center.lat, center.lon, intersectionPoint.lat, intersectionPoint.lon);
+              if (intersectionDistance + 1e-9 < minDist) {
+                alert(`Distance too short to pass through the intersection point. Minimum required: ${minDist.toFixed(3)} km`);
+                return;
+              }
+
               // Calculate endpoint using the intersection point and distance
               endpoint = endpointFromIntersection(center.lat, center.lon, intersectionPoint.lat, intersectionPoint.lon, intersectionDistance);
             }
@@ -2190,6 +2991,58 @@
           });
         }
 
+        // ===== SAVED COORDINATES EVENT LISTENERS =====
+        const saveCoordinateBtn = document.getElementById('saveCoordinateBtn');
+        if (saveCoordinateBtn) {
+          saveCoordinateBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('coordinateName').value.trim();
+            const coordinateStr = document.getElementById('coordinateValue').value.trim();
+
+            // Parse coordinates
+            const coordinateParts = coordinateStr.split(',').map(s => parseFloat(s.trim()));
+            if (coordinateParts.length !== 2 || isNaN(coordinateParts[0]) || isNaN(coordinateParts[1])) {
+              alert('Invalid coordinates. Please enter as: lat, lon');
+              return;
+            }
+
+            const lat = coordinateParts[0];
+            const lon = coordinateParts[1];
+
+            // Validate latitude and longitude
+            if (lat < -90 || lat > 90) {
+              alert('Invalid latitude. Must be between -90 and 90.');
+              return;
+            }
+            if (lon < -180 || lon > 180) {
+              alert('Invalid longitude. Must be between -180 and 180.');
+              return;
+            }
+
+            if (addSavedCoordinate(name, lat, lon)) {
+              // Clear the form
+              document.getElementById('coordinateName').value = '';
+              document.getElementById('coordinateValue').value = '';
+              document.getElementById('coordinateName').focus();
+            }
+          });
+        }
+
+        // ===== SAVED COORDINATES MODAL EVENT LISTENERS =====
+        const manageSavedCoordinatesBtn = document.getElementById('manageSavedCoordinatesBtn');
+        if (manageSavedCoordinatesBtn) {
+          manageSavedCoordinatesBtn.addEventListener('click', function () {
+            document.getElementById('savedCoordinatesModal').classList.add('show');
+          });
+        }
+
+        const cancelSavedCoordinatesBtn = document.getElementById('cancelSavedCoordinatesBtn');
+        if (cancelSavedCoordinatesBtn) {
+          cancelSavedCoordinatesBtn.addEventListener('click', function () {
+            document.getElementById('savedCoordinatesModal').classList.remove('show');
+          });
+        }
+
         // ===== FILENAME MODAL EVENT LISTENERS =====
         const cancelFilenameBtn = document.getElementById('cancelFilenameBtn');
         if (cancelFilenameBtn) {
@@ -2205,6 +3058,7 @@
             const lineSegmentModal = document.getElementById('lineSegmentModal');
             const pointModal = document.getElementById('pointModal');
             const filenameModal = document.getElementById('filenameModal');
+            const savedCoordinatesModal = document.getElementById('savedCoordinatesModal');
 
             if (circleModal && circleModal.classList.contains('show')) {
               circleModal.classList.remove('show');
@@ -2212,6 +3066,8 @@
               lineSegmentModal.classList.remove('show');
             } else if (pointModal && pointModal.classList.contains('show')) {
               pointModal.classList.remove('show');
+            } else if (savedCoordinatesModal && savedCoordinatesModal.classList.contains('show')) {
+              savedCoordinatesModal.classList.remove('show');
             } else if (filenameModal && filenameModal.classList.contains('show')) {
               filenameModal.classList.remove('show');
             }
@@ -2476,12 +3332,27 @@
 
               const color = lineColors[index % lineColors.length];
 
-              // Draw line
-              const polyline = L.polyline(
-                [
+              // Draw line with intermediate points for accurate great circle representation
+              let polylineLatLngs;
+              if (segment.mode === 'intersection') {
+                // For intersection mode, draw a simple 2-point straight line (projected) from start to endpoint
+                polylineLatLngs = [
                   [segment.center.lat, segment.center.lon],
-                  [endpoint.lat, endpoint.lon],
-                ],
+                  [endpoint.lat, endpoint.lon]
+                ];
+              } else {
+                // For other modes, use slerp interpolation between start and endpoint
+                const linePoints = generateLinePoints(
+                  segment.center.lat,
+                  segment.center.lon,
+                  endpoint.lat,
+                  endpoint.lon,
+                  100 // Number of intermediate segments
+                );
+                polylineLatLngs = linePoints.map(p => [p.lat, p.lon]);
+              }
+              const polyline = L.polyline(
+                polylineLatLngs,
                 {
                   color: color,
                   weight: 3,
@@ -2493,6 +3364,22 @@
                 `<b>${escapeHtml(segment.name)}</b><br>From: ${segment.center.lat.toFixed(4)}, ${segment.center.lon.toFixed(4)}<br>To: ${endpoint.lat.toFixed(4)}, ${endpoint.lon.toFixed(4)}`
               );
               mapLayers.push(polyline);
+
+              // For intersection mode, also show the intersection point visually
+              if (segment.mode === 'intersection' && segment.intersectionPoint) {
+                const intersectionMarker = L.circleMarker([segment.intersectionPoint.lat, segment.intersectionPoint.lon], {
+                  radius: 8,
+                  fillColor: '#FFD700', // Gold color for intersection point
+                  color: '#FFA500',
+                  weight: 2,
+                  opacity: 1,
+                  fillOpacity: 0.9,
+                }).addTo(map);
+                intersectionMarker.bindPopup(
+                  `<b>${escapeHtml(segment.name)} - Intersection Point</b><br>Lat: ${segment.intersectionPoint.lat.toFixed(6)}<br>Lon: ${segment.intersectionPoint.lon.toFixed(6)}`
+                );
+                mapLayers.push(intersectionMarker);
+              }
 
               // Draw start point
               const startMarker = L.marker([segment.center.lat, segment.center.lon], {
@@ -2609,7 +3496,9 @@
             mode: segment.mode,
             endpoint: segment.mode === 'coordinate' || segment.mode === 'intersection' ? segment.endpoint : null,
             azimuth: segment.mode === 'azimuth' ? segment.azimuth : null,
-            distance: segment.mode === 'azimuth' ? segment.distance : null
+            distance: segment.mode === 'azimuth' ? segment.distance : null,
+            intersectionPoint: segment.mode === 'intersection' ? segment.intersectionPoint : null,
+            intersectionDistance: segment.mode === 'intersection' ? segment.intersectionDistance : null
           }));
 
           // Update map preview
@@ -2795,6 +3684,57 @@
         };
         return text.replace(/[&<>"']/g, m => map[m]);
       }
+
+      // ===== INITIALIZATION =====
+      // Initialize saved coordinates on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadSavedCoordinates();
+        renderSavedCoordinates();
+      });
+
+      // Also initialize immediately in case DOMContentLoaded has already fired
+      loadSavedCoordinates();
+      renderSavedCoordinates();
+    
+      // Generate great-circle points from start that pass through a given intersection point
+      // Returns numPoints+1 points from start to totalDistanceKm along the great-circle
+      function generateLinePointsThroughIntersection(startLat, startLon, intersectLat, intersectLon, totalDistanceKm, numPoints) {
+        const R = 6371; // km
+        const points = [];
+
+        const startVec = latLonToVector(startLat, startLon);
+        const interVec = latLonToVector(intersectLat, intersectLon);
+
+        // Great-circle normal axis
+        let axis = crossProduct(startVec, interVec);
+        const axisMag = magnitude(axis);
+        if (axisMag < 1e-12) {
+          // Degenerate: fallback to simple interpolation to destination
+          const bearing = calculateBearing(startLat, startLon, intersectLat, intersectLon);
+          const end = destinationPoint(startLat, startLon, totalDistanceKm, bearing);
+          return generateLinePoints(startLat, startLon, end.lat, end.lon, numPoints);
+        }
+        axis = normalize(axis);
+
+        // Ensure positive rotation goes from start toward intersection
+        const angleToInter = Math.acos(Math.max(-1, Math.min(1, dotProduct(startVec, interVec))));
+        const testVec = rotateVector(startVec, axis, angleToInter);
+        if (dotProduct(testVec, interVec) <= 0.999999) {
+          axis = { x: -axis.x, y: -axis.y, z: -axis.z };
+        }
+
+        const totalAngle = totalDistanceKm / R; // radians
+        for (let i = 0; i <= numPoints; i++) {
+          const angle = (totalAngle * i) / numPoints;
+          const v = rotateVector(startVec, axis, angle);
+          const p = vectorToLatLon(normalize(v));
+          points.push(p);
+        }
+
+        return points;
+      }
+
     </script>
   </body>
 </html>
+
