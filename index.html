@@ -3469,6 +3469,14 @@
                 circleForm.reset();
                 circleForm.removeAttribute('data-editId');
             });
+
+            // Allow form submission by pressing Enter
+            circleForm.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    circleForm.dispatchEvent(new Event('submit'));
+                }
+            });
         }
 
         // Add Line Segment button
@@ -3610,6 +3618,14 @@
                 lineSegmentForm.reset();
                 lineSegmentForm.removeAttribute('data-editId');
             });
+
+            // Allow form submission by pressing Enter
+            lineSegmentForm.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    lineSegmentForm.dispatchEvent(new Event('submit'));
+                }
+            });
         }
 
         // Add Point button
@@ -3682,6 +3698,14 @@
                 pointForm.reset();
                 pointForm.removeAttribute('data-editId');
             });
+
+            // Allow form submission by pressing Enter
+            pointForm.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    pointForm.dispatchEvent(new Event('submit'));
+                }
+            });
         }
 
         // ===== SAVED COORDINATES EVENT LISTENERS =====
@@ -3717,6 +3741,26 @@
                     document.getElementById('coordinateName').value = '';
                     document.getElementById('coordinateValue').value = '';
                     document.getElementById('coordinateName').focus();
+                }
+            });
+        }
+
+        // Allow saved coordinates form submission by pressing Enter
+        const coordinateNameInput = document.getElementById('coordinateName');
+        const coordinateValueInput = document.getElementById('coordinateValue');
+        if (coordinateNameInput) {
+            coordinateNameInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveCoordinateBtn.click();
+                }
+            });
+        }
+        if (coordinateValueInput) {
+            coordinateValueInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveCoordinateBtn.click();
                 }
             });
         }
@@ -3810,6 +3854,14 @@
 
                     saveProject(projectName);
                     closeModal('filenameModal');
+                }
+            });
+
+            // Allow form submission by pressing Enter
+            filenameForm.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    filenameForm.dispatchEvent(new Event('submit'));
                 }
             });
         }
@@ -4308,6 +4360,17 @@
             showMessage('Error generating GPX file: ' + error.message, true);
         }
     });
+
+    // Allow GPX form submission by pressing Enter
+    const gpxForm = document.getElementById('gpxForm');
+    if (gpxForm) {
+        gpxForm.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                gpxForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
 
     // ===== PROJECT MANAGEMENT: SAVE/LOAD/DELETE =====
     // Old function to support backward compatibility (kept for reference)
