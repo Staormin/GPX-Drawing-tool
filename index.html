@@ -2392,7 +2392,7 @@
                 trackPoints = [segment.center, endpoint];
 
                 gpxTracks += `  <trk>
-    <name>Line Segment ${segmentIndex + 1}</name>
+    <name>${segment.name || `Line Segment ${segmentIndex + 1}`}</name>
     <type>LineSegment</type>
     <trkseg>
 `;
@@ -2423,7 +2423,7 @@
                 }
 
                 gpxTracks += `  <trk>
-    <name>Line Segment ${segmentIndex + 1}</name>
+    <name>${segment.name || `Line Segment ${segmentIndex + 1}`}</name>
     <type>LineSegment</type>
     <trkseg>
 `;
@@ -2442,7 +2442,7 @@
                 trackPoints = [segment.center, endpoint];
 
                 gpxTracks += `  <trk>
-    <name>Line Segment ${segmentIndex + 1}</name>
+    <name>${segment.name || `Line Segment ${segmentIndex + 1}`}</name>
     <type>LineSegment</type>
     <trkseg>
 `;
@@ -3923,25 +3923,11 @@
 
                     const color = '#000000'; // Always use black for line segments
 
-                    // Draw line with intermediate points for accurate great circle representation
-                    let polylineLatLngs;
-                    if (segment.mode === 'intersection') {
-                        // For intersection mode, draw a simple 2-point straight line (projected) from start to endpoint
-                        polylineLatLngs = [
-                            [segment.center.lat, segment.center.lon],
-                            [endpoint.lat, endpoint.lon]
-                        ];
-                    } else {
-                        // For other modes, use slerp interpolation between start and endpoint
-                        const linePoints = generateLinePoints(
-                            segment.center.lat,
-                            segment.center.lon,
-                            endpoint.lat,
-                            endpoint.lon,
-                            100 // Number of intermediate segments
-                        );
-                        polylineLatLngs = linePoints.map(p => [p.lat, p.lon]);
-                    }
+                    // Draw line as simple 2-point straight line (matches GPX output)
+                    const polylineLatLngs = [
+                        [segment.center.lat, segment.center.lon],
+                        [endpoint.lat, endpoint.lon]
+                    ];
                     const polyline = L.polyline(
                         polylineLatLngs,
                         {
