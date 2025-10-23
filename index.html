@@ -1162,6 +1162,7 @@
             <select id="lineSegmentMode" required>
               <option value="coordinate">Endpoint (by coordinates)</option>
               <option value="azimuth">Azimuth (by bearing and distance)</option>
+              <option value="intersection">Intersection (by point and distance)</option>
             </select>
           </div>
           <div id="coordinateMode" class="modal-form-group">
@@ -1176,6 +1177,16 @@
           <div id="azimuthMode" class="modal-form-group" style="display: none;">
             <label for="lineSegmentDistance">Distance (km)</label>
             <input type="text" id="lineSegmentDistance" placeholder="5.0" />
+          </div>
+          <div id="intersectionMode" class="modal-form-group" style="display: none;">
+            <label for="lineSegmentIntersectionPoint">Intersection Point</label>
+            <input type="text" id="lineSegmentIntersectionPoint" placeholder="48.9, 2.4" />
+            <div class="input-hint">Latitude, Longitude - Line will pass through this point</div>
+          </div>
+          <div id="intersectionMode" class="modal-form-group" style="display: none;">
+            <label for="lineSegmentIntersectionDistance">Distance (km)</label>
+            <input type="text" id="lineSegmentIntersectionDistance" placeholder="5.0" />
+            <div class="input-hint">Total length of the line segment</div>
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-secondary" id="cancelLineSegmentBtn">Cancel</button>
@@ -1265,6 +1276,29 @@
         };
       }
 
+      // Calculate endpoint from start point through intersection point with specified distance
+      function endpointFromIntersection(startLat, startLon, intersectLat, intersectLon, distance) {
+        // Calculate bearing from start point to intersection point
+        const φ1 = toRadians(startLat);
+        const λ1 = toRadians(startLon);
+        const φ2 = toRadians(intersectLat);
+        const λ2 = toRadians(intersectLon);
+
+        const Δλ = λ2 - λ1;
+
+        // Calculate bearing using atan2
+        // Using the formula: atan2(sin(Δλ)*cos(φ2), cos(φ1)*sin(φ2) - sin(φ1)*cos(φ2)*cos(Δλ))
+        const y = Math.sin(Δλ) * Math.cos(φ2);
+        const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+        const bearing = toDegrees(Math.atan2(y, x));
+
+        // Normalize bearing to 0-360 range
+        const normalizedBearing = (bearing + 360) % 360;
+
+        // Use the bearing and distance to calculate the endpoint
+        return destinationPoint(startLat, startLon, distance, normalizedBearing);
+      }
+
       // Generate circle points
       function generateCircle(centerLat, centerLon, radiusKm, numPoints) {
         const points = [];
@@ -1350,9 +1384,9 @@
         segments.forEach((segment, segmentIndex) => {
           let endpoint;
 
-          if (segment.type === 'coordinate') {
+          if (segment.mode === 'coordinate') {
             endpoint = segment.endpoint;
-          } else {
+          } else if (segment.mode === 'azimuth') {
             // Calculate endpoint from azimuth and distance
             endpoint = destinationPoint(
               segment.center.lat,
@@ -1360,6 +1394,9 @@
               segment.distance,
               segment.azimuth
             );
+          } else if (segment.mode === 'intersection') {
+            // Endpoint is already calculated and stored
+            endpoint = segment.endpoint;
           }
 
           gpxTracks += `  <trk>
@@ -1586,7 +1623,7 @@
       }
 
       // Add a new line segment to layers
-      function addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance) {
+      function addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance, intersectionPoint, intersectionDistance) {
         const segment = {
           id: Date.now(),
           name: name,
@@ -1594,7 +1631,9 @@
           mode: mode,
           endpoint: endpoint,
           azimuth: azimuth,
-          distance: distance
+          distance: distance,
+          intersectionPoint: intersectionPoint,
+          intersectionDistance: intersectionDistance
         };
         layers.lineSegments.push(segment);
         updateLayersPanel();
@@ -1657,7 +1696,12 @@
 
         // Add line segments
         layers.lineSegments.forEach(segment => {
-          const modeLabel = segment.mode === 'coordinate' ? 'Endpoint' : 'Azimuth';
+          let modeLabel = 'Endpoint';
+          if (segment.mode === 'azimuth') {
+            modeLabel = 'Azimuth';
+          } else if (segment.mode === 'intersection') {
+            modeLabel = 'Intersection';
+          }
           html += `
             <div class="layer-item" data-type="lineSegment" data-id="${segment.id}">
               <div class="layer-item-info">
@@ -1728,9 +1772,12 @@
 
         if (segment.mode === 'coordinate') {
           document.getElementById('lineSegmentEndpoint').value = `${segment.endpoint.lat}, ${segment.endpoint.lon}`;
-        } else {
+        } else if (segment.mode === 'azimuth') {
           document.getElementById('lineSegmentAzimuth').value = segment.azimuth;
           document.getElementById('lineSegmentDistance').value = segment.distance;
+        } else if (segment.mode === 'intersection') {
+          document.getElementById('lineSegmentIntersectionPoint').value = `${segment.intersectionPoint.lat}, ${segment.intersectionPoint.lon}`;
+          document.getElementById('lineSegmentIntersectionDistance').value = segment.intersectionDistance;
         }
 
         // Change modal title and button text
@@ -1770,13 +1817,20 @@
       function updateLineSegmentModeFields(mode) {
         const coordinateMode = document.querySelector('div[id="coordinateMode"]');
         const azimuthMode = document.querySelectorAll('div[id="azimuthMode"]');
+        const intersectionMode = document.querySelectorAll('div[id="intersectionMode"]');
 
         if (mode === 'coordinate') {
           coordinateMode.style.display = 'block';
           azimuthMode.forEach(el => el.style.display = 'none');
-        } else {
+          intersectionMode.forEach(el => el.style.display = 'none');
+        } else if (mode === 'azimuth') {
           coordinateMode.style.display = 'none';
           azimuthMode.forEach(el => el.style.display = 'block');
+          intersectionMode.forEach(el => el.style.display = 'none');
+        } else if (mode === 'intersection') {
+          coordinateMode.style.display = 'none';
+          azimuthMode.forEach(el => el.style.display = 'none');
+          intersectionMode.forEach(el => el.style.display = 'block');
         }
       }
 
@@ -2006,7 +2060,7 @@
             }
 
             const center = { lat: centerParts[0], lon: centerParts[1] };
-            let endpoint, azimuth, distance;
+            let endpoint, azimuth, distance, intersectionPoint, intersectionDistance;
 
             if (mode === 'coordinate') {
               const endpointStr = document.getElementById('lineSegmentEndpoint').value.trim();
@@ -2016,7 +2070,7 @@
                 return;
               }
               endpoint = { lat: endpointParts[0], lon: endpointParts[1] };
-            } else {
+            } else if (mode === 'azimuth') {
               azimuth = parseFloat(document.getElementById('lineSegmentAzimuth').value);
               distance = parseFloat(document.getElementById('lineSegmentDistance').value);
 
@@ -2029,6 +2083,23 @@
                 alert('Invalid distance. Please enter a positive number.');
                 return;
               }
+            } else if (mode === 'intersection') {
+              const intersectionStr = document.getElementById('lineSegmentIntersectionPoint').value.trim();
+              const intersectionParts = intersectionStr.split(',').map(s => parseFloat(s.trim()));
+              if (intersectionParts.length !== 2 || isNaN(intersectionParts[0]) || isNaN(intersectionParts[1])) {
+                alert('Invalid intersection point coordinates. Please enter as: lat, lon');
+                return;
+              }
+              intersectionPoint = { lat: intersectionParts[0], lon: intersectionParts[1] };
+
+              intersectionDistance = parseFloat(document.getElementById('lineSegmentIntersectionDistance').value);
+              if (isNaN(intersectionDistance) || intersectionDistance <= 0) {
+                alert('Invalid distance. Please enter a positive number.');
+                return;
+              }
+
+              // Calculate endpoint using the intersection point and distance
+              endpoint = endpointFromIntersection(center.lat, center.lon, intersectionPoint.lat, intersectionPoint.lon, intersectionDistance);
             }
 
             const editId = lineSegmentForm.dataset.editId;
@@ -2043,10 +2114,12 @@
                 segment.endpoint = endpoint;
                 segment.azimuth = azimuth;
                 segment.distance = distance;
+                segment.intersectionPoint = intersectionPoint;
+                segment.intersectionDistance = intersectionDistance;
               }
             } else {
               // Add new line segment
-              addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance);
+              addLineSegmentLayer(name, center, mode, endpoint, azimuth, distance, intersectionPoint, intersectionDistance);
             }
 
             updateLayersPanel();
@@ -2388,7 +2461,7 @@
 
               if (segment.mode === 'coordinate') {
                 endpoint = segment.endpoint;
-              } else {
+              } else if (segment.mode === 'azimuth') {
                 // Calculate endpoint from azimuth and distance
                 endpoint = destinationPoint(
                   segment.center.lat,
@@ -2396,6 +2469,9 @@
                   segment.distance,
                   segment.azimuth
                 );
+              } else if (segment.mode === 'intersection') {
+                // Endpoint is already calculated and stored
+                endpoint = segment.endpoint;
               }
 
               const color = lineColors[index % lineColors.length];
@@ -2530,8 +2606,8 @@
           // Convert line segments to the format expected by generateCompleteGPX
           const lineSegments = layers.lineSegments.map(segment => ({
             center: segment.center,
-            type: segment.mode,
-            endpoint: segment.mode === 'coordinate' ? segment.endpoint : null,
+            mode: segment.mode,
+            endpoint: segment.mode === 'coordinate' || segment.mode === 'intersection' ? segment.endpoint : null,
             azimuth: segment.mode === 'azimuth' ? segment.azimuth : null,
             distance: segment.mode === 'azimuth' ? segment.distance : null
           }));
