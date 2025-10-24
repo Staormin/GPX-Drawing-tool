@@ -1739,8 +1739,16 @@
             color: var(--muted);
         }
 
-        /* Toggle visibility button */
-        .btn-toggle-visibility {
+        /* Layer item actions menu */
+        .layer-item-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .layer-actions-menu-btn {
             background: none;
             border: none;
             font-size: 18px;
@@ -1749,14 +1757,71 @@
             border-radius: 4px;
             transition: background-color 0.2s ease;
             color: #cbd5e1;
+            flex-shrink: 0;
         }
 
-        .btn-toggle-visibility:hover {
+        .layer-actions-menu-btn:hover {
             background-color: rgba(203, 213, 225, 0.1);
         }
 
-        .btn-toggle-visibility:active {
+        .layer-actions-menu-btn:active {
             background-color: rgba(203, 213, 225, 0.2);
+        }
+
+        /* Hidden action buttons */
+        .layer-item-actions .layer-action-btn {
+            display: none;
+        }
+
+        .layer-item-actions .layer-action-btn.visible {
+            display: inline-block;
+        }
+
+        /* Dropdown menu for layer actions */
+        .layer-actions-dropdown {
+            position: fixed;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            min-width: 160px;
+            z-index: 10000;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            display: none;
+            padding: 4px 0;
+            overflow: hidden;
+        }
+
+        .layer-actions-dropdown.show {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .layer-actions-dropdown .layer-action-btn {
+            display: block !important;
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 8px 14px;
+            color: #f1f5f9;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background-color 0.15s ease;
+            border-radius: 0;
+            white-space: nowrap;
+        }
+
+        .layer-actions-dropdown .layer-action-btn:hover {
+            background-color: #334155;
+        }
+
+        .layer-actions-dropdown .layer-action-btn.delete {
+            color: #fca5a5;
+        }
+
+        .layer-actions-dropdown .layer-action-btn.delete:hover {
+            background-color: rgba(239, 68, 68, 0.2);
         }
 
         /* Make legacy container invisible after script moves content (failsafe) */
@@ -3326,10 +3391,14 @@
                 <div class="layer-item-type">Circle • ${circle.radius} km radius</div>
               </div>
               <div class="layer-item-actions">
-                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('circle', ${circle.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
-                <button type="button" class="layer-action-btn" onclick="startNavigateMode('circle', ${circle.id})">Navigate</button>
-                <button type="button" class="layer-action-btn" onclick="editCircleLayer(${circle.id})">Edit</button>
-                <button type="button" class="layer-action-btn delete" onclick="removeLayer('circle', ${circle.id})">Delete</button>
+                <button type="button" class="layer-actions-menu-btn" data-element-type="circle" data-element-id="${circle.id}">⋮</button>
+                <div class="layer-actions-dropdown" data-element-type="circle" data-element-id="${circle.id}">
+                  <button type="button" class="layer-action-btn" onclick="gotoElement('circle', ${circle.id})" title="Jump to element">Go to</button>
+                  <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('circle', ${circle.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
+                  <button type="button" class="layer-action-btn" onclick="startNavigateMode('circle', ${circle.id})">Navigate</button>
+                  <button type="button" class="layer-action-btn" onclick="editCircleLayer(${circle.id})">Edit</button>
+                  <button type="button" class="layer-action-btn delete" onclick="removeLayer('circle', ${circle.id})">Delete</button>
+                </div>
               </div>
             </div>
           `;
@@ -3371,11 +3440,15 @@
                 <div class="layer-item-type">Line Segment • ${modeLabel} • ${segmentDistance.toFixed(2)} km</div>
               </div>
               <div class="layer-item-actions">
-                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('lineSegment', ${segment.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
-                <button type="button" class="layer-action-btn" onclick="startNavigateMode('lineSegment', ${segment.id})">Navigate</button>
-                <button type="button" class="layer-action-btn" onclick="openAddPointOnSegmentModal(${segment.id})">Add point on</button>
-                <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
-                <button type="button" class="layer-action-btn delete" onclick="removeLayer('lineSegment', ${segment.id})">Delete</button>
+                <button type="button" class="layer-actions-menu-btn" data-element-type="lineSegment" data-element-id="${segment.id}">⋮</button>
+                <div class="layer-actions-dropdown" data-element-type="lineSegment" data-element-id="${segment.id}">
+                  <button type="button" class="layer-action-btn" onclick="gotoElement('lineSegment', ${segment.id})" title="Jump to element">Go to</button>
+                  <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('lineSegment', ${segment.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
+                  <button type="button" class="layer-action-btn" onclick="startNavigateMode('lineSegment', ${segment.id})">Navigate</button>
+                  <button type="button" class="layer-action-btn" onclick="openAddPointOnSegmentModal(${segment.id})">Add point on</button>
+                  <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
+                  <button type="button" class="layer-action-btn delete" onclick="removeLayer('lineSegment', ${segment.id})">Delete</button>
+                </div>
               </div>
             </div>
           `;
@@ -3391,15 +3464,141 @@
                 <div class="layer-item-type">Point • ${point.coordinates.lat.toFixed(4)}, ${point.coordinates.lon.toFixed(4)}</div>
               </div>
               <div class="layer-item-actions">
-                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('point', ${point.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
-                <button type="button" class="layer-action-btn" onclick="editPointLayer(${point.id})">Edit</button>
-                <button type="button" class="layer-action-btn delete" onclick="removeLayer('point', ${point.id})">Delete</button>
+                <button type="button" class="layer-actions-menu-btn" data-element-type="point" data-element-id="${point.id}">⋮</button>
+                <div class="layer-actions-dropdown" data-element-type="point" data-element-id="${point.id}">
+                  <button type="button" class="layer-action-btn" onclick="gotoElement('point', ${point.id})" title="Jump to element">Go to</button>
+                  <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('point', ${point.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
+                  <button type="button" class="layer-action-btn" onclick="editPointLayer(${point.id})">Edit</button>
+                  <button type="button" class="layer-action-btn delete" onclick="removeLayer('point', ${point.id})">Delete</button>
+                </div>
               </div>
             </div>
           `;
         });
 
         layersPanel.innerHTML = html;
+
+        // Attach event listeners to menu buttons
+        document.querySelectorAll('.layer-actions-menu-btn').forEach(btn => {
+            btn.addEventListener('click', toggleActionMenu);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', closeActionMenuOnClickOutside);
+    }
+
+    // Go to element - center map on the element
+    function gotoElement(type, id) {
+        let lat, lon, zoomLevel = 13;
+
+        if (type === 'circle') {
+            const circle = layers.circles.find(c => c.id === id);
+            if (!circle) return;
+            lat = circle.center.lat;
+            lon = circle.center.lon;
+            // Zoom based on circle radius
+            zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(circle.radius / 2)));
+        } else if (type === 'lineSegment') {
+            const segment = layers.lineSegments.find(s => s.id === id);
+            if (!segment) return;
+
+            // Calculate center of segment
+            let endpoint;
+            if (segment.mode === 'coordinate') {
+                endpoint = segment.endpoint;
+            } else if (segment.mode === 'azimuth') {
+                endpoint = destinationPoint(
+                    segment.center.lat,
+                    segment.center.lon,
+                    segment.distance,
+                    segment.azimuth
+                );
+            } else if (segment.mode === 'intersection') {
+                endpoint = segment.endpoint;
+            }
+
+            lat = (segment.center.lat + endpoint.lat) / 2;
+            lon = (segment.center.lon + endpoint.lon) / 2;
+
+            // Calculate zoom based on segment length
+            const segmentLength = calculateDistance(
+                segment.center.lat,
+                segment.center.lon,
+                endpoint.lat,
+                endpoint.lon
+            );
+            zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(segmentLength / 2)));
+        } else if (type === 'point') {
+            const point = layers.points.find(p => p.id === id);
+            if (!point) return;
+            lat = point.coordinates.lat;
+            lon = point.coordinates.lon;
+        }
+
+        if (lat !== undefined && lon !== undefined && map) {
+            map.setView([lat, lon], zoomLevel);
+        }
+    }
+
+    // Toggle action menu dropdown
+    function toggleActionMenu(e) {
+        e.stopPropagation();
+        const btn = e.target;
+        const dropdown = btn.nextElementSibling;
+
+        if (!dropdown || !dropdown.classList.contains('layer-actions-dropdown')) {
+            return;
+        }
+
+        // Close all other dropdowns
+        document.querySelectorAll('.layer-actions-dropdown.show').forEach(menu => {
+            if (menu !== dropdown) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Toggle current dropdown
+        const isOpening = !dropdown.classList.contains('show');
+        dropdown.classList.toggle('show');
+
+        // Position the dropdown if opening
+        if (isOpening) {
+            const btnRect = btn.getBoundingClientRect();
+            // Position below button with slight offset, or above if too close to bottom
+            const dropdownHeight = 200; // approximate
+            const spaceBelow = window.innerHeight - btnRect.bottom;
+
+            let top, left;
+            if (spaceBelow > dropdownHeight) {
+                top = btnRect.bottom + 4;
+            } else {
+                top = btnRect.top - dropdownHeight - 4;
+            }
+
+            // Right align with button
+            left = btnRect.right - 160; // 160px is min-width of dropdown
+
+            // Ensure dropdown stays within viewport
+            if (left < 10) left = 10;
+            if (left + 160 > window.innerWidth) left = window.innerWidth - 160 - 10;
+
+            dropdown.style.top = top + 'px';
+            dropdown.style.left = left + 'px';
+        }
+    }
+
+    // Close action menu when clicking outside
+    function closeActionMenuOnClickOutside(e) {
+        // Check if click is on a menu button or inside a dropdown
+        if (e.target.classList.contains('layer-actions-menu-btn') ||
+            e.target.closest('.layer-actions-dropdown')) {
+            return;
+        }
+
+        // Close all open dropdowns
+        document.querySelectorAll('.layer-actions-dropdown.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
     }
 
     // Edit circle layer
