@@ -245,9 +245,6 @@
             box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
         }
 
-        .btn-generate:active {
-        }
-
         .btn-generate:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -452,9 +449,6 @@
         .btn-remove-segment:hover {
             background: transparent;
             color: #dc2626;
-        }
-
-        .btn-remove-segment:active {
         }
 
         .segment-input-group {
@@ -1564,12 +1558,6 @@
         .btn-generate:hover,
         .modal-btn:hover {
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25);
-        }
-
-        .btn-action:active,
-        .btn-save-project:active,
-        .btn-generate:active,
-        .modal-btn:active {
         }
 
         /* Primary emphasis */
@@ -2980,7 +2968,6 @@
             map = L.map('map').setView([48.8566, 2.3522], 12);
 
             // Load IGN Classique map via data.geopf.fr/private/wmts
-            console.log('Loading IGN Classique WMTS layer...');
             L.tileLayer(
                 'https://data.geopf.fr/private/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&apikey=ign_scan_ws',
                 {
@@ -2992,7 +2979,6 @@
             ).addTo(map);
 
             mapInitialized = true;
-            console.log('IGN Scan25 layer loaded');
 
             // Add right-click context menu to copy coordinates
             const mapContainer = document.getElementById('map');
@@ -3011,8 +2997,6 @@
                     const lat = latlng.lat.toFixed(6);
                     const lon = latlng.lng.toFixed(6);
                     const coordinateStr = `${lat}, ${lon}`;
-
-                    console.log('Right-click coordinates:', coordinateStr);
 
                     // Fill in the coordinate input and open modal
                     document.getElementById('coordinateValue').value = coordinateStr;
@@ -3059,6 +3043,9 @@
     // ===== ELEMENTS VISIBILITY =====
     // Track visibility state for each element
     let elementVisibility = {};
+
+    // ===== EVENT LISTENER FLAGS =====
+    let actionMenuListenerAttached = false;
 
     function toggleElementVisibility(type, id, button) {
         const key = `${type}_${id}`;
@@ -3142,7 +3129,7 @@
         list.innerHTML = savedCoordinates.map(coord => `
           <div class="saved-coordinate-item">
             <div class="saved-coordinate-item-info">
-              <div class="saved-coordinate-item-name">${coord.name}</div>
+              <div class="saved-coordinate-item-name">${escapeHtml(coord.name)}</div>
               <div class="saved-coordinate-item-value">${coord.lat}, ${coord.lon}</div>
             </div>
             <div class="saved-coordinate-item-actions">
@@ -3201,7 +3188,7 @@
             const item = document.createElement('div');
             item.className = 'coordinate-picker-item';
             item.innerHTML = `
-            <div class="coordinate-picker-item-name">${coord.name}</div>
+            <div class="coordinate-picker-item-name">${escapeHtml(coord.name)}</div>
             <div class="coordinate-picker-item-value">${coord.lat}, ${coord.lon}</div>
           `;
             item.onclick = () => {
@@ -3373,6 +3360,7 @@
     // Update the layers panel UI
     function updateLayersPanel() {
         const layersPanel = document.getElementById('layersPanel');
+        if (!layersPanel) return; // Guard against missing DOM element
 
         if (layers.circles.length === 0 && layers.lineSegments.length === 0 && layers.points.length === 0) {
             layersPanel.innerHTML = '<div class="layers-empty-state">No elements added yet. Use the buttons above to add circles, line segments, or points.</div>';
@@ -3483,60 +3471,70 @@
             btn.addEventListener('click', toggleActionMenu);
         });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', closeActionMenuOnClickOutside);
+        // Close dropdown when clicking outside (attach only once)
+        if (!actionMenuListenerAttached) {
+            document.addEventListener('click', closeActionMenuOnClickOutside);
+            actionMenuListenerAttached = true;
+        }
     }
 
     // Go to element - center map on the element
     function gotoElement(type, id) {
+        if (!type || !id || !map) return; // Guard against invalid inputs
+
         let lat, lon, zoomLevel = 13;
 
-        if (type === 'circle') {
-            const circle = layers.circles.find(c => c.id === id);
-            if (!circle) return;
-            lat = circle.center.lat;
-            lon = circle.center.lon;
-            // Zoom based on circle radius
-            zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(circle.radius / 2)));
-        } else if (type === 'lineSegment') {
-            const segment = layers.lineSegments.find(s => s.id === id);
-            if (!segment) return;
+        try {
+            if (type === 'circle') {
+                const circle = layers.circles.find(c => c.id === id);
+                if (!circle || !circle.center) return;
+                lat = circle.center.lat;
+                lon = circle.center.lon;
+                // Zoom based on circle radius
+                zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(circle.radius / 2)));
+            } else if (type === 'lineSegment') {
+                const segment = layers.lineSegments.find(s => s.id === id);
+                if (!segment || !segment.center) return;
 
-            // Calculate center of segment
-            let endpoint;
-            if (segment.mode === 'coordinate') {
-                endpoint = segment.endpoint;
-            } else if (segment.mode === 'azimuth') {
-                endpoint = destinationPoint(
+                // Calculate center of segment
+                let endpoint;
+                if (segment.mode === 'coordinate') {
+                    endpoint = segment.endpoint;
+                } else if (segment.mode === 'azimuth') {
+                    endpoint = destinationPoint(
+                        segment.center.lat,
+                        segment.center.lon,
+                        segment.distance,
+                        segment.azimuth
+                    );
+                } else if (segment.mode === 'intersection') {
+                    endpoint = segment.endpoint;
+                }
+
+                if (!endpoint || !endpoint.lat || !endpoint.lon) return;
+                lat = (segment.center.lat + endpoint.lat) / 2;
+                lon = (segment.center.lon + endpoint.lon) / 2;
+
+                // Calculate zoom based on segment length
+                const segmentLength = calculateDistance(
                     segment.center.lat,
                     segment.center.lon,
-                    segment.distance,
-                    segment.azimuth
+                    endpoint.lat,
+                    endpoint.lon
                 );
-            } else if (segment.mode === 'intersection') {
-                endpoint = segment.endpoint;
+                zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(segmentLength / 2)));
+            } else if (type === 'point') {
+                const point = layers.points.find(p => p.id === id);
+                if (!point || !point.coordinates) return;
+                lat = point.coordinates.lat;
+                lon = point.coordinates.lon;
             }
 
-            lat = (segment.center.lat + endpoint.lat) / 2;
-            lon = (segment.center.lon + endpoint.lon) / 2;
-
-            // Calculate zoom based on segment length
-            const segmentLength = calculateDistance(
-                segment.center.lat,
-                segment.center.lon,
-                endpoint.lat,
-                endpoint.lon
-            );
-            zoomLevel = Math.max(5, Math.min(15, 13 - Math.log2(segmentLength / 2)));
-        } else if (type === 'point') {
-            const point = layers.points.find(p => p.id === id);
-            if (!point) return;
-            lat = point.coordinates.lat;
-            lon = point.coordinates.lon;
-        }
-
-        if (lat !== undefined && lon !== undefined && map) {
-            map.setView([lat, lon], zoomLevel);
+            if (typeof lat === 'number' && typeof lon === 'number') {
+                map.setView([lat, lon], zoomLevel);
+            }
+        } catch (e) {
+            console.error('Error navigating to element:', e);
         }
     }
 
@@ -3704,13 +3702,6 @@
         }
     }
 
-    // HTML escape helper
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     // ===== UI HELPERS: MODALS & VISIBILITY =====
     // Open/close modal by element id
     function openModal(id) {
@@ -3752,7 +3743,6 @@
         }
         document.body.classList.add('navigation-active');
 
-        console.log('Navigation mode started for', elementType, elementId);
     }
 
     function exitNavigateMode() {
@@ -3770,8 +3760,6 @@
             navigationBar.style.display = 'none';
         }
         document.body.classList.remove('navigation-active');
-
-        console.log('Navigation mode exited');
     }
 
     function getNavigationMovement() {
@@ -5014,12 +5002,7 @@
         const radiiStr = radii.length === 1 ? `${radii[0]}km` : `${radii.join('_')}km`;
         const centersCount = coordsResult.centers.length;
 
-        let lineSegmentsCount = 0;
-        try {
-            lineSegmentsCount = parseLineSegments().length;
-        } catch (e) {
-            // Ignore
-        }
+        let lineSegmentsCount = layers.lineSegments.length;
 
         const filename =
             lineSegmentsCount > 0
@@ -5133,7 +5116,8 @@
 
     // Update filename display
     function updateFilenameDisplay() {
-        const filenameInput = document.getElementById('filename');
+        const filenameInput = document.getElementById('filenameInput');
+        if (!filenameInput) return;
         if (filenameManuallyEdited) {
             return; // Don't override if user has edited it
         }
@@ -5437,32 +5421,6 @@
 
     // ===== PROJECT MANAGEMENT: SAVE/LOAD/DELETE =====
     // Old function to support backward compatibility (kept for reference)
-    function collectLegacyLineSegments() {
-        const lineSegments = [];
-        const container = document.getElementById('lineSegmentsContainer');
-        const segmentItems = container.querySelectorAll('.line-segment-item');
-
-        segmentItems.forEach((item, index) => {
-            const centerInput = item.querySelector('.segment-center').value.trim();
-            const mode = item.querySelector('input[name="segment-mode-' + index + '"]:checked')?.value || 'coordinate';
-            const endpointInput = item.querySelector('.segment-endpoint')?.value.trim() || '';
-            const azimuthInput = item.querySelector('.segment-azimuth')?.value || '';
-            const distanceInput = item.querySelector('.segment-distance')?.value || '';
-
-            if (centerInput) {
-                lineSegments.push({
-                    center: centerInput,
-                    mode: mode,
-                    endpoint: endpointInput,
-                    azimuth: azimuthInput,
-                    distance: distanceInput
-                });
-            }
-        });
-
-        return lineSegments;
-    }
-
     // Save project with a name
     function saveProject(projectName) {
         if (!projectName || projectName.trim().length === 0) {
@@ -5515,78 +5473,9 @@
             let projects = getAllProjects();
             projects = projects.filter(p => p.name !== projectName);
             saveProjectsToStorage(projects);
-            refreshProjectsDropdown();
             showMessage(`Project "${projectName}" deleted.`, false);
             showToast(`🗑️ Project "${projectName}" deleted.`, true, 2000);
         }
-    }
-
-    // Refresh the projects dropdown
-    function refreshProjectsDropdown() {
-        const dropdown = document.getElementById('projectDropdown');
-        // Check if the dropdown element exists (it may not if using modal instead)
-        if (!dropdown) {
-            return;
-        }
-
-        const projects = getAllProjects();
-        dropdown.innerHTML = '';
-
-        if (projects.length === 0) {
-            dropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 14px;">No saved projects yet</div>';
-            return;
-        }
-
-        projects.forEach(project => {
-            const item = document.createElement('div');
-            item.className = 'project-item';
-            item.innerHTML = `
-            <span class="project-item-name">${escapeHtml(project.name)}</span>
-            <span class="project-item-delete" onclick="deleteProject('${escapeHtml(project.name)}', event)">×</span>
-          `;
-            item.addEventListener('click', function (e) {
-                if (e.target.className === 'project-item-delete') return;
-                loadFormData(project.data);
-                const projectSearch = document.getElementById('projectSearch');
-                if (projectSearch) {
-                    projectSearch.value = '';
-                }
-                dropdown.classList.remove('show');
-            });
-            dropdown.appendChild(item);
-        });
-    }
-
-    // Filter projects by search term
-    function filterProjects(searchTerm) {
-        const projects = getAllProjects();
-        const dropdown = document.getElementById('projectDropdown');
-        dropdown.innerHTML = '';
-
-        const filtered = projects.filter(p =>
-            p.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        if (filtered.length === 0) {
-            dropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 14px;">No projects match your search</div>';
-            return;
-        }
-
-        filtered.forEach(project => {
-            const item = document.createElement('div');
-            item.className = 'project-item';
-            item.innerHTML = `
-            <span class="project-item-name">${escapeHtml(project.name)}</span>
-            <span class="project-item-delete" onclick="deleteProject('${escapeHtml(project.name)}', event)">×</span>
-          `;
-            item.addEventListener('click', function (e) {
-                if (e.target.className === 'project-item-delete') return;
-                loadFormData(project.data);
-                document.getElementById('projectSearch').value = '';
-                dropdown.classList.remove('show');
-            });
-            dropdown.appendChild(item);
-        });
     }
 
     // Escape HTML to prevent XSS
@@ -5611,45 +5500,6 @@
     // Also initialize immediately in case DOMContentLoaded has already fired
     loadSavedCoordinates();
     renderSavedCoordinates();
-
-    // Generate great-circle points from start that pass through a given intersection point
-    // Returns numPoints+1 points from start to totalDistanceKm along the great-circle
-    function generateLinePointsThroughIntersection(startLat, startLon, intersectLat, intersectLon, totalDistanceKm, numPoints) {
-        const R = 6371; // km
-        const points = [];
-
-        const startVec = latLonToVector(startLat, startLon);
-        const interVec = latLonToVector(intersectLat, intersectLon);
-
-        // Great-circle normal axis
-        let axis = crossProduct(startVec, interVec);
-        const axisMag = magnitude(axis);
-        if (axisMag < 1e-12) {
-            // Degenerate: fallback to simple interpolation to destination
-            const bearing = calculateBearing(startLat, startLon, intersectLat, intersectLon);
-            const end = destinationPoint(startLat, startLon, totalDistanceKm, bearing);
-            return generateLinePoints(startLat, startLon, end.lat, end.lon, numPoints);
-        }
-        axis = normalize(axis);
-
-        // Ensure positive rotation goes from start toward intersection
-        const angleToInter = Math.acos(Math.max(-1, Math.min(1, dotProduct(startVec, interVec))));
-        const testVec = rotateVector(startVec, axis, angleToInter);
-        if (dotProduct(testVec, interVec) <= 0.999999) {
-            axis = {x: -axis.x, y: -axis.y, z: -axis.z};
-        }
-
-        const totalAngle = totalDistanceKm / R; // radians
-        for (let i = 0; i <= numPoints; i++) {
-            const angle = (totalAngle * i) / numPoints;
-            const v = rotateVector(startVec, axis, angle);
-            const p = vectorToLatLon(normalize(v));
-            points.push(p);
-        }
-
-        return points;
-    }
-
 </script>
 <!-- Inlined sidebar/map bootstrapper (previously in script.js) -->
 <script>
