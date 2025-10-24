@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>404</title>
+    <meta http-equiv="refresh" content="0; url=./index.html">
+    <script>
+      // Redirect to the correct index.html while preserving hash and query
+      (function() {
+        var l = window.location;
+        // If the path already ends with index.html, do nothing
+        if (l.pathname.endsWith('/index.html')) return;
+        var newUrl = l.origin + l.pathname.replace(/\/[^\/]*$/, '/') + 'index.html' + l.search + l.hash;
+        window.location.replace(newUrl);
+      })();
+    </script>
+  </head>
+  <body>
+    <h1>404 - Redirecting...</h1>
+    <p>If you are not redirected automatically, <a id="redirect" href="./index.html">click here</a>.</p>
+    <script>
+      document.getElementById('redirect').href = './index.html' + window.location.search + window.location.hash;
+    </script>
+  </body>
+</html>
