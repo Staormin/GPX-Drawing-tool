@@ -1739,6 +1739,26 @@
             color: var(--muted);
         }
 
+        /* Toggle visibility button */
+        .btn-toggle-visibility {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            color: #cbd5e1;
+        }
+
+        .btn-toggle-visibility:hover {
+            background-color: rgba(203, 213, 225, 0.1);
+        }
+
+        .btn-toggle-visibility:active {
+            background-color: rgba(203, 213, 225, 0.2);
+        }
+
         /* Make legacy container invisible after script moves content (failsafe) */
         body.sidebar-ready .container {
             display: none !important;
@@ -2971,6 +2991,32 @@
         anglePosition: 0  // For circles: angle in degrees (0-360)
     };
 
+    // ===== ELEMENTS VISIBILITY =====
+    // Track visibility state for each element
+    let elementVisibility = {};
+
+    function toggleElementVisibility(type, id, button) {
+        const key = `${type}_${id}`;
+        // Toggle: if currently visible (true or undefined), make hidden (false); if hidden (false), make visible (true)
+        const currentlyVisible = elementVisibility[key] !== false;
+        elementVisibility[key] = !currentlyVisible;
+
+        // Update button text immediately
+        const isVisible = isElementVisible(type, id);
+        if (button) {
+            button.textContent = isVisible ? 'Hide' : 'Show';
+            button.title = isVisible ? 'Show' : 'Hide';
+        }
+
+        updateMapPreview();
+    }
+
+    function isElementVisible(type, id) {
+        const key = `${type}_${id}`;
+        // Default to visible if not explicitly hidden
+        return elementVisibility[key] !== false;
+    }
+
     // ===== SAVED COORDINATES MANAGEMENT =====
     // Data structure for saved coordinates
     let savedCoordinates = [];
@@ -3272,6 +3318,7 @@
 
         // Add circles
         layers.circles.forEach(circle => {
+            const isVisible = isElementVisible('circle', circle.id);
             html += `
             <div class="layer-item" data-type="circle" data-id="${circle.id}">
               <div class="layer-item-info">
@@ -3279,6 +3326,7 @@
                 <div class="layer-item-type">Circle • ${circle.radius} km radius</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('circle', ${circle.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
                 <button type="button" class="layer-action-btn" onclick="startNavigateMode('circle', ${circle.id})">Navigate</button>
                 <button type="button" class="layer-action-btn" onclick="editCircleLayer(${circle.id})">Edit</button>
                 <button type="button" class="layer-action-btn delete" onclick="removeLayer('circle', ${circle.id})">Delete</button>
@@ -3315,6 +3363,7 @@
                 endpoint.lat,
                 endpoint.lon
             );
+            const isVisible = isElementVisible('lineSegment', segment.id);
             html += `
             <div class="layer-item" data-type="lineSegment" data-id="${segment.id}">
               <div class="layer-item-info">
@@ -3322,6 +3371,7 @@
                 <div class="layer-item-type">Line Segment • ${modeLabel} • ${segmentDistance.toFixed(2)} km</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('lineSegment', ${segment.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
                 <button type="button" class="layer-action-btn" onclick="startNavigateMode('lineSegment', ${segment.id})">Navigate</button>
                 <button type="button" class="layer-action-btn" onclick="openAddPointOnSegmentModal(${segment.id})">Add point on</button>
                 <button type="button" class="layer-action-btn" onclick="editLineSegmentLayer(${segment.id})">Edit</button>
@@ -3333,6 +3383,7 @@
 
         // Add points
         layers.points.forEach(point => {
+            const isVisible = isElementVisible('point', point.id);
             html += `
             <div class="layer-item" data-type="point" data-id="${point.id}">
               <div class="layer-item-info">
@@ -3340,6 +3391,7 @@
                 <div class="layer-item-type">Point • ${point.coordinates.lat.toFixed(4)}, ${point.coordinates.lon.toFixed(4)}</div>
               </div>
               <div class="layer-item-actions">
+                <button type="button" class="layer-action-btn" onclick="toggleElementVisibility('point', ${point.id}, this)" title="${isVisible ? 'Hide' : 'Show'}">${isVisible ? 'Hide' : 'Show'}</button>
                 <button type="button" class="layer-action-btn" onclick="editPointLayer(${point.id})">Edit</button>
                 <button type="button" class="layer-action-btn delete" onclick="removeLayer('point', ${point.id})">Delete</button>
               </div>
@@ -4924,6 +4976,11 @@
             if (layers.circles.length > 0) {
                 const colors = ['#0066cc', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
                 layers.circles.forEach((circle, index) => {
+                    // Check if circle is visible
+                    if (!isElementVisible('circle', circle.id)) {
+                        return;
+                    }
+
                     const color = colors[index % colors.length];
 
                     // Add center marker
@@ -4958,6 +5015,11 @@
             // Draw all line segments from layers
             if (layers.lineSegments.length > 0) {
                 layers.lineSegments.forEach((segment, index) => {
+                    // Check if segment is visible
+                    if (!isElementVisible('lineSegment', segment.id)) {
+                        return;
+                    }
+
                     let endpoint;
 
                     if (segment.mode === 'coordinate') {
@@ -5040,6 +5102,11 @@
             // Draw all points from layers
             if (layers.points.length > 0) {
                 layers.points.forEach((point) => {
+                    // Check if point is visible
+                    if (!isElementVisible('point', point.id)) {
+                        return;
+                    }
+
                     const pointMarker = L.marker([point.coordinates.lat, point.coordinates.lon], {
                         title: point.name,
                     }).addTo(map);
