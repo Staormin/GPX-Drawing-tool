@@ -19,12 +19,56 @@ export interface AddressSearchResult {
     lon: number
   }
   type?: string
+  elevation?: number
 }
 
 const COMPLETION_API = 'https://data.geopf.fr/geocodage/completion'
 const REVERSE_GEOCODING_API = 'https://data.geopf.fr/geocodage/reverse'
 const ADRESSE_API = 'https://api-adresse.data.gouv.fr/search/'
 const OVERPASS_API = 'https://overpass-api.de/api/interpreter'
+const ELEVATION_API = 'https://api.open-elevation.com/api/v1/lookup'
+
+/**
+ * Fetch elevation data for coordinates using Open-Elevation API
+ * @param coordinates Array of {lat, lon} coordinate pairs
+ * @returns Map of coordinate strings to elevation values
+ */
+async function fetchElevations(coordinates: Array<{ lat: number, lon: number }>): Promise<Map<string, number>> {
+  const elevationMap = new Map<string, number>()
+
+  if (coordinates.length === 0) {
+    return elevationMap
+  }
+
+  try {
+    const locations = coordinates.map(coord => ({ latitude: coord.lat, longitude: coord.lon }))
+    const response = await fetch(ELEVATION_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations }),
+    })
+
+    if (!response.ok) {
+      console.warn(`Elevation API error: ${response.status}`)
+      return elevationMap
+    }
+
+    const data = await response.json() as { results: Array<{ latitude: number, longitude: number, elevation: number | null }> }
+
+    if (data.results) {
+      data.results.forEach((result) => {
+        if (result.elevation !== null) {
+          const key = `${result.latitude.toFixed(6)}_${result.longitude.toFixed(6)}`
+          elevationMap.set(key, Math.round(result.elevation))
+        }
+      })
+    }
+  } catch (error) {
+    console.warn('Error fetching elevation data:', error)
+  }
+
+  return elevationMap
+}
 
 /**
  * Search for addresses using Geoportail Completion API
@@ -521,5 +565,21 @@ export async function searchLocationsNearPath(
     }
   }
 
-  return Array.from(results.values())
+  // Fetch elevation data for all results
+  const resultArray = Array.from(results.values())
+  if (resultArray.length > 0) {
+    const coordinates = resultArray.map(r => r.coordinates)
+    const elevationMap = await fetchElevations(coordinates)
+
+    // Add elevation data to results
+    resultArray.forEach((result) => {
+      const key = `${result.coordinates.lat.toFixed(6)}_${result.coordinates.lon.toFixed(6)}`
+      const elevation = elevationMap.get(key)
+      if (elevation !== undefined) {
+        result.elevation = elevation
+      }
+    })
+  }
+
+  return resultArray
 }

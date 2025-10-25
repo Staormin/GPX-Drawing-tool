@@ -56,6 +56,17 @@
               </v-list-item>
             </v-list>
           </v-menu>
+
+          <v-text-field
+            v-model.number="form.elevation"
+            class="mb-4"
+            density="compact"
+            label="Altitude (meters)"
+            type="number"
+            placeholder="Optional"
+            variant="outlined"
+            hint="Leave empty if not available"
+          />
         </v-form>
       </v-card-text>
 
@@ -84,6 +95,7 @@
   const form = ref({
     name: '',
     coordinates: '48.8566, 2.3522',
+    elevation: undefined as number | undefined,
   })
 
   const isOpen = computed({
@@ -107,6 +119,7 @@
           form.value = {
             name: point.name,
             coordinates: `${point.coordinates.lat}, ${point.coordinates.lon}`,
+            elevation: point.elevation,
           }
         }
       }
@@ -135,12 +148,12 @@
       // Note: Point update not yet implemented in useDrawing
       // For now, delete and recreate
       drawing.deleteElement('point', uiStore.editingElement.id)
-      drawing.drawPoint(lat, lon, name)
+      drawing.drawPoint(lat, lon, name, undefined, form.value.elevation)
       uiStore.addToast('Point updated successfully!', 'success')
       uiStore.stopEditing()
     } else {
       // Add new point
-      drawing.drawPoint(lat, lon, name)
+      drawing.drawPoint(lat, lon, name, undefined, form.value.elevation)
       uiStore.addToast('Point added successfully!', 'success')
     }
     closeModal()
@@ -156,6 +169,7 @@
     form.value = {
       name: '',
       coordinates: '48.8566, 2.3522',
+      elevation: undefined,
     }
   }
 </script>

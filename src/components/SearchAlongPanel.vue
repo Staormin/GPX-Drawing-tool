@@ -69,21 +69,64 @@
 
       <v-divider v-if="results.length > 0" />
 
-      <!-- Results Section -->
-      <div v-if="filteredResults.length > 0" class="pa-4 overflow-y-auto" style="flex: 1 1 auto; min-height: 0;">
-        <div
-          v-for="(result, index) in filteredResults"
-          :key="`${result.main}-${index}`"
-          class="mb-3 pb-3 border-bottom cursor-pointer hover:bg-grey-100 pa-2 rounded transition-colors"
-          @click="handleResultClick(result)"
-        >
-          <div class="d-flex align-start">
-            <v-icon icon="mdi-map-marker" size="small" class="mt-1 mr-2 flex-shrink-0 text-primary" />
-            <div class="flex-grow-1">
-              <div class="font-weight-500 text-subtitle-2">{{ result.main }}</div>
-              <div v-if="result.secondary" class="text-caption text-disabled mt-1">
-                {{ result.secondary }}
-              </div>
+      <!-- Results Section as Table -->
+      <div v-if="filteredResults.length > 0" class="d-flex flex-column overflow-hidden" style="flex: 1 1 auto; min-height: 0;">
+        <!-- Table Header -->
+        <div class="flex-shrink-0 px-4 py-3 border-b border-slate-200 bg-slate-50">
+          <div class="d-flex align-center" style="gap: 8px;">
+            <button
+              class="font-semibold text-sm cursor-pointer hover:text-primary transition-colors d-flex align-center justify-start gap-1"
+              style="flex: 1 1 auto; min-width: 0;"
+              @click="toggleSort('name')"
+            >
+              Name
+              <v-icon
+                :icon="sortBy === 'name' ? (sortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down') : 'mdi-unfold-more-vertical'"
+                size="xs"
+              />
+            </button>
+            <button
+              class="font-semibold text-sm cursor-pointer hover:text-primary transition-colors d-flex align-center justify-center gap-1"
+              style="flex: 1 1 auto; min-width: 0; text-align: center;"
+              @click="toggleSort('type')"
+            >
+              Type
+              <v-icon
+                :icon="sortBy === 'type' ? (sortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down') : 'mdi-unfold-more-vertical'"
+                size="xs"
+              />
+            </button>
+            <button
+              class="font-semibold text-sm cursor-pointer hover:text-primary transition-colors d-flex align-center justify-end gap-1"
+              style="flex: 1 1 auto; min-width: 0;"
+              @click="toggleSort('elevation')"
+            >
+              Altitude
+              <v-icon
+                :icon="sortBy === 'elevation' ? (sortAsc ? 'mdi-arrow-up' : 'mdi-arrow-down') : 'mdi-unfold-more-vertical'"
+                size="xs"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Body -->
+        <div class="overflow-y-auto" style="flex: 1 1 auto; min-height: 0;">
+          <div
+            v-for="(result, index) in filteredResults"
+            :key="`${result.main}-${index}`"
+            class="d-flex align-center px-4 py-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors"
+            style="gap: 8px;"
+            @click="handleResultClick(result)"
+          >
+            <div class="font-medium text-sm text-truncate d-flex align-center" style="flex: 1 1 0px; min-width: 0;">
+              {{ result.main }}
+            </div>
+            <div class="text-xs text-slate-600 d-flex align-center justify-center" style="flex: 1 1 0px; min-width: 0;">
+              {{ result.secondary || 'N/A' }}
+            </div>
+            <div class="text-sm font-semibold d-flex align-center justify-end" style="flex: 1 1 0px; min-width: 0;">
+              {{ result.elevation ? `${result.elevation} m` : 'N/A' }}
             </div>
           </div>
         </div>
@@ -115,6 +158,8 @@
   const results = ref<AddressSearchResult[]>([])
   const filterText = ref('')
   const isSearching = ref(false)
+  const sortBy = ref<'name' | 'type' | 'elevation'>('name')
+  const sortAsc = ref(true)
   let searchZoneLayer: L.FeatureGroup | null = null
 
   // Get the element name
@@ -199,7 +244,7 @@
     }
   })
 
-  // Filter results based on search text and sort by distance from start point
+  // Filter results based on search text and apply sorting
   const filteredResults = computed(() => {
     let filtered = results.value
 
@@ -213,15 +258,22 @@
       )
     }
 
-    // Sort by distance from start point
-    const startPoint = pathPoints.value[0]
-    if (startPoint && filtered.length > 0) {
-      filtered = [...filtered].sort((a, b) => {
-        const distA = haversineDistance(startPoint, a.coordinates)
-        const distB = haversineDistance(startPoint, b.coordinates)
-        return distA - distB
-      })
-    }
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      let compareValue = 0
+
+      if (sortBy.value === 'name') {
+        compareValue = a.main.localeCompare(b.main)
+      } else if (sortBy.value === 'type') {
+        compareValue = (a.secondary || '').localeCompare(b.secondary || '')
+      } else if (sortBy.value === 'elevation') {
+        const elevA = a.elevation ?? -1
+        const elevB = b.elevation ?? -1
+        compareValue = elevA - elevB
+      }
+
+      return sortAsc.value ? compareValue : -compareValue
+    })
 
     return filtered
   })
@@ -315,5 +367,16 @@
     )
 
     uiStore.addToast(`Navigating to ${result.main}`, 'success')
+  }
+
+  function toggleSort (column: 'name' | 'type' | 'elevation') {
+    if (sortBy.value === column) {
+      // Toggle ascending/descending if clicking the same column
+      sortAsc.value = !sortAsc.value
+    } else {
+      // Switch to new column, default to ascending
+      sortBy.value = column
+      sortAsc.value = true
+    }
   }
 </script>

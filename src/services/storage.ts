@@ -53,6 +53,7 @@ export interface PointElement {
   id?: string
   name: string
   coordinates: { lat: number, lon: number }
+  elevation?: number
   color?: string
   leafletId?: number
 }

@@ -342,7 +342,7 @@ export function useDrawing (mapRef: any) {
   }
 
   // Point drawing
-  const drawPoint = (lat: number, lon: number, name?: string): PointElement | null => {
+  const drawPoint = (lat: number, lon: number, name?: string, color?: string, elevation?: number): PointElement | null => {
     if (!mapRef.map?.value) {
       return null
     }
@@ -352,6 +352,7 @@ export function useDrawing (mapRef: any) {
       id: pointId,
       name: name || `Point ${layersStore.pointCount + 1}`,
       coordinates: { lat, lon },
+      elevation,
       color: DEFAULT_COLOR,
     } as PointElement
 
