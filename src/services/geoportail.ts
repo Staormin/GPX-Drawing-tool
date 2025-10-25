@@ -23,6 +23,8 @@ export interface AddressSearchResult {
 
 const COMPLETION_API = 'https://data.geopf.fr/geocodage/completion'
 const REVERSE_GEOCODING_API = 'https://data.geopf.fr/geocodage/reverse'
+const ADRESSE_API = 'https://api-adresse.data.gouv.fr/search/'
+const OVERPASS_API = 'https://overpass-api.de/api/interpreter'
 
 /**
  * Search for addresses using Geoportail Completion API
@@ -230,6 +232,45 @@ function distancePointToSegment(
 }
 
 /**
+ * Check if a point is inside a GeoJSON polygon using ray casting algorithm
+ * @param point Point to check as [lon, lat]
+ * @param polygon GeoJSON Polygon or Feature with Polygon geometry
+ * @returns true if point is inside polygon
+ */
+function pointInPolygon(point: [number, number], polygon: any): boolean {
+  // Get the polygon coordinates (handle both Polygon and Feature types)
+  let coords: any[]
+  if (polygon.type === 'Polygon') {
+    coords = polygon.coordinates
+  } else if (polygon.type === 'Feature' && polygon.geometry?.type === 'Polygon') {
+    coords = polygon.geometry.coordinates
+  } else {
+    return false
+  }
+
+  const [x, y] = point
+  const exterior = coords[0]
+
+  if (!exterior || !Array.isArray(exterior)) {
+    return false
+  }
+
+  // Ray casting algorithm
+  let isInside = false
+  for (let i = 0, j = exterior.length - 1; i < exterior.length; j = i++) {
+    const xi = exterior[i]![0]
+    const yi = exterior[i]![1]
+    const xj = exterior[j]![0]
+    const yj = exterior[j]![1]
+
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+    if (intersect) isInside = !isInside
+  }
+
+  return isInside
+}
+
+/**
  * Simple request queue to respect rate limits
  */
 class RequestQueue {
@@ -301,17 +342,19 @@ class RequestQueue {
 const requestQueue = new RequestQueue()
 
 /**
- * Search for locations near a path using Geoportail Completion API with bounding boxes
- * This is much more efficient than point-by-point searches
+ * Search for locations near a path using Geoportail Completion API
+ * Uses a buffer polygon to define the search area for precise filtering
  * @param pathPoints Array of lat/lon points defining the path
  * @param searchDistanceKm Maximum distance from the path to search (in km)
  * @param types Types of locations to search for (e.g., 'LieuDit', 'Commune')
- * @returns Array of locations found near the path
+ * @param bufferPolygon Optional GeoJSON buffer polygon for precise search boundary (from turf.buffer())
+ * @returns Array of locations found within the search zone
  */
 export async function searchLocationsNearPath(
   pathPoints: Array<{ lat: number; lon: number }>,
   searchDistanceKm: number = 1,
   types: string[] = ['LieuDit', 'Commune'],
+  bufferPolygon?: any,
 ): Promise<AddressSearchResult[]> {
   if (!pathPoints || pathPoints.length === 0) {
     return []
@@ -319,57 +362,43 @@ export async function searchLocationsNearPath(
 
   const results: Map<string, AddressSearchResult> = new Map() // Deduplication map
 
-  // Split path into segments respecting the 1000m bbox limit
-  const segments = splitPathIntoSegments(pathPoints, 900)
+  // Calculate bounding box for the entire path with search distance buffer
+  const fullBbox = calculateBbox(pathPoints, searchDistanceKm)
+  const bboxParts = fullBbox.split(',').map(Number)
+  const minLon = bboxParts[0] ?? 0
+  const minLat = bboxParts[1] ?? 0
+  const maxLon = bboxParts[2] ?? 0
+  const maxLat = bboxParts[3] ?? 0
 
-  // Search each segment using reverse geocoding with LineString geometry - more efficient!
-  const searchPromises = segments.map(segment =>
+  // Use Overpass API to search for all named places and locations in the bounding box
+  // No text query required - returns all place nodes with names
+  const overpassQuery = `
+    [bbox:${minLat},${minLon},${maxLat},${maxLon}];
+    (
+      node[name][place];
+      way[name][place];
+      relation[name][place];
+    );
+    out center;
+  `
+
+  const searchPromises = [
     requestQueue.add(async () => {
       try {
-        // Build GeoJSON LineString from segment
-        const coordinates = segment.map(p => [p.lon, p.lat])
-
-        // Create a circle around the entire segment for searching
-        // Calculate center and max distance from center
-        const segmentBbox = calculateBbox(segment, searchDistanceKm)
-        const bboxParts = segmentBbox.split(',').map(Number)
-        const minLon = bboxParts[0] ?? 0
-        const minLat = bboxParts[1] ?? 0
-        const maxLon = bboxParts[2] ?? 0
-        const maxLat = bboxParts[3] ?? 0
-        const centerLon = (minLon + maxLon) / 2
-        const centerLat = (minLat + maxLat) / 2
-
-        // Calculate radius in meters based on bbox
-        const lonDiff = (maxLon - minLon) * 111.32 * Math.cos((minLat + maxLat) / 2 * Math.PI / 180)
-        const latDiff = (maxLat - minLat) * 111.32
-        const radiusM = Math.max(lonDiff, latDiff) * 1000 / 2 // Convert to meters
-
-        // API caps at 500m, but we want to search up to user's searchDistanceKm
-        // If user wants more than 500m, we use 500m and post-filter results
-        const searchRadiusM = Math.min(radiusM, 500) // Cap at 500m API limit
-
-        // Use Circle geometry for reverse geocoding
-        const searchgeom = JSON.stringify({
-          type: 'Circle',
-          coordinates: [centerLon, centerLat],
-          radius: searchRadiusM,
+        const response = await fetch(OVERPASS_API, {
+          method: 'POST',
+          body: overpassQuery,
+          headers: {
+            'Content-Type': 'application/osm3s',
+          },
         })
-
-        const params = new URLSearchParams({
-          searchgeom,
-          index: 'poi', // Search POI database
-          limit: '15',
-        })
-
-        const response = await fetch(`${REVERSE_GEOCODING_API}?${params.toString()}`)
         return response
       } catch (error) {
-        console.error('Error in circle search:', error)
+        console.error('Error in overpass search:', error)
         throw error
       }
     }),
-  )
+  ]
 
   // Process all segment searches
   const responses = await Promise.allSettled(searchPromises)
@@ -377,72 +406,117 @@ export async function searchLocationsNearPath(
   for (const response of responses) {
     if (response.status === 'fulfilled') {
       try {
-        const data = await response.value.json() as any
+        const xmlText = await response.value.text()
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(xmlText, 'text/xml')
 
-        // Handle reverse geocoding response format (features array)
-        // The API search already limits results to the circle bounds, so we don't need additional filtering
-        if (data.features && Array.isArray(data.features)) {
-          for (const feature of data.features) {
-            const props = feature.properties || {}
-            const coords = feature.geometry?.coordinates || [0, 0]
+        // Handle Overpass API XML response format
+        // Parse nodes
+        const nodes = doc.querySelectorAll('node')
+        nodes.forEach((node) => {
+          const lat = parseFloat(node.getAttribute('lat') || '0')
+          const lon = parseFloat(node.getAttribute('lon') || '0')
+          const nameTag = node.querySelector('tag[k="name"]')
+          const name = nameTag?.getAttribute('v')
+          const placeTag = node.querySelector('tag[k="place"]')
+          const placeType = placeTag?.getAttribute('v')
 
-            if (coords.length >= 2) {
-              const resultCoords = {
-                lat: coords[1],
-                lon: coords[0],
-              }
-
-              const name = Array.isArray(props.name) ? props.name[0] : props.name
-              const context = Array.isArray(props.context) ? props.context[0] : props.context
-              const key = `${name || ''}_${coords[0]}_${coords[1]}`
-
-              if (!results.has(key)) {
-                results.set(key, {
-                  main: name || 'Unknown',
-                  secondary: context || props.city?.[0] || undefined,
-                  coordinates: resultCoords,
-                  type: props._type || undefined,
-                })
-              }
-            }
-          }
-        }
-
-        // Also handle completion API response format (results array)
-        if (data.results && Array.isArray(data.results)) {
-          for (const result of data.results) {
+          if (name && lat && lon) {
             const resultCoords = {
-              lat: result.y,
-              lon: result.x,
+              lat,
+              lon,
             }
 
-            // Filter results to only those within searchDistanceKm of the actual path
-            let minDist = Infinity
-            for (let i = 0; i < pathPoints.length - 1; i++) {
-              const dist = distancePointToSegment(
-                resultCoords,
-                pathPoints[i]!,
-                pathPoints[i + 1]!,
-              )
-              minDist = Math.min(minDist, dist)
+            // Filter using buffer polygon if available
+            let isInSearchZone = false
+
+            if (bufferPolygon) {
+              // Use precise polygon-based filtering
+              isInSearchZone = pointInPolygon([lon, lat], bufferPolygon)
+            } else {
+              // Fallback to distance-based filtering
+              let minDist = Infinity
+              for (let i = 0; i < pathPoints.length - 1; i++) {
+                const dist = distancePointToSegment(
+                  resultCoords,
+                  pathPoints[i]!,
+                  pathPoints[i + 1]!,
+                )
+                minDist = Math.min(minDist, dist)
+              }
+              isInSearchZone = minDist <= searchDistanceKm
             }
 
-            // Only include if within search distance
-            if (minDist <= searchDistanceKm) {
-              const key = `${result.fulltext}`
+            // Only include if within search zone
+            if (isInSearchZone) {
+              const key = `${name}_${lon}_${lat}`
               if (!results.has(key)) {
                 results.set(key, {
-                  main: result.fulltext,
-                  secondary: result.kind || undefined,
+                  main: name,
+                  secondary: placeType && placeType !== null ? placeType : undefined,
                   coordinates: resultCoords,
-                  type: result.kind,
+                  type: placeType && placeType !== null ? placeType : undefined,
                 })
               }
             }
           }
-        }
+        })
+
+        // Parse ways with center tag
+        const ways = doc.querySelectorAll('way')
+        ways.forEach((way) => {
+          const centerTag = way.querySelector('center')
+          if (centerTag) {
+            const lat = parseFloat(centerTag.getAttribute('lat') || '0')
+            const lon = parseFloat(centerTag.getAttribute('lon') || '0')
+            const nameTag = way.querySelector('tag[k="name"]')
+            const name = nameTag?.getAttribute('v')
+            const placeTag = way.querySelector('tag[k="place"]')
+            const placeType = placeTag?.getAttribute('v')
+
+            if (name && lat && lon) {
+              const resultCoords = {
+                lat,
+                lon,
+              }
+
+              // Filter using buffer polygon if available
+              let isInSearchZone = false
+
+              if (bufferPolygon) {
+                // Use precise polygon-based filtering
+                isInSearchZone = pointInPolygon([lon, lat], bufferPolygon)
+              } else {
+                // Fallback to distance-based filtering
+                let minDist = Infinity
+                for (let i = 0; i < pathPoints.length - 1; i++) {
+                  const dist = distancePointToSegment(
+                    resultCoords,
+                    pathPoints[i]!,
+                    pathPoints[i + 1]!,
+                  )
+                  minDist = Math.min(minDist, dist)
+                }
+                isInSearchZone = minDist <= searchDistanceKm
+              }
+
+              // Only include if within search zone
+              if (isInSearchZone) {
+                const key = `${name}_${lon}_${lat}`
+                if (!results.has(key)) {
+                  results.set(key, {
+                    main: name,
+                    secondary: placeType && placeType !== null ? placeType : undefined,
+                    coordinates: resultCoords,
+                    type: placeType && placeType !== null ? placeType : undefined,
+                  })
+                }
+              }
+            }
+          }
+        })
       } catch (error) {
-        console.error('Error parsing reverse geocoding response:', error)
+        console.error('Error parsing Overpass API response:', error)
       }
     }
   }
