@@ -37,7 +37,7 @@ export function useMap (containerId: string) {
 
       // Add tile layer from Geoportail
       const tileLayer: L.TileLayer = L.tileLayer(getMapTilesUrl(), {
-        attribution: false,
+        attribution: '',
         minZoom: 0,
         maxZoom: 18,
         crossOrigin: 'anonymous',

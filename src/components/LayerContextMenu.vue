@@ -35,12 +35,12 @@
         <v-list-item-title>Add point on</v-list-item-title>
       </v-list-item>
 
-      <!-- Search along (only for circles and line segments) -->
-      <v-list-item v-if="['circle', 'lineSegment'].includes(elementType)" @click="handleSearchAlong">
+      <!-- Location near (only for circles and line segments) -->
+      <v-list-item v-if="['circle', 'lineSegment'].includes(elementType)" @click="handleLocationNear">
         <template #prepend>
           <v-icon icon="mdi-magnify" size="small" />
         </template>
-        <v-list-item-title>Search along</v-list-item-title>
+        <v-list-item-title>Location near</v-list-item-title>
       </v-list-item>
 
       <!-- Add as coordinate (only for points without existing coordinate) -->
@@ -297,7 +297,7 @@
     isOpen.value = false
   }
 
-  function handleSearchAlong () {
+  function handleLocationNear () {
     const elementType = props.elementType as 'circle' | 'lineSegment'
     if (!['circle', 'lineSegment'].includes(elementType)) return
 

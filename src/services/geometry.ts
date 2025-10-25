@@ -341,6 +341,38 @@ export function generateLinePoints(
 }
 
 /**
+ * Generate points along a line using linear interpolation in Web Mercator projection
+ * This matches how Leaflet draws line segments (straight lines appear straight in Web Mercator)
+ * Used for buffer zone calculations to ensure alignment with displayed line segments
+ */
+export function generateLinePointsLinear(
+    startLat: number,
+    startLon: number,
+    endLat: number,
+    endLon: number,
+    numPoints: number,
+): LatLon[] {
+    const points: LatLon[] = []
+
+    // Project start and end points to Web Mercator
+    const startMercator = mercatorProject(startLat, startLon)
+    const endMercator = mercatorProject(endLat, endLon)
+
+    // Interpolate linearly in Web Mercator space
+    for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints
+        const x = startMercator.x + (endMercator.x - startMercator.x) * t
+        const y = startMercator.y + (endMercator.y - startMercator.y) * t
+
+        // Convert back to lat/lon
+        const point = mercatorUnproject(x, y)
+        points.push(point)
+    }
+
+    return points
+}
+
+/**
  * Generate circle points at specified radius and number of points
  */
 export function generateCircle(centerLat: number, centerLon: number, radiusKm: number, numPoints = 360): LatLon[] {
