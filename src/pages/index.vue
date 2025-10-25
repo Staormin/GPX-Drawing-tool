@@ -45,6 +45,9 @@
   <LoadProjectModal v-if="uiStore.isModalOpen('loadProjectModal')" />
   <TutorialModal />
 
+  <!-- Search Along Panel -->
+  <SearchAlongPanel />
+
   <!-- Toast notifications -->
   <v-snackbar
     v-for="toast in uiStore.toasts"
@@ -67,6 +70,7 @@
   import NavigationBar from '@/components/NavigationBar.vue'
   import NewProjectModal from '@/components/NewProjectModal.vue'
   import PointModal from '@/components/PointModal.vue'
+  import SearchAlongPanel from '@/components/SearchAlongPanel.vue'
   import SidebarActionButtons from '@/components/SidebarActionButtons.vue'
   import SidebarAddressSearch from '@/components/SidebarAddressSearch.vue'
   import SidebarDrawingTools from '@/components/SidebarDrawingTools.vue'

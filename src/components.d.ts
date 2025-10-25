@@ -23,6 +23,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SaveProjectModal: typeof import('./components/SaveProjectModal.vue')['default']
+    SearchAlongPanel: typeof import('./components/SearchAlongPanel.vue')['default']
     SidebarActionButtons: typeof import('./components/SidebarActionButtons.vue')['default']
     SidebarAddressSearch: typeof import('./components/SidebarAddressSearch.vue')['default']
     SidebarCoordinatesPanel: typeof import('./components/SidebarCoordinatesPanel.vue')['default']

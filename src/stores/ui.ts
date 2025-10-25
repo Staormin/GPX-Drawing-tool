@@ -28,6 +28,12 @@ export interface NavigatingElement {
   id: string
 }
 
+export interface SearchAlongPanel {
+  isOpen: boolean
+  elementType: 'circle' | 'lineSegment' | null
+  elementId: string | null
+}
+
 export const useUIStore = defineStore('ui', () => {
   // State
   const openModals = ref<Set<string>>(new Set())
@@ -46,6 +52,11 @@ export const useUIStore = defineStore('ui', () => {
   const lineSegmentEndPreFill = ref<{ lat: number, lon: number } | null>(null)
   const navigatingElement = ref<NavigatingElement | null>(null)
   const showTutorial = ref(false)
+  const searchAlongPanel = ref<SearchAlongPanel>({
+    isOpen: false,
+    elementType: null,
+    elementId: null,
+  })
 
   // Computed
   const isModalOpen = computed(() => (modalId: string) => openModals.value.has(modalId))
@@ -194,6 +205,22 @@ export const useUIStore = defineStore('ui', () => {
     showTutorial.value = show
   }
 
+  function openSearchAlong (elementType: 'circle' | 'lineSegment', elementId: string): void {
+    searchAlongPanel.value = {
+      isOpen: true,
+      elementType,
+      elementId,
+    }
+  }
+
+  function closeSearchAlong (): void {
+    searchAlongPanel.value = {
+      isOpen: false,
+      elementType: null,
+      elementId: null,
+    }
+  }
+
   return {
     // State
     openModals,
@@ -212,6 +239,7 @@ export const useUIStore = defineStore('ui', () => {
     lineSegmentEndPreFill,
     navigatingElement,
     showTutorial,
+    searchAlongPanel,
 
     // Computed
     isModalOpen,
@@ -248,5 +276,7 @@ export const useUIStore = defineStore('ui', () => {
     stopNavigating,
     isNavigating,
     setShowTutorial,
+    openSearchAlong,
+    closeSearchAlong,
   }
 })

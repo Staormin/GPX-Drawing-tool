@@ -35,6 +35,14 @@
         <v-list-item-title>Add point on</v-list-item-title>
       </v-list-item>
 
+      <!-- Search along (only for circles and line segments) -->
+      <v-list-item v-if="['circle', 'lineSegment'].includes(elementType)" @click="handleSearchAlong">
+        <template #prepend>
+          <v-icon icon="mdi-magnify" size="small" />
+        </template>
+        <v-list-item-title>Search along</v-list-item-title>
+      </v-list-item>
+
       <!-- Add as coordinate (only for points without existing coordinate) -->
       <v-list-item v-if="elementType === 'point' && !hasCoordinateAtLocation" @click="handleAddAsCoordinate">
         <template #prepend>
@@ -286,6 +294,20 @@
     uiStore.startCreating('lineSegment')
     uiStore.setLineSegmentEnd(point.coordinates.lat, point.coordinates.lon)
     uiStore.openModal('lineSegmentModal')
+    isOpen.value = false
+  }
+
+  function handleSearchAlong () {
+    const elementType = props.elementType as 'circle' | 'lineSegment'
+    if (!['circle', 'lineSegment'].includes(elementType)) return
+
+    const element = getElement()
+    if (!element) {
+      uiStore.addToast('Element not found', 'error')
+      return
+    }
+
+    uiStore.openSearchAlong(elementType, props.elementId)
     isOpen.value = false
   }
 </script>
