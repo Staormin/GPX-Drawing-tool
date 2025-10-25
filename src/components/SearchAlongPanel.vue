@@ -102,7 +102,7 @@
   import * as turf from '@turf/turf'
   import { useUIStore } from '@/stores/ui'
   import { useLayersStore } from '@/stores/layers'
-  import { searchLocationsNearPath } from '@/services/geoportail'
+  import { searchLocationsNearPath, haversineDistance } from '@/services/geoportail'
   import { generateCircle, generateLinePointsLinear } from '@/services/geometry'
   import type { AddressSearchResult } from '@/services/geoportail'
   import { createSearchZoneLayer, removeSearchZoneLayer } from '@/services/searchZone'
@@ -179,17 +179,31 @@
     }
   })
 
-  // Filter results based on search text
+  // Filter results based on search text and sort by distance from start point
   const filteredResults = computed(() => {
-    if (!filterText.value.trim()) {
-      return results.value
+    let filtered = results.value
+
+    // Apply text filter
+    if (filterText.value.trim()) {
+      const query = filterText.value.toLowerCase()
+      filtered = filtered.filter(
+        result =>
+          result.main.toLowerCase().includes(query) ||
+          (result.secondary && result.secondary.toLowerCase().includes(query)),
+      )
     }
-    const query = filterText.value.toLowerCase()
-    return results.value.filter(
-      result =>
-        result.main.toLowerCase().includes(query) ||
-        (result.secondary && result.secondary.toLowerCase().includes(query)),
-    )
+
+    // Sort by distance from start point
+    const startPoint = pathPoints.value[0]
+    if (startPoint && filtered.length > 0) {
+      filtered = [...filtered].sort((a, b) => {
+        const distA = haversineDistance(startPoint, a.coordinates)
+        const distB = haversineDistance(startPoint, b.coordinates)
+        return distA - distB
+      })
+    }
+
+    return filtered
   })
 
   // Close sidebar when search along panel opens

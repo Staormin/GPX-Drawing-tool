@@ -190,7 +190,7 @@ function splitPathIntoSegments(
 /**
  * Calculate distance between two points in kilometers using Haversine formula
  */
-function haversineDistance(
+export function haversineDistance(
   point1: { lat: number; lon: number },
   point2: { lat: number; lon: number },
 ): number {
