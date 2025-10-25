@@ -246,25 +246,26 @@
     return uiStore.isEditing('lineSegment', uiStore.editingElement?.id || '')
   })
 
-  // Watch for editing state changes
+  // Watch for modal opening - pre-fill form with current element data
   watch(
-    () => uiStore.editingElement,
+    () => isOpen.value,
     newValue => {
-      if (newValue?.type === 'lineSegment') {
-        const segment = layersStore.lineSegments.find(l => l.id === newValue.id)
+      if (newValue && uiStore.editingElement?.type === 'lineSegment') {
+        const segment = layersStore.lineSegments.find(l => l.id === uiStore.editingElement?.id)
         if (segment) {
           form.value = {
             name: segment.name,
             mode: segment.mode as 'coordinate' | 'azimuth' | 'intersection' | 'parallel',
             startCoord: `${segment.center.lat}, ${segment.center.lon}`,
             endCoord: segment.endpoint ? `${segment.endpoint.lat}, ${segment.endpoint.lon}` : '48.8866, 2.3822',
-            azimuth: segment.azimuth || 45,
-            distance: segment.distance || 10,
+            azimuth: segment.azimuth !== undefined ? segment.azimuth : 45,
+            distance: segment.distance !== undefined ? segment.distance : 10,
             intersectCoord: segment.intersectionPoint ? `${segment.intersectionPoint.lat}, ${segment.intersectionPoint.lon}` : '48.8666, 2.3622',
           }
         }
       }
     },
+    { immediate: true },
   )
 
   // Watch for creating state changes with pre-fill values
@@ -438,10 +439,9 @@
       }
 
       if (isEditing.value && uiStore.editingElement) {
-        // Note: Line segment update not yet implemented in useDrawing
-        // For now, delete and recreate
-        drawing.deleteElement('lineSegment', uiStore.editingElement.id)
-        drawing.drawLineSegment(
+        // Update existing line segment in place
+        drawing.updateLineSegment(
+          uiStore.editingElement.id,
           startLat,
           startLon,
           endLat,

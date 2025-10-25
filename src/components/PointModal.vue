@@ -97,12 +97,12 @@
     return uiStore.isEditing('point', uiStore.editingElement?.id || '')
   })
 
-  // Watch for editing state changes
+  // Watch for modal opening - pre-fill form with current element data
   watch(
-    () => uiStore.editingElement,
+    () => isOpen.value,
     newValue => {
-      if (newValue?.type === 'point') {
-        const point = layersStore.points.find(p => p.id === newValue.id)
+      if (newValue && uiStore.editingElement?.type === 'point') {
+        const point = layersStore.points.find(p => p.id === uiStore.editingElement?.id)
         if (point) {
           form.value = {
             name: point.name,
@@ -111,6 +111,7 @@
         }
       }
     },
+    { immediate: true },
   )
 
   function selectCoordinate (coord: SavedCoordinate) {

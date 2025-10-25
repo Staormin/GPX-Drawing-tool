@@ -171,7 +171,7 @@
       const segment = element as LineSegmentElement
       if (segment.mode === 'parallel') {
         // For parallel, center on the parallel's latitude
-        lat = segment.longitude || 0
+        lat = segment.longitude !== undefined ? segment.longitude : 0
         lon = 0
         zoom = 3
       } else if (segment.endpoint) {

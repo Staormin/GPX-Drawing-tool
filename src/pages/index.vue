@@ -151,7 +151,7 @@
         // Restore line segments
         for (const line of activeProject.data.lineSegments) {
           if (line.mode === 'parallel') {
-            drawing.drawParallel(line.longitude || 0, line.name)
+            drawing.drawParallel(line.longitude !== undefined ? line.longitude : 0, line.name)
           } else if (line.endpoint) {
             drawing.drawLineSegment(
               line.center.lat,

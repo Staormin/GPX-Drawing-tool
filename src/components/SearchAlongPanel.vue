@@ -140,19 +140,39 @@
       const circle = layersStore.circles.find(c => c.id === elementId)
       if (!circle) return []
       // Generate points along the circle perimeter
-      return generateCircle(circle.center.lat, circle.center.lon, circle.radius, 60)
+      return generateCircle(circle.center.lat, circle.center.lon, circle.radius, 120)
     } else if (elementType === 'lineSegment') {
       const segment = layersStore.lineSegments.find(s => s.id === elementId)
-      if (!segment || !segment.endpoint) return []
-      // Generate points along the line segment using linear interpolation
-      // This ensures the buffer zone aligns with the displayed straight line in Leaflet
-      return generateLinePointsLinear(
-        segment.center.lat,
-        segment.center.lon,
-        segment.endpoint.lat,
-        segment.endpoint.lon,
-        60,
-      )
+      if (!segment) return []
+
+      // Handle different segment modes
+      if (segment.mode === 'parallel') {
+        // For parallel lines, create a horizontal line from west to east
+        const lat = segment.longitude !== undefined ? segment.longitude : 0
+        const westPoint = { lat, lon: -180 }
+        const eastPoint = { lat, lon: 180 }
+        return generateLinePointsLinear(
+          westPoint.lat,
+          westPoint.lon,
+          eastPoint.lat,
+          eastPoint.lon,
+          120,
+        )
+      } else if (!segment.endpoint) {
+        // For other modes without endpoint, cannot search
+        return []
+      } else {
+        // Generate points along the line segment using linear interpolation
+        // This ensures the buffer zone aligns with the displayed straight line in Leaflet
+        // Works for coordinate, azimuth, and intersection modes
+        return generateLinePointsLinear(
+          segment.center.lat,
+          segment.center.lon,
+          segment.endpoint.lat,
+          segment.endpoint.lon,
+          120,
+        )
+      }
     }
 
     return []

@@ -68,7 +68,7 @@
                   icon="mdi-delete"
                   size="small"
                   variant="text"
-                  @click="deleteCoordinate(coord.id!)"
+                  @click="handleDeleteCoordinate(coord.id)"
                 />
               </div>
             </div>
@@ -259,9 +259,16 @@
     resetForm()
   }
 
-  function deleteCoordinate (id: string) {
-    coordinatesStore.deleteCoordinate(id)
-    uiStore.addToast('Coordinate deleted!', 'success')
+  function handleDeleteCoordinate (id: string | undefined) {
+    if (!id) {
+      uiStore.addToast('Invalid coordinate ID', 'error')
+      return
+    }
+
+    if (confirm('Delete this coordinate?')) {
+      coordinatesStore.deleteCoordinate(id)
+      uiStore.addToast('Coordinate deleted!', 'success')
+    }
   }
 
   function closeModal () {

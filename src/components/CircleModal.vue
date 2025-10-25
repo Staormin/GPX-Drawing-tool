@@ -110,12 +110,12 @@
     return uiStore.isEditing('circle', uiStore.editingElement?.id || '')
   })
 
-  // Watch for editing state changes
+  // Watch for modal opening - pre-fill form with current element data
   watch(
-    () => uiStore.editingElement,
+    () => isOpen.value,
     newValue => {
-      if (newValue?.type === 'circle') {
-        const circle = layersStore.circles.find(c => c.id === newValue.id)
+      if (newValue && uiStore.editingElement?.type === 'circle') {
+        const circle = layersStore.circles.find(c => c.id === uiStore.editingElement?.id)
         if (circle) {
           form.value = {
             name: circle.name,
@@ -125,6 +125,7 @@
         }
       }
     },
+    { immediate: true },
   )
 
   // Watch for creating state changes with pre-fill values

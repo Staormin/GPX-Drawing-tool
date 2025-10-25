@@ -259,6 +259,88 @@ export function useDrawing (mapRef: any) {
     return lineElement
   }
 
+  // Update existing line segment
+  const updateLineSegment = (
+    lineId: string | undefined,
+    startLat: number,
+    startLon: number,
+    endLat: number,
+    endLon: number,
+    name: string,
+    mode: 'coordinate' | 'azimuth' | 'intersection' = 'coordinate',
+    distance?: number,
+    azimuth?: number,
+    intersectLat?: number,
+    intersectLon?: number,
+    intersectDistance?: number,
+  ) => {
+    if (!mapRef.map?.value || !lineId) {
+      return
+    }
+
+    // Update store
+    layersStore.updateLineSegment(lineId, {
+      name,
+      center: { lat: startLat, lon: startLon },
+      endpoint: { lat: endLat, lon: endLon },
+      mode,
+      distance,
+      azimuth,
+      intersectionPoint: intersectLat && intersectLon ? { lat: intersectLat, lon: intersectLon } : undefined,
+      intersectionDistance: intersectDistance,
+    })
+
+    // Remove old line from map using className
+    const lineClass = `line-${lineId}`
+    const lineElements = document.querySelectorAll(`.${lineClass}`)
+    for (const el of lineElements) {
+      const svgElement = el.closest('svg')
+      if (svgElement) {
+        svgElement.remove()
+      }
+    }
+
+    // Also remove intersection marker if present
+    const className = `intersection-${lineId}`
+    const intersectionElements = document.querySelectorAll(`.${className}`)
+    for (const el of intersectionElements) {
+      const svgElement = el.closest('svg')
+      if (svgElement) {
+        svgElement.remove()
+      }
+    }
+
+    // Redraw line segment
+    const latLngs = [
+      [startLat, startLon] as [number, number],
+      [endLat, endLon] as [number, number],
+    ]
+
+    const polyline = L.polyline(latLngs, {
+      color: DEFAULT_COLOR,
+      weight: 3,
+      opacity: 1,
+      className: `line-layer line-${lineId}`,
+    }).addTo(mapRef.map.value)
+
+    // Update Leaflet ID in store
+    const newLeafletId = L.stamp(polyline)
+    layersStore.storeLeafletId('lineSegment', lineId, newLeafletId)
+
+    // For intersection mode, show the intersection point marker
+    if (mode === 'intersection' && intersectLat && intersectLon) {
+      L.circleMarker([intersectLat, intersectLon], {
+        radius: 8,
+        fillColor: '#FFD700',
+        color: '#FFA500',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9,
+        className: `intersection-marker intersection-${lineId}`,
+      }).addTo(mapRef.map.value)
+    }
+  }
+
   // Point drawing
   const drawPoint = (lat: number, lon: number, name?: string): PointElement | null => {
     if (!mapRef.map?.value) {
@@ -347,7 +429,7 @@ export function useDrawing (mapRef: any) {
           const segment = layersStore.lineSegments.find(s => s.id === elementId)
           if (segment && segment.id && segment.mode === 'parallel') {
           // For parallel lines, redraw them using drawParallel
-            drawParallel(segment.longitude || 0, segment.name)
+            drawParallel(segment.longitude !== undefined ? segment.longitude : 0, segment.name)
           } else if (segment && segment.id && segment.endpoint) {
             redrawLineSegmentOnMap(
               segment.id,
@@ -395,8 +477,20 @@ export function useDrawing (mapRef: any) {
     }
 
     // Remove from map using Leaflet's layer management
+    // Use both className and leafletId as fallbacks for robustness
     switch (elementType) {
       case 'circle': {
+        // Remove by className first (most reliable)
+        const circleClass = `circle-${elementId}`
+        const circleElements = document.querySelectorAll(`.${circleClass}`)
+        for (const el of circleElements) {
+          const svgElement = el.closest('svg')
+          if (svgElement) {
+            svgElement.remove()
+          }
+        }
+
+        // Also try Leaflet layer management as backup
         const circle = layersStore.circles.find(c => c.id === elementId)
         if (circle && circle.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {
@@ -409,6 +503,17 @@ export function useDrawing (mapRef: any) {
         break
       }
       case 'lineSegment': {
+        // Remove by className first (most reliable)
+        const lineClass = `line-${elementId}`
+        const lineElements = document.querySelectorAll(`.${lineClass}`)
+        for (const el of lineElements) {
+          const svgElement = el.closest('svg')
+          if (svgElement) {
+            svgElement.remove()
+          }
+        }
+
+        // Also try Leaflet layer management as backup
         const segment = layersStore.lineSegments.find(s => s.id === elementId)
         if (segment && segment.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {
@@ -417,6 +522,7 @@ export function useDrawing (mapRef: any) {
             }
           })
         }
+
         // Also remove intersection marker if present
         const className = `intersection-${elementId}`
         const elements = document.querySelectorAll(`.${className}`)
@@ -430,6 +536,17 @@ export function useDrawing (mapRef: any) {
         break
       }
       case 'point': {
+        // Remove by className first (most reliable)
+        const pointClass = `point-${elementId}`
+        const pointElements = document.querySelectorAll(`.${pointClass}`)
+        for (const el of pointElements) {
+          const svgElement = el.closest('svg')
+          if (svgElement) {
+            svgElement.remove()
+          }
+        }
+
+        // Also try Leaflet layer management as backup
         const point = layersStore.points.find(p => p.id === elementId)
         if (point && point.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {
@@ -618,6 +735,7 @@ export function useDrawing (mapRef: any) {
     drawCircle,
     updateCircle,
     drawLineSegment,
+    updateLineSegment,
     drawParallel,
     updateParallel,
     drawPoint,

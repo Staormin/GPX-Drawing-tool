@@ -117,7 +117,7 @@ export function generateLineSegmentTracks (segments: LineSegmentData[]): string 
           // Generate parallel line (horizontal) from west to east at constant latitude
           trackPoints = []
           const numPoints = 180
-          const lat = segment.longitude || 0
+          const lat = segment.longitude !== undefined ? segment.longitude : 0
           for (let i = 0; i <= numPoints; i++) {
             const lon = -180 + (i / numPoints) * 360
             trackPoints.push({ lat, lon })

@@ -30,7 +30,7 @@
               icon="mdi-delete"
               size="x-small"
               variant="text"
-              @click="coordinatesStore.deleteCoordinate(coord.id!)"
+              @click="handleDeleteCoordinate(coord.id)"
             />
           </template>
         </v-list-item>
@@ -41,6 +41,20 @@
 
 <script lang="ts" setup>
   import { useCoordinatesStore } from '@/stores/coordinates'
+  import { useUIStore } from '@/stores/ui'
 
   const coordinatesStore = useCoordinatesStore()
+  const uiStore = useUIStore()
+
+  function handleDeleteCoordinate (id: string | undefined) {
+    if (!id) {
+      uiStore.addToast('Invalid coordinate ID', 'error')
+      return
+    }
+
+    if (confirm('Delete this coordinate?')) {
+      coordinatesStore.deleteCoordinate(id)
+      uiStore.addToast('Coordinate deleted', 'success')
+    }
+  }
 </script>

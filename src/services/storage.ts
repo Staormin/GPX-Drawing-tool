@@ -185,6 +185,11 @@ export function saveCoordinate (name: string, lat: number, lon: number): SavedCo
  * Delete a saved coordinate by id
  */
 export function deleteCoordinate (id: string): void {
+  if (!id || typeof id !== 'string') {
+    console.error('Invalid coordinate ID provided to deleteCoordinate:', id)
+    return
+  }
+
   const coordinates = getSavedCoordinates()
   const filtered = coordinates.filter(c => c.id !== id)
   localStorage.setItem(SAVED_COORDINATES_KEY, JSON.stringify(filtered))
@@ -194,6 +199,11 @@ export function deleteCoordinate (id: string): void {
  * Update a saved coordinate
  */
 export function updateCoordinate (id: string, name: string, lat: number, lon: number): void {
+  if (!id || typeof id !== 'string') {
+    console.error('Invalid coordinate ID provided to updateCoordinate:', id)
+    return
+  }
+
   const coordinates = getSavedCoordinates()
   const coord = coordinates.find(c => c.id === id)
   if (coord) {
