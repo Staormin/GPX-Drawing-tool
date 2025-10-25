@@ -32,11 +32,12 @@ export function useMap (containerId: string) {
       map.value = L.map(containerId, {
         preferCanvas: true,
         zoomControl: false,
+        attributionControl: false,
       } as any).setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lon], DEFAULT_MAP_ZOOM)
 
       // Add tile layer from Geoportail
       const tileLayer: L.TileLayer = L.tileLayer(getMapTilesUrl(), {
-        attribution: getMapAttribution(),
+        attribution: false,
         minZoom: 0,
         maxZoom: 18,
         crossOrigin: 'anonymous',

@@ -46,6 +46,16 @@ style.textContent = `
     height: 100%;
     background: var(--bg);
   }
+
+  /* Hide scrollbars while keeping scrolling functionality */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 `
 document.head.append(style)
 
