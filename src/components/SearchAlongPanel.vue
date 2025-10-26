@@ -103,6 +103,40 @@
 
           <!-- Results table -->
           <table class="w-full">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(148, 163, 184, 0.3); background-color: rgba(148, 163, 184, 0.05);">
+                <th style="padding: 8px; text-align: left; cursor: pointer;" @click="toggleSort('name')">
+                  <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
+                    Name
+                    <v-icon
+                      v-if="sortBy === 'name'"
+                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                      size="16"
+                    />
+                  </div>
+                </th>
+                <th style="padding: 8px; text-align: right; cursor: pointer;" @click="toggleSort('distance')">
+                  <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
+                    Distance
+                    <v-icon
+                      v-if="sortBy === 'distance'"
+                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                      size="16"
+                    />
+                  </div>
+                </th>
+                <th style="padding: 8px; text-align: right; cursor: pointer;" @click="toggleSort('elevation')">
+                  <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
+                    Elevation
+                    <v-icon
+                      v-if="sortBy === 'elevation'"
+                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                      size="16"
+                    />
+                  </div>
+                </th>
+              </tr>
+            </thead>
             <tbody>
               <tr
                 v-for="(result, index) in filteredResults"
@@ -113,9 +147,12 @@
                 @mouseenter="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(59, 130, 246, 0.1)'"
                 @mouseleave="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'"
               >
-                <td style="padding: 8px; width: 70%;">
+                <td style="padding: 8px; width: 40%;">
                   <div class="font-medium text-sm text-truncate">{{ result.main }}</div>
                   <div class="text-xs text-slate-600 text-truncate">{{ result.type || 'N/A' }}</div>
+                </td>
+                <td style="padding: 8px; text-align: right; width: 30%;">
+                  <div class="text-sm font-medium">{{ getResultDistance(result).toFixed(1) }} km</div>
                 </td>
                 <td style="padding: 8px; text-align: right; width: 30%;">
                   <div class="text-sm font-medium">{{ result.elevation ? `${result.elevation} m` : 'N/A' }}</div>
@@ -155,14 +192,16 @@
   const filterText = ref('')
   const isSearching = ref(false)
   const isFiltering = ref(false) // Track if filtering is in progress
-  const sortBy = ref<'name' | 'type' | 'elevation'>('name')
+  const sortBy = ref<'name' | 'type' | 'elevation' | 'distance'>('name')
   const sortAsc = ref(true)
   const altitudeRange = ref<[number, number]>([0, 0]) // Committed value used for filtering
   const liveAltitudeRange = ref<[number, number]>([0, 0]) // Live value shown while dragging slider
   const cachedFilteredResults = ref<AddressSearchResult[]>([])
+  const cachedUnfilteredResults = ref<AddressSearchResult[]>([]) // Results before sorting
 
   let searchZoneLayer: L.FeatureGroup | null = null
   let filterTimeoutId: number | null = null
+  let sortTimeoutId: number | null = null
 
   // Get the maximum search distance based on element type
   const maxSearchDistance = computed(() => {
@@ -296,6 +335,52 @@
   // Expose filteredResults as a computed that returns cached results
   const filteredResults = computed(() => cachedFilteredResults.value)
 
+  // Apply sorting to the unfiltered cached results
+  function applySorting () {
+    isFiltering.value = true
+
+    const callback = () => {
+      try {
+        // Sort the cached unfiltered results
+        const sorted = [...cachedUnfilteredResults.value].sort((a, b) => {
+          let compareValue = 0
+
+          if (sortBy.value === 'name') {
+            compareValue = a.main.localeCompare(b.main)
+          } else if (sortBy.value === 'type') {
+            compareValue = (a.secondary || '').localeCompare(b.secondary || '')
+          } else if (sortBy.value === 'elevation') {
+            const elevA = a.elevation ?? -1
+            const elevB = b.elevation ?? -1
+            compareValue = elevA - elevB
+          } else if (sortBy.value === 'distance') {
+            const distA = getResultDistance(a)
+            const distB = getResultDistance(b)
+            compareValue = distA - distB
+          }
+
+          return sortAsc.value ? compareValue : -compareValue
+        })
+
+        cachedFilteredResults.value = sorted
+      } finally {
+        isFiltering.value = false
+      }
+    }
+
+    // Clear previous timeout if exists
+    if (sortTimeoutId !== null) {
+      clearTimeout(sortTimeoutId)
+    }
+
+    // Schedule sorting to run on next idle time
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(callback, { timeout: 100 })
+    } else {
+      sortTimeoutId = window.setTimeout(callback, 50)
+    }
+  }
+
   // Background filtering function
   function performFiltering () {
     isFiltering.value = true
@@ -348,8 +433,11 @@
           })
         }
 
-        // Apply sorting
-        filtered = [...filtered].sort((a, b) => {
+        // Store the filtered results before sorting
+        cachedUnfilteredResults.value = filtered
+
+        // Apply sorting to the filtered results
+        const sorted = [...filtered].sort((a, b) => {
           let compareValue = 0
 
           if (sortBy.value === 'name') {
@@ -360,12 +448,16 @@
             const elevA = a.elevation ?? -1
             const elevB = b.elevation ?? -1
             compareValue = elevA - elevB
+          } else if (sortBy.value === 'distance') {
+            const distA = getResultDistance(a)
+            const distB = getResultDistance(b)
+            compareValue = distA - distB
           }
 
           return sortAsc.value ? compareValue : -compareValue
         })
 
-        cachedFilteredResults.value = filtered
+        cachedFilteredResults.value = sorted
       } finally {
         isFiltering.value = false
       }
@@ -445,6 +537,11 @@
     performFiltering()
   })
 
+  // Trigger sorting (only re-sort, don't re-filter) when sort changes
+  watch([sortBy, sortAsc], () => {
+    applySorting()
+  })
+
   // Handler for distance slider release
   function handleDisplayDistanceRelease () {
     displayDistance.value = liveDisplayDistance.value
@@ -510,6 +607,9 @@
         }
       }
 
+      // Trigger filtering after results are loaded
+      performFiltering()
+
       if (locations.length === 0) {
         uiStore.addToast('No locations found', 'info')
       } else {
@@ -542,7 +642,14 @@
     uiStore.addToast(`Navigating to ${result.main}`, 'success')
   }
 
-  function toggleSort (column: 'name' | 'type' | 'elevation') {
+  function getResultDistance (result: AddressSearchResult): number {
+    if (pathPoints.value.length === 0) return 0
+
+    // Always use the first point (center of circle or start of segment)
+    return haversineDistance(result.coordinates, pathPoints.value[0]!)
+  }
+
+  function toggleSort (column: 'name' | 'type' | 'elevation' | 'distance') {
     if (sortBy.value === column) {
       // Toggle ascending/descending if clicking the same column
       sortAsc.value = !sortAsc.value
