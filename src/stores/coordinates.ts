@@ -23,8 +23,18 @@ export const useCoordinatesStore = defineStore('coordinates', () => {
     savedCoordinates.value = storage.getSavedCoordinates()
   }
 
-  function addCoordinate (name: string, lat: number, lon: number): SavedCoordinate {
-    const coord = storage.saveCoordinate(name, lat, lon)
+  function addCoordinate (name: string, lat: number, lon: number, id?: string): SavedCoordinate {
+    const coord = id
+      ? { id, name, lat, lon, timestamp: Date.now() }
+      : storage.saveCoordinate(name, lat, lon)
+
+    // If we have a custom ID, we need to save it directly
+    if (id) {
+      const coordinates = storage.getSavedCoordinates()
+      coordinates.push(coord)
+      storage.saveCoordinates(coordinates)
+    }
+
     loadCoordinates()
     return coord
   }

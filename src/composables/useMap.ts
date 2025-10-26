@@ -25,7 +25,6 @@ export function useMap (containerId: string) {
 
       // Ensure element has proper dimensions
       const rect = element.getBoundingClientRect()
-      console.log(`Map container dimensions: ${rect.width}x${rect.height}`)
 
       // Create map centered on default location
       // eslint-disable-next-line unicorn/no-array-callback-reference, unicorn/no-array-method-this-argument
@@ -52,7 +51,6 @@ export function useMap (containerId: string) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (map.value) {
-            console.log(`Invalidating map size after layout settled`)
             map.value.invalidateSize(true)
           }
         })

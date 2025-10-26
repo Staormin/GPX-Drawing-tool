@@ -4,6 +4,7 @@
 
 import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage'
 import L from 'leaflet'
+import { v4 as uuidv4 } from 'uuid'
 import { generateCircle } from '@/services/geometry'
 import { useLayersStore } from '@/stores/layers'
 
@@ -13,7 +14,7 @@ const DEFAULT_RADIUS = 8 // Slightly larger for better visibility on map
 export function useDrawing (mapRef: any) {
   const layersStore = useLayersStore()
 
-  const generateId = () => `element_${Date.now()}`
+  const generateId = () => uuidv4()
 
   // Helper function to redraw a circle on the map without adding to store
   const redrawCircleOnMap = (circleId: string, centerLat: number, centerLon: number, radiusKm: number) => {
@@ -481,17 +482,6 @@ export function useDrawing (mapRef: any) {
     // Use both className and leafletId as fallbacks for robustness
     switch (elementType) {
       case 'circle': {
-        // Remove by className first (most reliable)
-        const circleClass = `circle-${elementId}`
-        const circleElements = document.querySelectorAll(`.${circleClass}`)
-        for (const el of circleElements) {
-          const svgElement = el.closest('svg')
-          if (svgElement) {
-            svgElement.remove()
-          }
-        }
-
-        // Also try Leaflet layer management as backup
         const circle = layersStore.circles.find(c => c.id === elementId)
         if (circle && circle.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {
@@ -504,17 +494,7 @@ export function useDrawing (mapRef: any) {
         break
       }
       case 'lineSegment': {
-        // Remove by className first (most reliable)
-        const lineClass = `line-${elementId}`
-        const lineElements = document.querySelectorAll(`.${lineClass}`)
-        for (const el of lineElements) {
-          const svgElement = el.closest('svg')
-          if (svgElement) {
-            svgElement.remove()
-          }
-        }
-
-        // Also try Leaflet layer management as backup
+        // Remove the line segment layer
         const segment = layersStore.lineSegments.find(s => s.id === elementId)
         if (segment && segment.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {
@@ -525,29 +505,20 @@ export function useDrawing (mapRef: any) {
         }
 
         // Also remove intersection marker if present
-        const className = `intersection-${elementId}`
-        const elements = document.querySelectorAll(`.${className}`)
-        for (const el of elements) {
-          const svgElement = el.closest('svg')
-          if (svgElement) {
-            svgElement.remove()
-          }
+        const intersectionPoint = layersStore.lineSegments.find(s => s.id === elementId)
+        if (intersectionPoint && intersectionPoint.leafletId !== undefined) {
+          mapRef.map.value.eachLayer((layer: any) => {
+            // Check if this is an intersection marker for this line by looking at className
+            const className = layer.options?.className
+            if (className && className.includes(`intersection-${elementId}`)) {
+              mapRef.map.value.removeLayer(layer)
+            }
+          })
         }
 
         break
       }
       case 'point': {
-        // Remove by className first (most reliable)
-        const pointClass = `point-${elementId}`
-        const pointElements = document.querySelectorAll(`.${pointClass}`)
-        for (const el of pointElements) {
-          const svgElement = el.closest('svg')
-          if (svgElement) {
-            svgElement.remove()
-          }
-        }
-
-        // Also try Leaflet layer management as backup
         const point = layersStore.points.find(p => p.id === elementId)
         if (point && point.leafletId !== undefined) {
           mapRef.map.value.eachLayer((layer: any) => {

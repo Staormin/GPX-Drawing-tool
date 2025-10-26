@@ -72,7 +72,6 @@ export function createSearchZoneLayer(
     // Add the feature group to the map
     searchZoneGroup.addTo(mapInstance)
 
-    console.log('[SearchZone] Created buffer zone with distance:', bufferDistanceKm, 'km')
 
     return searchZoneGroup
   } catch (error) {
@@ -100,7 +99,6 @@ export function removeSearchZoneLayer(
     }
 
     mapInstance.removeLayer(searchZoneLayer)
-    console.log('[SearchZone] Removed search zone')
   } catch (error) {
     console.error('[SearchZone] Error removing search zone:', error)
   }

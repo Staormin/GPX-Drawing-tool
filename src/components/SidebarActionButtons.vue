@@ -149,9 +149,12 @@
         if (projectData.circles && Array.isArray(projectData.circles)) {
           for (const circle of projectData.circles) {
             layersStore.addCircle({
+              id: circle.id,
               name: circle.name,
               center: circle.center,
               radius: circle.radius,
+              color: circle.color,
+              leafletId: circle.leafletId,
             })
           }
         }
@@ -160,12 +163,18 @@
         if (projectData.lineSegments && Array.isArray(projectData.lineSegments)) {
           for (const line of projectData.lineSegments) {
             layersStore.addLineSegment({
+              id: line.id,
               name: line.name,
               center: line.center,
               endpoint: line.endpoint,
               mode: line.mode,
               distance: line.distance,
               azimuth: line.azimuth,
+              intersectionPoint: line.intersectionPoint,
+              intersectionDistance: line.intersectionDistance,
+              longitude: line.longitude,
+              color: line.color,
+              leafletId: line.leafletId,
             })
           }
         }
@@ -174,8 +183,12 @@
         if (projectData.points && Array.isArray(projectData.points)) {
           for (const point of projectData.points) {
             layersStore.addPoint({
+              id: point.id,
               name: point.name,
               coordinates: point.coordinates,
+              elevation: point.elevation,
+              color: point.color,
+              leafletId: point.leafletId,
             })
           }
         }

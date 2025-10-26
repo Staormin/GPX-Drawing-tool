@@ -125,9 +125,10 @@
 
     const segmentLength = calculateDistance(line.center.lat, line.center.lon, endpoint.lat, endpoint.lon)
     const azimuth = calculateBearing(line.center.lat, line.center.lon, endpoint.lat, endpoint.lon)
+    const inverseAzimuth = (azimuth + 180) % 360
     const modeLabel = line.mode === 'coordinate' ? 'coordinate' : (line.mode === 'azimuth' ? 'azimuth' : 'intersection')
 
-    return `${modeLabel} • ${azimuth.toFixed(1)}° • ${segmentLength.toFixed(2)} km`
+    return `${modeLabel} • ${azimuth.toFixed(1)}° / ${inverseAzimuth.toFixed(1)}° • ${segmentLength.toFixed(2)} km`
   }
 
   function handleEditCircle (circle: CircleElement) {

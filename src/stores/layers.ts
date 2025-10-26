@@ -27,8 +27,8 @@ export const useLayersStore = defineStore('layers', () => {
   const pointCount = computed(() => points.value.length)
 
   // Actions
-  function addCircle (circle: CircleElement & { name: string, center: { lat: number, lon: number }, radius: number }): void {
-    circles.value.push(circle as CircleElement)
+  function addCircle (circle: CircleElement): void {
+    circles.value.push(circle)
   }
 
   function updateCircle (id: string | undefined, circle: Partial<CircleElement>): void {

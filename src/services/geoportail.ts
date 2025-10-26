@@ -254,7 +254,7 @@ export function haversineDistance(
 /**
  * Calculate minimum distance from a point to a line segment
  */
-function distancePointToSegment(
+export function distancePointToSegment(
   point: { lat: number; lon: number },
   segStart: { lat: number; lon: number },
   segEnd: { lat: number; lon: number },
@@ -386,18 +386,18 @@ class RequestQueue {
 const requestQueue = new RequestQueue()
 
 /**
- * Search for locations near a path using Geoportail Completion API
+ * Search for locations near a path using Overpass API
  * Uses a buffer polygon to define the search area for precise filtering
  * @param pathPoints Array of lat/lon points defining the path
  * @param searchDistanceKm Maximum distance from the path to search (in km)
- * @param types Types of locations to search for (e.g., 'LieuDit', 'Commune')
+ * @param tags Array of OSM tag keys to search for (e.g., ['place', 'amenity']). Empty array = no tag filter
  * @param bufferPolygon Optional GeoJSON buffer polygon for precise search boundary (from turf.buffer())
  * @returns Array of locations found within the search zone
  */
 export async function searchLocationsNearPath(
   pathPoints: Array<{ lat: number; lon: number }>,
   searchDistanceKm: number = 1,
-  types: string[] = ['LieuDit', 'Commune'],
+  tags: string[] = [],
   bufferPolygon?: any,
 ): Promise<AddressSearchResult[]> {
   if (!pathPoints || pathPoints.length === 0) {
@@ -414,14 +414,14 @@ export async function searchLocationsNearPath(
   const maxLon = bboxParts[2] ?? 0
   const maxLat = bboxParts[3] ?? 0
 
-  // Use Overpass API to search for all named places and locations in the bounding box
-  // No text query required - returns all place nodes with names
+  // Build Overpass query - search for all named places
+  // This searches for any element with both a name tag and a place tag
+  const queryElements = `node[name][place];\n    way[name][place];\n    relation[name][place];\n    `
+
   const overpassQuery = `
     [bbox:${minLat},${minLon},${maxLat},${maxLon}];
     (
-      node[name][place];
-      way[name][place];
-      relation[name][place];
+      ${queryElements}
     );
     out center;
   `
@@ -454,6 +454,12 @@ export async function searchLocationsNearPath(
         const parser = new DOMParser()
         const doc = parser.parseFromString(xmlText, 'text/xml')
 
+        // Check for parsing errors
+        if (doc.documentElement.nodeName === 'parsererror') {
+          console.error('XML parsing error:', xmlText.substring(0, 500))
+          continue
+        }
+
         // Handle Overpass API XML response format
         // Parse nodes
         const nodes = doc.querySelectorAll('node')
@@ -462,8 +468,21 @@ export async function searchLocationsNearPath(
           const lon = parseFloat(node.getAttribute('lon') || '0')
           const nameTag = node.querySelector('tag[k="name"]')
           const name = nameTag?.getAttribute('v')
+
+          // Get the type from place, amenity, tourism, natural, or historic tags
+          let typeValue = ''
           const placeTag = node.querySelector('tag[k="place"]')
-          const placeType = placeTag?.getAttribute('v')
+          const amenityTag = node.querySelector('tag[k="amenity"]')
+          const tourismTag = node.querySelector('tag[k="tourism"]')
+          const naturalTag = node.querySelector('tag[k="natural"]')
+          const historicTag = node.querySelector('tag[k="historic"]')
+
+          typeValue = placeTag?.getAttribute('v')
+            || amenityTag?.getAttribute('v')
+            || tourismTag?.getAttribute('v')
+            || naturalTag?.getAttribute('v')
+            || historicTag?.getAttribute('v')
+            || ''
 
           if (name && lat && lon) {
             const resultCoords = {
@@ -497,9 +516,9 @@ export async function searchLocationsNearPath(
               if (!results.has(key)) {
                 results.set(key, {
                   main: name,
-                  secondary: placeType && placeType !== null ? placeType : undefined,
+                  secondary: typeValue && typeValue !== null ? typeValue : undefined,
                   coordinates: resultCoords,
-                  type: placeType && placeType !== null ? placeType : undefined,
+                  type: typeValue && typeValue !== null ? typeValue : undefined,
                 })
               }
             }
@@ -515,8 +534,21 @@ export async function searchLocationsNearPath(
             const lon = parseFloat(centerTag.getAttribute('lon') || '0')
             const nameTag = way.querySelector('tag[k="name"]')
             const name = nameTag?.getAttribute('v')
+
+            // Get the type from place, amenity, tourism, natural, or historic tags
+            let typeValue = ''
             const placeTag = way.querySelector('tag[k="place"]')
-            const placeType = placeTag?.getAttribute('v')
+            const amenityTag = way.querySelector('tag[k="amenity"]')
+            const tourismTag = way.querySelector('tag[k="tourism"]')
+            const naturalTag = way.querySelector('tag[k="natural"]')
+            const historicTag = way.querySelector('tag[k="historic"]')
+
+            typeValue = placeTag?.getAttribute('v')
+              || amenityTag?.getAttribute('v')
+              || tourismTag?.getAttribute('v')
+              || naturalTag?.getAttribute('v')
+              || historicTag?.getAttribute('v')
+              || ''
 
             if (name && lat && lon) {
               const resultCoords = {
@@ -550,9 +582,9 @@ export async function searchLocationsNearPath(
                 if (!results.has(key)) {
                   results.set(key, {
                     main: name,
-                    secondary: placeType && placeType !== null ? placeType : undefined,
+                    secondary: typeValue && typeValue !== null ? typeValue : undefined,
                     coordinates: resultCoords,
-                    type: placeType && placeType !== null ? placeType : undefined,
+                    type: typeValue && typeValue !== null ? typeValue : undefined,
                   })
                 }
               }

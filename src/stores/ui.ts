@@ -4,6 +4,7 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
 
 export type DrawingMode = 'circle' | 'line' | 'point' | 'intersection' | 'none'
 
@@ -93,7 +94,7 @@ export const useUIStore = defineStore('ui', () => {
   }
 
   function addToast (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000): void {
-    const id = `toast_${Date.now()}`
+    const id = uuidv4()
     const toast: Toast = { id, message, type, duration }
     toasts.value.push(toast)
 

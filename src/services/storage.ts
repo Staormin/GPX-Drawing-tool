@@ -2,8 +2,10 @@
  * Storage service - localStorage management for projects and coordinates
  */
 
+import { v4 as uuidv4 } from 'uuid'
+
 export interface SavedCoordinate {
-  id?: string
+  id: string
   name: string
   lat: number
   lon: number
@@ -26,7 +28,7 @@ export interface ProjectLayerData {
 }
 
 export interface CircleElement {
-  id?: string
+  id: string
   name: string
   center: { lat: number, lon: number }
   radius: number
@@ -35,7 +37,7 @@ export interface CircleElement {
 }
 
 export interface LineSegmentElement {
-  id?: string
+  id: string
   name: string
   center: { lat: number, lon: number }
   endpoint?: { lat: number, lon: number }
@@ -50,7 +52,7 @@ export interface LineSegmentElement {
 }
 
 export interface PointElement {
-  id?: string
+  id: string
   name: string
   coordinates: { lat: number, lon: number }
   elevation?: number
@@ -101,7 +103,7 @@ export function createProject (
   data: ProjectLayerData,
 ): ProjectData {
   return {
-    id: `project_${Date.now()}`,
+    id: uuidv4(),
     name,
     data,
     createdAt: Date.now(),
@@ -171,7 +173,7 @@ export function getSavedCoordinates (): SavedCoordinate[] {
 export function saveCoordinate (name: string, lat: number, lon: number): SavedCoordinate {
   const coordinates = getSavedCoordinates()
   const newCoord: SavedCoordinate = {
-    id: `coord_${Date.now()}`,
+    id: uuidv4(),
     name,
     lat,
     lon,
@@ -180,6 +182,13 @@ export function saveCoordinate (name: string, lat: number, lon: number): SavedCo
   coordinates.push(newCoord)
   localStorage.setItem(SAVED_COORDINATES_KEY, JSON.stringify(coordinates))
   return newCoord
+}
+
+/**
+ * Save/update the entire coordinates array
+ */
+export function saveCoordinates (coordinates: SavedCoordinate[]): void {
+  localStorage.setItem(SAVED_COORDINATES_KEY, JSON.stringify(coordinates))
 }
 
 /**
@@ -192,7 +201,15 @@ export function deleteCoordinate (id: string): void {
   }
 
   const coordinates = getSavedCoordinates()
+  const initialCount = coordinates.length
   const filtered = coordinates.filter(c => c.id !== id)
+
+  // Verify we actually deleted something
+  if (filtered.length === initialCount) {
+    console.warn(`Coordinate with ID "${id}" not found`)
+    return
+  }
+
   localStorage.setItem(SAVED_COORDINATES_KEY, JSON.stringify(filtered))
 }
 

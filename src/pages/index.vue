@@ -7,27 +7,33 @@
 
   <!-- Sidebar -->
   <aside class="sidebar" :class="{ open: sidebarOpen }">
-    <!-- Scrollable content area -->
-    <div class="sidebar-inner">
-      <!-- Address search -->
-      <SidebarAddressSearch />
+    <!-- Search Along Panel (when active) -->
+    <SearchAlongPanelInline v-if="uiStore.searchAlongPanel.isOpen" />
 
-      <!-- Drawing Tools -->
-      <SidebarDrawingTools />
+    <!-- Normal sidebar content (when not in search mode) -->
+    <template v-else>
+      <!-- Scrollable content area -->
+      <div class="sidebar-inner">
+        <!-- Address search -->
+        <SidebarAddressSearch />
 
-      <!-- Layers panel -->
-      <SidebarLayersPanel />
+        <!-- Drawing Tools -->
+        <SidebarDrawingTools />
 
-      <!-- Status messages -->
-      <div v-if="lastMessage" class="status-message" :class="{ success: lastMessageType === 'success', error: lastMessageType === 'error' }">
-        {{ lastMessage }}
+        <!-- Layers panel -->
+        <SidebarLayersPanel />
+
+        <!-- Status messages -->
+        <div v-if="lastMessage" class="status-message" :class="{ success: lastMessageType === 'success', error: lastMessageType === 'error' }">
+          {{ lastMessage }}
+        </div>
       </div>
-    </div>
 
-    <!-- Action buttons footer - sticky at bottom -->
-    <div class="sidebar-footer">
-      <SidebarActionButtons />
-    </div>
+      <!-- Action buttons footer - sticky at bottom -->
+      <div class="sidebar-footer">
+        <SidebarActionButtons />
+      </div>
+    </template>
   </aside>
 
   <!-- Sidebar toggle button -->
@@ -44,9 +50,6 @@
   <NewProjectModal v-if="uiStore.isModalOpen('newProjectModal')" />
   <LoadProjectModal v-if="uiStore.isModalOpen('loadProjectModal')" />
   <TutorialModal />
-
-  <!-- Search Along Panel -->
-  <SearchAlongPanel />
 
   <!-- Toast notifications -->
   <v-snackbar
@@ -70,7 +73,7 @@
   import NavigationBar from '@/components/NavigationBar.vue'
   import NewProjectModal from '@/components/NewProjectModal.vue'
   import PointModal from '@/components/PointModal.vue'
-  import SearchAlongPanel from '@/components/SearchAlongPanel.vue'
+  import SearchAlongPanelInline from '@/components/SearchAlongPanel.vue'
   import SidebarActionButtons from '@/components/SidebarActionButtons.vue'
   import SidebarAddressSearch from '@/components/SidebarAddressSearch.vue'
   import SidebarDrawingTools from '@/components/SidebarDrawingTools.vue'
