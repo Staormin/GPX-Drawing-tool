@@ -414,9 +414,17 @@ export async function searchLocationsNearPath(
   const maxLon = bboxParts[2] ?? 0
   const maxLat = bboxParts[3] ?? 0
 
-  // Build Overpass query - search for all named places
-  // This searches for any element with both a name tag and a place tag
-  const queryElements = `node[name][place];\n    way[name][place];\n    relation[name][place];\n    `
+  // Build Overpass query
+  // For line segments: search for elements with both name and place tag
+  // For points: search for all named elements (no place type filter)
+  let queryElements: string
+  if (pathPoints.length === 1) {
+    // Point search - no place type filter, just get all named elements
+    queryElements = `node[name];\n    way[name];\n    relation[name];\n    `
+  } else {
+    // Line segment search - filter by place tag
+    queryElements = `node[name][place];\n    way[name][place];\n    relation[name][place];\n    `
+  }
 
   const overpassQuery = `
     [bbox:${minLat},${minLon},${maxLat},${maxLon}];
@@ -499,13 +507,19 @@ export async function searchLocationsNearPath(
             } else {
               // Fallback to distance-based filtering
               let minDist = Infinity
-              for (let i = 0; i < pathPoints.length - 1; i++) {
-                const dist = distancePointToSegment(
-                  resultCoords,
-                  pathPoints[i]!,
-                  pathPoints[i + 1]!,
-                )
-                minDist = Math.min(minDist, dist)
+              if (pathPoints.length === 1) {
+                // For single point, just calculate distance to that point
+                minDist = haversineDistance(resultCoords, pathPoints[0]!)
+              } else {
+                // For multiple points, use segment-based distance
+                for (let i = 0; i < pathPoints.length - 1; i++) {
+                  const dist = distancePointToSegment(
+                    resultCoords,
+                    pathPoints[i]!,
+                    pathPoints[i + 1]!,
+                  )
+                  minDist = Math.min(minDist, dist)
+                }
               }
               isInSearchZone = minDist <= searchDistanceKm
             }
@@ -565,13 +579,19 @@ export async function searchLocationsNearPath(
               } else {
                 // Fallback to distance-based filtering
                 let minDist = Infinity
-                for (let i = 0; i < pathPoints.length - 1; i++) {
-                  const dist = distancePointToSegment(
-                    resultCoords,
-                    pathPoints[i]!,
-                    pathPoints[i + 1]!,
-                  )
-                  minDist = Math.min(minDist, dist)
+                if (pathPoints.length === 1) {
+                  // For single point, just calculate distance to that point
+                  minDist = haversineDistance(resultCoords, pathPoints[0]!)
+                } else {
+                  // For multiple points, use segment-based distance
+                  for (let i = 0; i < pathPoints.length - 1; i++) {
+                    const dist = distancePointToSegment(
+                      resultCoords,
+                      pathPoints[i]!,
+                      pathPoints[i + 1]!,
+                    )
+                    minDist = Math.min(minDist, dist)
+                  }
                 }
                 isInSearchZone = minDist <= searchDistanceKm
               }

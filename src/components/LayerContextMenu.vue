@@ -35,8 +35,8 @@
         <v-list-item-title>Add point on</v-list-item-title>
       </v-list-item>
 
-      <!-- Location near (only for circles and line segments) -->
-      <v-list-item v-if="['circle', 'lineSegment'].includes(elementType)" @click="handleLocationNear">
+      <!-- Location near (only for line segments and points) -->
+      <v-list-item v-if="['lineSegment', 'point'].includes(elementType)" @click="handleLocationNear">
         <template #prepend>
           <v-icon icon="mdi-magnify" size="small" />
         </template>
@@ -298,8 +298,8 @@
   }
 
   function handleLocationNear () {
-    const elementType = props.elementType as 'circle' | 'lineSegment'
-    if (!['circle', 'lineSegment'].includes(elementType)) return
+    const elementType = props.elementType as 'lineSegment' | 'point'
+    if (!['lineSegment', 'point'].includes(elementType)) return
 
     const element = getElement()
     if (!element) {

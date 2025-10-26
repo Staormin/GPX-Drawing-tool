@@ -31,14 +31,25 @@ export function createSearchZoneLayer(
       return searchZoneGroup
     }
 
-    // Convert path points to GeoJSON LineString (GeoJSON uses [lon, lat])
+    // Convert path points to GeoJSON geometry
     // Points are already properly interpolated by the composable/component
     const coordinates = pathPoints.map(p => [p.lon, p.lat])
 
-    const lineString = turf.lineString(coordinates)
+    let geometry
+    let pathGeometry
 
-    // Create a buffer polygon around the line
-    const bufferedPolygon = turf.buffer(lineString, bufferDistanceKm, {
+    if (pathPoints.length === 1) {
+      // For single point, use Point geometry
+      geometry = turf.point(coordinates[0]!)
+      pathGeometry = turf.point(coordinates[0]!)
+    } else {
+      // For multiple points, use LineString geometry
+      geometry = turf.lineString(coordinates)
+      pathGeometry = turf.lineString(coordinates)
+    }
+
+    // Create a buffer polygon around the geometry
+    const bufferedPolygon = turf.buffer(geometry, bufferDistanceKm, {
       units: 'kilometers',
     })
 
@@ -57,8 +68,19 @@ export function createSearchZoneLayer(
     // Add the GeoJSON layer to the feature group
     geoJsonLayer.addTo(searchZoneGroup)
 
-    // Also visualize the original path with a thicker line
-    const pathGeoJson = L.geoJSON(lineString, {
+    // Also visualize the original path with a thicker line or circle marker
+    const pathGeoJson = L.geoJSON(pathGeometry, {
+      pointToLayer: (feature: any, latlng: any) => {
+        // For point features, create a circular marker
+        return L.circleMarker(latlng, {
+          radius: 5,
+          fillColor: '#ff0000',
+          color: '#ff0000',
+          weight: 3,
+          opacity: 0.8,
+          fillOpacity: 0.8,
+        })
+      },
       style: {
         color: '#ff0000',
         weight: 3,

@@ -1,31 +1,32 @@
 <template>
-  <div class="search-along-panel-sidebar d-flex flex-column h-full">
-    <!-- Scrollable sidebar content -->
-    <div class="sidebar-inner flex-grow-1 overflow-y-auto">
-      <!-- Results header with back arrow -->
-      <div class="pa-4 flex-shrink-0 d-flex align-center">
-        <v-btn
-          icon="mdi-arrow-left"
-          size="small"
-          variant="text"
-          @click="handleClose"
-        />
-        <span class="text-subtitle-2 ml-2">Search Results</span>
-      </div>
+  <!-- Match the sidebar-inner structure from index.vue -->
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px; height: 100%; overflow-y: auto; padding-bottom: 96px;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+      <v-btn
+        icon="mdi-arrow-left"
+        size="small"
+        variant="text"
+        @click="handleClose"
+      />
+      <span class="text-subtitle-2">Search Results</span>
+    </div>
 
-      <!-- Loading Indicator -->
-      <div v-if="isSearching" class="pa-4 pt-0 d-flex flex-column align-center justify-center" style="min-height: 200px;">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="48"
-          width="4"
-        />
-        <div class="text-caption text-disabled mt-4">Searching...</div>
-      </div>
+    <!-- Loading Indicator -->
+    <div v-if="isSearching" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        size="48"
+        width="4"
+      />
+      <div class="text-caption text-disabled mt-4">Searching...</div>
+    </div>
 
-      <!-- Filter Section -->
-      <div v-else class="pa-4 pt-0">
+    <!-- Main Content Area -->
+    <template v-else>
+      <!-- Filter Section - Show for both line segments and points -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
         <v-text-field
           v-model="filterText"
           placeholder="Filter results by name..."
@@ -37,31 +38,32 @@
         />
 
         <!-- Distance Slider -->
-        <div class="mt-4">
+        <div>
           <div class="d-flex align-center justify-space-between mb-2">
             <label class="text-subtitle-2">Search Distance</label>
-            <span class="text-subtitle-2 font-weight-bold text-primary">{{ displayDistance.toFixed(1) }} km</span>
+            <span class="text-subtitle-2 font-weight-bold text-primary">{{ liveDisplayDistance.toFixed(1) }} km</span>
           </div>
           <v-slider
-            v-model="displayDistance"
+            v-model="liveDisplayDistance"
             :min="0.5"
-            :max="5"
+            :max="maxSearchDistance"
             :step="0.1"
             :disabled="isSearching"
+            @mouseup="handleDisplayDistanceRelease"
+            @touchend="handleDisplayDistanceRelease"
           />
         </div>
 
-
         <!-- Altitude Range Slider -->
-        <div class="mt-4">
+        <div>
           <div class="d-flex align-center justify-space-between mb-2">
             <label class="text-subtitle-2">Altitude Range</label>
             <span class="text-subtitle-2 font-weight-bold text-primary">
-              {{ altitudeRange[0].toFixed(0) }} m - {{ altitudeRange[1].toFixed(0) }} m
+              {{ liveAltitudeRange[0].toFixed(0) }} m - {{ liveAltitudeRange[1].toFixed(0) }} m
             </span>
           </div>
           <v-range-slider
-            v-model="altitudeRange"
+            v-model="liveAltitudeRange"
             :min="altitudeMinMax.min"
             :max="altitudeMinMax.max"
             :step="10"
@@ -69,57 +71,66 @@
             track-size="4"
             thumb-size="20"
             :disabled="isSearching"
+            @mouseup="handleAltitudeRangeRelease"
+            @touchend="handleAltitudeRangeRelease"
           />
           <div class="text-caption text-disabled mt-2">
             Min: {{ altitudeMinMax.min.toFixed(0) }} m | Max: {{ altitudeMinMax.max.toFixed(0) }} m
           </div>
         </div>
 
-        <div class="text-caption text-disabled mt-3">
+        <div class="text-caption text-disabled mt-2">
           Showing {{ filteredResults.length }} of {{ results.length }} result{{ results.length !== 1 ? 's' : '' }}
         </div>
+      </div>
 
-        <!-- Results Table -->
-        <div v-if="filteredResults.length > 0" class="mt-3">
-          <div class="text-subtitle-2 mb-2">Results</div>
-          <div class="overflow-y-auto" style="max-height: 500px;">
-            <table class="w-full">
-              <tbody>
-                <tr
-                  v-for="(result, index) in filteredResults"
-                  :key="`${result.main}-${index}`"
-                  class="cursor-pointer hover:bg-opacity-50"
-                  style="border-bottom: 1px solid rgba(148, 163, 184, 0.15); transition: background-color 0.2s;"
-                  @click="handleResultClick(result)"
-                  @mouseenter="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(59, 130, 246, 0.1)'"
-                  @mouseleave="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'"
-                >
-                  <td class="pa-3" style="width: 70%;">
-                    <div class="font-medium text-sm text-truncate">{{ result.main }}</div>
-                    <div class="text-xs text-slate-600 text-truncate">{{ result.type || 'N/A' }}</div>
-                  </td>
-                  <td class="pa-3 text-right" style="width: 30%;">
-                    <div class="text-sm font-medium">{{ result.elevation ? `${result.elevation} m` : 'N/A' }}</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      <!-- Results Section -->
+      <div v-if="filteredResults.length > 0 || isFiltering" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="text-subtitle-2">Results</div>
+        <div style="position: relative; min-height: 100px;">
+          <!-- Loading overlay -->
+          <div v-if="isFiltering" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; border-radius: 4px; z-index: 10;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <v-progress-circular
+                indeterminate
+                color="primary"
+                size="32"
+                width="3"
+              />
+              <div class="text-caption text-disabled">Filtering...</div>
+            </div>
           </div>
-        </div>
 
-        <div v-else class="text-caption text-disabled text-center pa-8">
-          <v-icon icon="mdi-magnify" size="24" class="mb-2" />
-          <div>No results match your filter.</div>
+          <!-- Results table -->
+          <table class="w-full">
+            <tbody>
+              <tr
+                v-for="(result, index) in filteredResults"
+                :key="`${result.main}-${index}`"
+                class="cursor-pointer"
+                style="border-bottom: 1px solid rgba(148, 163, 184, 0.15); transition: background-color 0.2s;"
+                @click="handleResultClick(result)"
+                @mouseenter="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(59, 130, 246, 0.1)'"
+                @mouseleave="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'"
+              >
+                <td style="padding: 8px; width: 70%;">
+                  <div class="font-medium text-sm text-truncate">{{ result.main }}</div>
+                  <div class="text-xs text-slate-600 text-truncate">{{ result.type || 'N/A' }}</div>
+                </td>
+                <td style="padding: 8px; text-align: right; width: 30%;">
+                  <div class="text-sm font-medium">{{ result.elevation ? `${result.elevation} m` : 'N/A' }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-    <!-- Action buttons footer -->
-    <div class="sidebar-footer">
-      <div class="pa-4">
-        <!-- No additional actions needed for search panel -->
+      <div v-else class="text-caption text-disabled text-center" style="padding: 32px 16px;">
+        <v-icon icon="mdi-magnify" size="24" class="mb-2" />
+        <div>No results match your filter.</div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -137,26 +148,37 @@
   const uiStore = useUIStore()
   const layersStore = useLayersStore()
   const mapContainer = inject('mapContainer') as any
-  const searchDistance = ref(5) // Search within 5km
-  const displayDistance = ref(1) // Display results within 1km by default
+  const searchDistance = ref(5) // Initial value, will be set based on element type
+  const displayDistance = ref(1) // Committed value used for filtering
+  const liveDisplayDistance = ref(1) // Live value shown while dragging slider
   const results = ref<AddressSearchResult[]>([])
   const filterText = ref('')
   const isSearching = ref(false)
+  const isFiltering = ref(false) // Track if filtering is in progress
   const sortBy = ref<'name' | 'type' | 'elevation'>('name')
   const sortAsc = ref(true)
-  const altitudeRange = ref<[number, number]>([0, 0])
+  const altitudeRange = ref<[number, number]>([0, 0]) // Committed value used for filtering
+  const liveAltitudeRange = ref<[number, number]>([0, 0]) // Live value shown while dragging slider
+  const cachedFilteredResults = ref<AddressSearchResult[]>([])
 
   let searchZoneLayer: L.FeatureGroup | null = null
+  let filterTimeoutId: number | null = null
+
+  // Get the maximum search distance based on element type
+  const maxSearchDistance = computed(() => {
+    const { elementType } = uiStore.searchAlongPanel
+    return elementType === 'point' ? 20 : 5
+  })
 
   // Get the element name
   const elementName = computed(() => {
     const { elementType, elementId } = uiStore.searchAlongPanel
     if (!elementType || !elementId) return null
 
-    if (elementType === 'circle') {
-      return layersStore.circles.find(c => c.id === elementId)?.name || null
-    } else if (elementType === 'lineSegment') {
+    if (elementType === 'lineSegment') {
       return layersStore.lineSegments.find(s => s.id === elementId)?.name || null
+    } else if (elementType === 'point') {
+      return layersStore.points.find(p => p.id === elementId)?.name || null
     }
 
     return null
@@ -198,11 +220,11 @@
     const { elementType, elementId } = uiStore.searchAlongPanel
     if (!elementType || !elementId) return []
 
-    if (elementType === 'circle') {
-      const circle = layersStore.circles.find(c => c.id === elementId)
-      if (!circle) return []
-      // Generate points along the circle perimeter
-      return generateCircle(circle.center.lat, circle.center.lon, circle.radius, 120)
+    if (elementType === 'point') {
+      const point = layersStore.points.find(p => p.id === elementId)
+      if (!point) return []
+      // For points, just return the center point
+      return [point.coordinates]
     } else if (elementType === 'lineSegment') {
       const segment = layersStore.lineSegments.find(s => s.id === elementId)
       if (!segment) return []
@@ -245,12 +267,22 @@
     if (pathPoints.value.length === 0) return null
 
     try {
-      // Convert path points to GeoJSON LineString (GeoJSON uses [lon, lat])
-      const coordinates = pathPoints.value.map(p => [p.lon, p.lat])
-      const lineString = turf.lineString(coordinates)
+      const { elementType } = uiStore.searchAlongPanel
+      let geometry
+
+      if (elementType === 'point') {
+        // For points, create a point geometry
+        const point = pathPoints.value[0]
+        if (!point) return null
+        geometry = turf.point([point.lon, point.lat])
+      } else {
+        // For line segments, create a LineString geometry (GeoJSON uses [lon, lat])
+        const coordinates = pathPoints.value.map(p => [p.lon, p.lat])
+        geometry = turf.lineString(coordinates)
+      }
 
       // Create buffer polygon at the search distance
-      const buffered = turf.buffer(lineString, searchDistance.value, {
+      const buffered = turf.buffer(geometry, searchDistance.value, {
         units: 'kilometers',
       })
 
@@ -261,70 +293,104 @@
     }
   })
 
-  // Filter results based on search text, type, altitude range, and apply sorting
-  const filteredResults = computed(() => {
-    let filtered = results.value
+  // Expose filteredResults as a computed that returns cached results
+  const filteredResults = computed(() => cachedFilteredResults.value)
 
-    // Apply text filter
-    if (filterText.value.trim()) {
-      const query = filterText.value.toLowerCase()
-      filtered = filtered.filter(
-        result =>
-          result.main.toLowerCase().includes(query) ||
-          (result.secondary && result.secondary.toLowerCase().includes(query)),
-      )
-    }
+  // Background filtering function
+  function performFiltering () {
+    isFiltering.value = true
 
-    // Apply distance filter - only show results within displayDistance from the path
-    if (results.value.length > 0 && pathPoints.value.length > 0) {
-      filtered = filtered.filter((result) => {
-        let minDist = Infinity
-        for (let i = 0; i < pathPoints.value.length - 1; i++) {
-          const dist = distancePointToSegment(
-            result.coordinates,
-            pathPoints.value[i]!,
-            pathPoints.value[i + 1]!,
+    // Use requestIdleCallback if available, otherwise use setTimeout
+    const callback = () => {
+      try {
+        let filtered = results.value
+
+        // Apply text filter
+        if (filterText.value.trim()) {
+          const query = filterText.value.toLowerCase()
+          filtered = filtered.filter(
+            result =>
+              result.main.toLowerCase().includes(query) ||
+              (result.secondary && result.secondary.toLowerCase().includes(query)),
           )
-          minDist = Math.min(minDist, dist)
         }
-        return minDist <= displayDistance.value
-      })
-    }
 
-    // No type filter - show all results
+        // Apply distance filter - only show results within displayDistance from the path
+        if (results.value.length > 0 && pathPoints.value.length > 0) {
+          filtered = filtered.filter((result) => {
+            let minDist = Infinity
+            if (pathPoints.value.length === 1) {
+              // For single point, calculate distance to that point
+              minDist = haversineDistance(result.coordinates, pathPoints.value[0]!)
+            } else {
+              // For multiple points, use segment-based distance
+              for (let i = 0; i < pathPoints.value.length - 1; i++) {
+                const dist = distancePointToSegment(
+                  result.coordinates,
+                  pathPoints.value[i]!,
+                  pathPoints.value[i + 1]!,
+                )
+                minDist = Math.min(minDist, dist)
+              }
+            }
+            return minDist <= displayDistance.value
+          })
+        }
 
-    // Apply altitude filter (only if we have search results and altitude range is set)
-    if (results.value.length > 0) {
-      const [minAlt, maxAlt] = altitudeRange.value
-      filtered = filtered.filter((result) => {
-        const elevation = result.elevation ?? 0
-        return elevation >= minAlt && elevation <= maxAlt
-      })
-    }
+        // No type filter - show all results
 
-    // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
-      let compareValue = 0
+        // Apply altitude filter (only if we have search results and altitude range is set)
+        if (results.value.length > 0) {
+          const [minAlt, maxAlt] = altitudeRange.value
+          filtered = filtered.filter((result) => {
+            const elevation = result.elevation ?? 0
+            return elevation >= minAlt && elevation <= maxAlt
+          })
+        }
 
-      if (sortBy.value === 'name') {
-        compareValue = a.main.localeCompare(b.main)
-      } else if (sortBy.value === 'type') {
-        compareValue = (a.secondary || '').localeCompare(b.secondary || '')
-      } else if (sortBy.value === 'elevation') {
-        const elevA = a.elevation ?? -1
-        const elevB = b.elevation ?? -1
-        compareValue = elevA - elevB
+        // Apply sorting
+        filtered = [...filtered].sort((a, b) => {
+          let compareValue = 0
+
+          if (sortBy.value === 'name') {
+            compareValue = a.main.localeCompare(b.main)
+          } else if (sortBy.value === 'type') {
+            compareValue = (a.secondary || '').localeCompare(b.secondary || '')
+          } else if (sortBy.value === 'elevation') {
+            const elevA = a.elevation ?? -1
+            const elevB = b.elevation ?? -1
+            compareValue = elevA - elevB
+          }
+
+          return sortAsc.value ? compareValue : -compareValue
+        })
+
+        cachedFilteredResults.value = filtered
+      } finally {
+        isFiltering.value = false
       }
+    }
 
-      return sortAsc.value ? compareValue : -compareValue
-    })
+    // Clear previous timeout if exists
+    if (filterTimeoutId !== null) {
+      clearTimeout(filterTimeoutId)
+    }
 
-    return filtered
-  })
+    // Schedule filtering to run on next idle time
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(callback, { timeout: 100 })
+    } else {
+      filterTimeoutId = window.setTimeout(callback, 50)
+    }
+  }
 
   // Auto-search when component mounts
   onMounted(async () => {
-    // Auto-launch search with 5km default
+    // Initialize searchDistance based on element type
+    const { elementType } = uiStore.searchAlongPanel
+    searchDistance.value = elementType === 'point' ? 20 : 5
+
+    // Auto-launch search with appropriate default
     if (pathPoints.value.length > 0) {
       await handleSearch()
       // Create search zone layer showing the display distance
@@ -338,6 +404,12 @@
     }
   })
 
+  // Synchronize live values with committed values when search results are loaded
+  watch(results, () => {
+    liveDisplayDistance.value = displayDistance.value
+    liveAltitudeRange.value = altitudeRange.value
+  })
+
   // Handle closing the search panel
   watch(() => uiStore.searchAlongPanel.isOpen, (isOpen) => {
     if (!isOpen) {
@@ -349,7 +421,7 @@
     }
   })
 
-  // Update search zone when display distance changes
+  // Update search zone and trigger filtering when display distance changes
   watch(displayDistance, (newDistance) => {
     if (searchZoneLayer && mapContainer && pathPoints.value.length > 0) {
       removeSearchZoneLayer(mapContainer, searchZoneLayer)
@@ -359,13 +431,40 @@
         newDistance,
       )
     }
+    // Trigger background filtering
+    performFiltering()
   })
+
+  // Trigger background filtering when altitude range changes
+  watch(altitudeRange, () => {
+    performFiltering()
+  })
+
+  // Trigger background filtering when filter text changes
+  watch(filterText, () => {
+    performFiltering()
+  })
+
+  // Handler for distance slider release
+  function handleDisplayDistanceRelease () {
+    displayDistance.value = liveDisplayDistance.value
+  }
+
+  // Handler for altitude range slider release
+  function handleAltitudeRangeRelease () {
+    altitudeRange.value = liveAltitudeRange.value
+  }
 
   function handleClose () {
     uiStore.closeSearchAlong()
     results.value = []
-    searchDistance.value = 5 // Reset to 5km default
+    // Reset to element-specific defaults
+    searchDistance.value = uiStore.searchAlongPanel.elementType === 'point' ? 20 : 5
     displayDistance.value = 1 // Reset to 1km default
+    liveDisplayDistance.value = 1 // Reset live value
+    filterText.value = '' // Reset filter
+    altitudeRange.value = [0, 0] // Reset altitude range
+    liveAltitudeRange.value = [0, 0] // Reset live value
     if (searchZoneLayer && mapContainer) {
       removeSearchZoneLayer(mapContainer, searchZoneLayer)
       searchZoneLayer = null
@@ -381,6 +480,7 @@
     results.value = []
     filterText.value = '' // Reset filter when searching
     altitudeRange.value = [0, 0] // Reset altitude range when searching
+    liveAltitudeRange.value = [0, 0] // Reset live altitude range
 
     try {
       const locations = await searchLocationsNearPath(

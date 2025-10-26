@@ -31,7 +31,7 @@ export interface NavigatingElement {
 
 export interface SearchAlongPanel {
   isOpen: boolean
-  elementType: 'circle' | 'lineSegment' | null
+  elementType: 'lineSegment' | 'point' | null
   elementId: string | null
 }
 
@@ -206,7 +206,7 @@ export const useUIStore = defineStore('ui', () => {
     showTutorial.value = show
   }
 
-  function openSearchAlong (elementType: 'circle' | 'lineSegment', elementId: string): void {
+  function openSearchAlong (elementType: 'lineSegment' | 'point', elementId: string): void {
     searchAlongPanel.value = {
       isOpen: true,
       elementType,
