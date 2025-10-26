@@ -31,6 +31,12 @@ export function createSearchZoneLayer(
       return searchZoneGroup
     }
 
+    // Validate we have at least one point
+    if (!pathPoints || pathPoints.length === 0) {
+      console.error('[SearchZone] No path points provided')
+      return searchZoneGroup
+    }
+
     // Convert path points to GeoJSON geometry
     // Points are already properly interpolated by the composable/component
     const coordinates = pathPoints.map(p => [p.lon, p.lat])

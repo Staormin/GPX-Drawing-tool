@@ -30,6 +30,7 @@ const ELEVATION_API = 'https://api.open-elevation.com/api/v1/lookup'
 
 /**
  * Fetch elevation data for coordinates using Open-Elevation API
+ * Handles "entity too large" errors by splitting the payload
  * @param coordinates Array of {lat, lon} coordinate pairs
  * @returns Map of coordinate strings to elevation values
  */
@@ -40,33 +41,78 @@ async function fetchElevations(coordinates: Array<{ lat: number, lon: number }>)
     return elevationMap
   }
 
-  try {
-    const locations = coordinates.map(coord => ({ latitude: coord.lat, longitude: coord.lon }))
-    const response = await fetch(ELEVATION_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locations }),
-    })
+  // Create a coordinate index map for looking up input coordinates by their position
+  const coordIndex: Map<string, number> = new Map()
+  coordinates.forEach((coord, index) => {
+    const key = `${coord.lat.toFixed(6)}_${coord.lon.toFixed(6)}`
+    coordIndex.set(key, index)
+  })
 
-    if (!response.ok) {
-      console.warn(`Elevation API error: ${response.status}`)
-      return elevationMap
+  // Helper function to fetch elevation with retry and splitting
+  async function fetchWithRetry(coords: Array<{ lat: number, lon: number }>, iteration = 0): Promise<void> {
+    if (coords.length === 0 || iteration >= 5) {
+      return
     }
 
-    const data = await response.json() as { results: Array<{ latitude: number, longitude: number, elevation: number | null }> }
-
-    if (data.results) {
-      data.results.forEach((result) => {
-        if (result.elevation !== null) {
-          const key = `${result.latitude.toFixed(6)}_${result.longitude.toFixed(6)}`
-          elevationMap.set(key, Math.round(result.elevation))
-        }
+    try {
+      const locations = coords.map(coord => ({ latitude: coord.lat, longitude: coord.lon }))
+      const response = await fetch(ELEVATION_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locations }),
       })
+
+      if (!response.ok) {
+        // Handle 413 Payload Too Large error
+        if (response.status === 413 && iteration < 5) {
+          console.warn(`Elevation API: Payload too large (413), splitting and retrying... (iteration ${iteration + 1}/5)`)
+          // Split the coordinates into two batches
+          const mid = Math.ceil(coords.length / 2)
+          const batch1 = coords.slice(0, mid)
+          const batch2 = coords.slice(mid)
+
+          // Recursively fetch both batches
+          await fetchWithRetry(batch1, iteration + 1)
+          await fetchWithRetry(batch2, iteration + 1)
+          return
+        }
+
+        console.warn(`Elevation API error: ${response.status}`)
+        return
+      }
+
+      const data = await response.json() as { results: Array<{ latitude: number, longitude: number, elevation: number | null }> }
+
+      if (data.results) {
+        data.results.forEach((result) => {
+          if (result.elevation !== null) {
+            // Try multiple key formats to match with the input coordinates
+            const keys = [
+              `${result.latitude.toFixed(6)}_${result.longitude.toFixed(6)}`,
+              `${result.latitude.toFixed(5)}_${result.longitude.toFixed(5)}`,
+              `${Math.round(result.latitude * 1000000) / 1000000}_${Math.round(result.longitude * 1000000) / 1000000}`,
+            ]
+
+            let foundKey: string | null = null
+            for (const key of keys) {
+              if (coordIndex.has(key)) {
+                foundKey = key
+                break
+              }
+            }
+
+            if (foundKey) {
+              elevationMap.set(foundKey, Math.round(result.elevation))
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.warn('Error fetching elevation data:', error)
     }
-  } catch (error) {
-    console.warn('Error fetching elevation data:', error)
   }
 
+  await fetchWithRetry(coordinates)
   return elevationMap
 }
 
@@ -625,8 +671,21 @@ export async function searchLocationsNearPath(
 
     // Add elevation data to results
     resultArray.forEach((result) => {
-      const key = `${result.coordinates.lat.toFixed(6)}_${result.coordinates.lon.toFixed(6)}`
-      const elevation = elevationMap.get(key)
+      // Try multiple key formats to handle different precision levels
+      const keys = [
+        `${result.coordinates.lat.toFixed(6)}_${result.coordinates.lon.toFixed(6)}`,
+        `${result.coordinates.lat.toFixed(5)}_${result.coordinates.lon.toFixed(5)}`,
+        `${Math.round(result.coordinates.lat * 1000000) / 1000000}_${Math.round(result.coordinates.lon * 1000000) / 1000000}`,
+      ]
+
+      let elevation: number | undefined
+      for (const key of keys) {
+        elevation = elevationMap.get(key)
+        if (elevation !== undefined) {
+          break
+        }
+      }
+
       if (elevation !== undefined) {
         result.elevation = elevation
       }

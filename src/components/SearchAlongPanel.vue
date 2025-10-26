@@ -87,7 +87,7 @@
       <!-- Results Section -->
       <div v-if="filteredResults.length > 0 || isFiltering" style="display: flex; flex-direction: column; gap: 8px;">
         <div class="text-subtitle-2">Results</div>
-        <div style="position: relative; min-height: 100px;">
+        <div style="position: relative; min-height: 100px; overflow-x: auto;">
           <!-- Loading overlay -->
           <div v-if="isFiltering" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; border-radius: 4px; z-index: 10;">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -102,10 +102,10 @@
           </div>
 
           <!-- Results table -->
-          <table class="w-full">
+          <table style="min-width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="border-bottom: 2px solid rgba(148, 163, 184, 0.3); background-color: rgba(148, 163, 184, 0.05);">
-                <th style="padding: 8px; text-align: left; cursor: pointer;" @click="toggleSort('name')">
+                <th style="padding: 8px; text-align: left; cursor: pointer; width: 45%; min-width: 120px;" @click="toggleSort('name')">
                   <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
                     Name
                     <v-icon
@@ -115,7 +115,7 @@
                     />
                   </div>
                 </th>
-                <th style="padding: 8px; text-align: right; cursor: pointer;" @click="toggleSort('distance')">
+                <th style="padding: 8px; text-align: right; cursor: pointer; width: 27%; min-width: 70px;" @click="toggleSort('distance')">
                   <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
                     Distance
                     <v-icon
@@ -125,7 +125,7 @@
                     />
                   </div>
                 </th>
-                <th style="padding: 8px; text-align: right; cursor: pointer;" @click="toggleSort('elevation')">
+                <th style="padding: 8px; text-align: right; cursor: pointer; width: 28%; min-width: 70px;" @click="toggleSort('elevation')">
                   <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
                     Elevation
                     <v-icon
@@ -147,14 +147,16 @@
                 @mouseenter="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(59, 130, 246, 0.1)'"
                 @mouseleave="(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'"
               >
-                <td style="padding: 8px; width: 40%;">
-                  <div class="font-medium text-sm text-truncate">{{ result.main }}</div>
-                  <div class="text-xs text-slate-600 text-truncate">{{ result.type || 'N/A' }}</div>
+                <td style="padding: 8px; width: 45%; min-width: 120px;">
+                  <div class="font-medium text-sm" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;" :title="result.main.length > 35 ? result.main : ''">
+                    {{ result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main }}
+                  </div>
+                  <div class="text-xs text-slate-600 text-truncate" :title="result.type || 'N/A'">{{ result.type || 'N/A' }}</div>
                 </td>
-                <td style="padding: 8px; text-align: right; width: 30%;">
+                <td style="padding: 8px; text-align: right; width: 27%; min-width: 70px; white-space: nowrap;">
                   <div class="text-sm font-medium">{{ getResultDistance(result).toFixed(1) }} km</div>
                 </td>
-                <td style="padding: 8px; text-align: right; width: 30%;">
+                <td style="padding: 8px; text-align: right; width: 28%; min-width: 70px; white-space: nowrap;">
                   <div class="text-sm font-medium">{{ result.elevation ? `${result.elevation} m` : 'N/A' }}</div>
                 </td>
               </tr>
