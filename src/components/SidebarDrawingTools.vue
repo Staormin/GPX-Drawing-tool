@@ -5,39 +5,23 @@
 
     <!-- Buttons -->
     <div class="drawing-buttons">
-      <button
-        class="btn-tool"
-        title="Add a new circle"
-        @click="openCircleModal"
-      >
-        🔵 Circle
-      </button>
-      <button
-        class="btn-tool"
-        title="Add a new line segment"
-        @click="openLineSegmentModal"
-      >
+      <button class="btn-tool" title="Add a new circle" @click="openCircleModal">🔵 Circle</button>
+      <button class="btn-tool" title="Add a new line segment" @click="openLineSegmentModal">
         ➖ Line
       </button>
-      <button
-        class="btn-tool"
-        title="Add a new point"
-        @click="openPointModal"
-      >
-        📍 Point
-      </button>
+      <button class="btn-tool" title="Add a new point" @click="openPointModal">📍 Point</button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { useUIStore } from '@/stores/ui'
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
+const uiStore = useUIStore();
 
-  const openCircleModal = () => uiStore.openModal('circleModal')
-  const openLineSegmentModal = () => uiStore.openModal('lineSegmentModal')
-  const openPointModal = () => uiStore.openModal('pointModal')
+const openCircleModal = () => uiStore.openModal('circleModal');
+const openLineSegmentModal = () => uiStore.openModal('lineSegmentModal');
+const openPointModal = () => uiStore.openModal('pointModal');
 </script>
 
 <style scoped>
@@ -73,7 +57,9 @@
 }
 
 .btn-tool:hover {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .btn-tool:active {

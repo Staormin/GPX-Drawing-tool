@@ -15,13 +15,13 @@
 </template>
 
 <script lang="ts" setup>
-  import { useUIStore } from '@/stores/ui'
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
+const uiStore = useUIStore();
 
-  function handleExitNavigation (): void {
-    uiStore.stopNavigating()
-  }
+function handleExitNavigation(): void {
+  uiStore.stopNavigating();
+}
 </script>
 
 <style scoped>

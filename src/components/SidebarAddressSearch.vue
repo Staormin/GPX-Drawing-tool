@@ -30,7 +30,7 @@
     <v-card
       v-if="addressSearchResults.length > 0 && addressSearchInput && showResults"
       class="position-absolute w-100 mt-0 rounded-t-0"
-      style="top: 100%; left: 0; right: 0; z-index: 10; border-radius: 0 0 8px 8px;"
+      style="top: 100%; left: 0; right: 0; z-index: 10; border-radius: 0 0 8px 8px"
     >
       <v-list class="pa-0" density="compact">
         <v-list-item
@@ -55,60 +55,60 @@
 </template>
 
 <script lang="ts" setup>
-  import type { MapContainer } from '@/composables/useMap'
-  import { inject, ref, watch } from 'vue'
-  import { type AddressSearchResult, searchAddress } from '@/services/geoportail'
-  import { useUIStore } from '@/stores/ui'
+import type { MapContainer } from '@/composables/useMap';
+import { inject, ref, watch } from 'vue';
+import { type AddressSearchResult, searchAddress } from '@/services/geoportail';
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
-  const mapContainer = inject<MapContainer>('mapContainer')
+const uiStore = useUIStore();
+const mapContainer = inject<MapContainer>('mapContainer');
 
-  const selectedAddress = ref<any>(null)
-  const addressSearchResults = ref<AddressSearchResult[]>([])
-  const addressSearchLoading = ref(false)
-  const addressSearchInput = ref<string>('')
-  const showResults = ref(false)
-  let addressSearchTimeout: ReturnType<typeof setTimeout> | null = null
+const selectedAddress = ref<any>(null);
+const addressSearchResults = ref<AddressSearchResult[]>([]);
+const addressSearchLoading = ref(false);
+const addressSearchInput = ref<string>('');
+const showResults = ref(false);
+let addressSearchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  async function onAddressSearch (query: string) {
-    if (addressSearchTimeout) {
-      clearTimeout(addressSearchTimeout)
-    }
-
-    if (!query || !query.trim()) {
-      addressSearchResults.value = []
-      showResults.value = false
-      return
-    }
-
-    addressSearchLoading.value = true
-    addressSearchTimeout = setTimeout(async () => {
-      try {
-        const results = await searchAddress(query)
-        addressSearchResults.value = results
-        showResults.value = results.length > 0
-      } catch (error) {
-        console.error('Error searching addresses:', error)
-        uiStore.addToast('Error searching addresses', 'error')
-        showResults.value = false
-      } finally {
-        addressSearchLoading.value = false
-      }
-    }, 300)
+async function onAddressSearch(query: string) {
+  if (addressSearchTimeout) {
+    clearTimeout(addressSearchTimeout);
   }
 
-  function onAddressSelect (coordinates: any) {
-    if (coordinates && coordinates.lat && coordinates.lon && mapContainer) {
-      mapContainer.setCenter(coordinates.lat, coordinates.lon, 13)
-      selectedAddress.value = null
-      addressSearchResults.value = []
-      showResults.value = false
-      addressSearchInput.value = ''
-    }
+  if (!query || !query.trim()) {
+    addressSearchResults.value = [];
+    showResults.value = false;
+    return;
   }
-  watch(addressSearchInput, newVal => {
-    onAddressSearch(newVal)
-  })
+
+  addressSearchLoading.value = true;
+  addressSearchTimeout = setTimeout(async () => {
+    try {
+      const results = await searchAddress(query);
+      addressSearchResults.value = results;
+      showResults.value = results.length > 0;
+    } catch (error) {
+      console.error('Error searching addresses:', error);
+      uiStore.addToast('Error searching addresses', 'error');
+      showResults.value = false;
+    } finally {
+      addressSearchLoading.value = false;
+    }
+  }, 300);
+}
+
+function onAddressSelect(coordinates: any) {
+  if (coordinates && coordinates.lat && coordinates.lon && mapContainer) {
+    mapContainer.setCenter(coordinates.lat, coordinates.lon, 13);
+    selectedAddress.value = null;
+    addressSearchResults.value = [];
+    showResults.value = false;
+    addressSearchInput.value = '';
+  }
+}
+watch(addressSearchInput, (newVal) => {
+  onAddressSearch(newVal);
+});
 </script>
 
 <style scoped>

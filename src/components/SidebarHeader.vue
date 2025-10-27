@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-header">
-    <img alt="GeoSketch Logo" class="logo-image" src="@/assets/logo.png">
+    <img alt="GeoSketch Logo" class="logo-image" src="@/assets/logo.png" />
     <div class="logo-text">
       <h1 class="app-title">GeoSketch</h1>
       <p class="app-subtitle">Map Drawing Tool</p>
@@ -8,8 +8,7 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-</script>
+<script lang="ts" setup></script>
 
 <style scoped>
 .sidebar-header {

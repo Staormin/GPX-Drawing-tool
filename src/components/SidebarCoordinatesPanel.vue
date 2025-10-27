@@ -5,9 +5,7 @@
     </v-card-title>
     <v-card-text class="pa-2">
       <div v-if="coordinatesStore.coordinateCount === 0" class="text-center py-3">
-        <p class="text-caption text-medium-emphasis">
-          Right-click on the map to save coordinates
-        </p>
+        <p class="text-caption text-medium-emphasis">Right-click on the map to save coordinates</p>
       </div>
 
       <v-list v-else class="pa-0 bg-transparent" density="compact">
@@ -40,21 +38,21 @@
 </template>
 
 <script lang="ts" setup>
-  import { useCoordinatesStore } from '@/stores/coordinates'
-  import { useUIStore } from '@/stores/ui'
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useUIStore } from '@/stores/ui';
 
-  const coordinatesStore = useCoordinatesStore()
-  const uiStore = useUIStore()
+const coordinatesStore = useCoordinatesStore();
+const uiStore = useUIStore();
 
-  function handleDeleteCoordinate (id: string | undefined) {
-    if (!id) {
-      uiStore.addToast('Invalid coordinate ID', 'error')
-      return
-    }
-
-    if (confirm('Delete this coordinate?')) {
-      coordinatesStore.deleteCoordinate(id)
-      uiStore.addToast('Coordinate deleted', 'success')
-    }
+function handleDeleteCoordinate(id: string | undefined) {
+  if (!id) {
+    uiStore.addToast('Invalid coordinate ID', 'error');
+    return;
   }
+
+  if (confirm('Delete this coordinate?')) {
+    coordinatesStore.deleteCoordinate(id);
+    uiStore.addToast('Coordinate deleted', 'success');
+  }
+}
 </script>

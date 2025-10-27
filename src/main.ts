@@ -5,20 +5,20 @@
  */
 
 // Composables
-import { createApp } from 'vue'
+import { createApp } from 'vue';
 
 // Plugins
-import { registerPlugins } from '@/plugins'
+import { registerPlugins } from '@/plugins';
 
 // Components
-import App from './App.vue'
+import App from './App.vue';
 
 // Styles
-import 'unfonts.css'
-import 'leaflet/dist/leaflet.css'
+import 'unfonts.css';
+import 'leaflet/dist/leaflet.css';
 
 // Global layout styles for Leaflet container and dark theme
-const style = document.createElement('style')
+const style = document.createElement('style');
 style.textContent = `
   :root {
     --bg: #0f172a;
@@ -56,11 +56,11 @@ style.textContent = `
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-`
-document.head.append(style)
+`;
+document.head.append(style);
 
-const app = createApp(App)
+const app = createApp(App);
 
-registerPlugins(app)
+registerPlugins(app);
 
-app.mount('#app')
+app.mount('#app');

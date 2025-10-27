@@ -2,214 +2,176 @@
   <!-- All three buttons in a row with equal width -->
   <div class="action-buttons">
     <!-- Coords Button -->
-    <button
-      class="btn-action"
-      @click="openCoordinatesModal"
-    >
-      🗂️ Coords
-    </button>
+    <button class="btn-action" @click="openCoordinatesModal">🗂️ Coords</button>
 
     <!-- Save/Load Menu (relative positioning for dropdown) -->
     <div class="save-menu-wrapper">
-      <button
-        class="btn-action"
-        @click="saveMenuOpen = !saveMenuOpen"
-      >
-        💾 Save
-      </button>
+      <button class="btn-action" @click="saveMenuOpen = !saveMenuOpen">💾 Save</button>
 
       <!-- Dropdown menu -->
-      <div
-        v-if="saveMenuOpen"
-        class="dropdown-menu"
-        @click.stop
-      >
-        <button
-          class="dropdown-item"
-          @click="openNewProjectModal"
-        >
-          ✨ New Project
-        </button>
-        <button
-          class="dropdown-item"
-          @click="openLoadProjectModal"
-        >
-          📥 Load Project
-        </button>
+      <div v-if="saveMenuOpen" class="dropdown-menu" @click.stop>
+        <button class="dropdown-item" @click="openNewProjectModal">✨ New Project</button>
+        <button class="dropdown-item" @click="openLoadProjectModal">📥 Load Project</button>
         <div class="dropdown-divider" />
-        <button
-          class="dropdown-item"
-          @click="exportAsJSON"
-        >
-          📄 Export JSON
-        </button>
-        <button
-          class="dropdown-item"
-          @click="importFromJSON"
-        >
-          📋 Import JSON
-        </button>
+        <button class="dropdown-item" @click="exportAsJSON">📄 Export JSON</button>
+        <button class="dropdown-item" @click="importFromJSON">📋 Import JSON</button>
       </div>
     </div>
 
     <!-- Export GPX Button -->
-    <button
-      class="btn-action"
-      @click="exportAsGPX"
-    >
-      📥 GPX
-    </button>
+    <button class="btn-action" @click="exportAsGPX">📥 GPX</button>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
-  import { downloadGPX, generateCompleteGPX, getTimestamp } from '@/services/gpx'
-  import { useCoordinatesStore } from '@/stores/coordinates'
-  import { useLayersStore } from '@/stores/layers'
-  import { useUIStore } from '@/stores/ui'
+import { ref } from 'vue';
+import { downloadGPX, generateCompleteGPX, getTimestamp } from '@/services/gpx';
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useLayersStore } from '@/stores/layers';
+import { useUIStore } from '@/stores/ui';
 
-  const layersStore = useLayersStore()
-  const uiStore = useUIStore()
-  const coordinatesStore = useCoordinatesStore()
+const layersStore = useLayersStore();
+const uiStore = useUIStore();
+const coordinatesStore = useCoordinatesStore();
 
-  const saveMenuOpen = ref(false)
+const saveMenuOpen = ref(false);
 
-  function openCoordinatesModal () {
-    saveMenuOpen.value = false
-    uiStore.openModal('coordinatesModal')
-  }
-  function openNewProjectModal () {
-    saveMenuOpen.value = false
-    uiStore.openModal('newProjectModal')
-  }
-  function openLoadProjectModal () {
-    saveMenuOpen.value = false
-    coordinatesStore.loadCoordinates()
-    uiStore.openModal('loadProjectModal')
-  }
+function openCoordinatesModal() {
+  saveMenuOpen.value = false;
+  uiStore.openModal('coordinatesModal');
+}
 
-  function exportAsGPX () {
-    saveMenuOpen.value = false
-    const circles = layersStore.circles.map(c => ({
-      lat: c.center.lat,
-      lon: c.center.lon,
-      radius: c.radius,
-      name: c.name,
-    }))
+function openNewProjectModal() {
+  saveMenuOpen.value = false;
+  uiStore.openModal('newProjectModal');
+}
 
-    const radii = [...new Set(circles.map(c => c.radius))]
-    const lineSegments = layersStore.lineSegments
+function openLoadProjectModal() {
+  saveMenuOpen.value = false;
+  uiStore.openModal('loadProjectModal');
+}
 
-    const gpx = generateCompleteGPX(circles, radii, 360, lineSegments, layersStore.points)
-    const filename = `gpx-export_${getTimestamp()}.gpx`
-    downloadGPX(gpx, filename)
-    uiStore.addToast('GPX exported successfully!', 'success')
-  }
+function exportAsGPX() {
+  saveMenuOpen.value = false;
+  const circles = layersStore.circles.map((c) => ({
+    lat: c.center.lat,
+    lon: c.center.lon,
+    radius: c.radius,
+    name: c.name,
+  }));
 
-  function exportAsJSON () {
-    saveMenuOpen.value = false
-    const projectData = {
-      circles: layersStore.circles,
-      lineSegments: layersStore.lineSegments,
-      points: layersStore.points,
-      coordinates: coordinatesStore.savedCoordinates,
-      exportedAt: new Date().toISOString(),
-    }
+  const radii = [...new Set(circles.map((c) => c.radius))];
+  const lineSegments = layersStore.lineSegments;
 
-    const jsonString = JSON.stringify(projectData, null, 2)
-    const blob = new Blob([jsonString], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `project-export_${getTimestamp()}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-    uiStore.addToast('Project exported as JSON successfully!', 'success')
-  }
+  const gpx = generateCompleteGPX(circles, radii, 360, lineSegments, layersStore.points);
+  const filename = `gpx-export_${getTimestamp()}.gpx`;
+  downloadGPX(gpx, filename);
+  uiStore.addToast('GPX exported successfully!', 'success');
+}
 
-  async function importFromJSON () {
-    saveMenuOpen.value = false
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'application/json'
-    input.addEventListener('change', async (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) return
+function exportAsJSON() {
+  saveMenuOpen.value = false;
+  const projectData = {
+    circles: layersStore.circles,
+    lineSegments: layersStore.lineSegments,
+    points: layersStore.points,
+    coordinates: coordinatesStore.savedCoordinates,
+    exportedAt: new Date().toISOString(),
+  };
 
-      try {
-        const content = await file.text()
-        const projectData = JSON.parse(content)
+  const jsonString = JSON.stringify(projectData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `project-export_${getTimestamp()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  uiStore.addToast('Project exported as JSON successfully!', 'success');
+}
 
-        // Clear existing data
-        layersStore.clearLayers()
-        coordinatesStore.clearAllCoordinates()
+async function importFromJSON() {
+  saveMenuOpen.value = false;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.addEventListener('change', async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
 
-        // Restore circles
-        if (projectData.circles && Array.isArray(projectData.circles)) {
-          for (const circle of projectData.circles) {
-            layersStore.addCircle({
-              id: circle.id,
-              name: circle.name,
-              center: circle.center,
-              radius: circle.radius,
-              color: circle.color,
-              leafletId: circle.leafletId,
-            })
-          }
+    try {
+      const content = await file.text();
+      const projectData = JSON.parse(content);
+
+      // Clear existing data
+      layersStore.clearLayers();
+      coordinatesStore.clearCoordinates();
+
+      // Restore circles
+      if (projectData.circles && Array.isArray(projectData.circles)) {
+        for (const circle of projectData.circles) {
+          layersStore.addCircle({
+            id: circle.id,
+            name: circle.name,
+            center: circle.center,
+            radius: circle.radius,
+            color: circle.color,
+            leafletId: circle.leafletId,
+          });
         }
-
-        // Restore line segments
-        if (projectData.lineSegments && Array.isArray(projectData.lineSegments)) {
-          for (const line of projectData.lineSegments) {
-            layersStore.addLineSegment({
-              id: line.id,
-              name: line.name,
-              center: line.center,
-              endpoint: line.endpoint,
-              mode: line.mode,
-              distance: line.distance,
-              azimuth: line.azimuth,
-              intersectionPoint: line.intersectionPoint,
-              intersectionDistance: line.intersectionDistance,
-              longitude: line.longitude,
-              color: line.color,
-              leafletId: line.leafletId,
-            })
-          }
-        }
-
-        // Restore points
-        if (projectData.points && Array.isArray(projectData.points)) {
-          for (const point of projectData.points) {
-            layersStore.addPoint({
-              id: point.id,
-              name: point.name,
-              coordinates: point.coordinates,
-              elevation: point.elevation,
-              color: point.color,
-              leafletId: point.leafletId,
-            })
-          }
-        }
-
-        // Restore coordinates
-        if (projectData.coordinates && Array.isArray(projectData.coordinates)) {
-          for (const coord of projectData.coordinates) {
-            coordinatesStore.addCoordinate(coord.name, coord.lat, coord.lon)
-          }
-        }
-
-        uiStore.addToast('Project imported successfully!', 'success')
-      } catch (error) {
-        uiStore.addToast(
-          `Error importing project: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'error',
-        )
       }
-    })
-    input.click()
-  }
+
+      // Restore line segments
+      if (projectData.lineSegments && Array.isArray(projectData.lineSegments)) {
+        for (const line of projectData.lineSegments) {
+          layersStore.addLineSegment({
+            id: line.id,
+            name: line.name,
+            center: line.center,
+            endpoint: line.endpoint,
+            mode: line.mode,
+            distance: line.distance,
+            azimuth: line.azimuth,
+            intersectionPoint: line.intersectionPoint,
+            intersectionDistance: line.intersectionDistance,
+            longitude: line.longitude,
+            color: line.color,
+            leafletId: line.leafletId,
+          });
+        }
+      }
+
+      // Restore points
+      if (projectData.points && Array.isArray(projectData.points)) {
+        for (const point of projectData.points) {
+          layersStore.addPoint({
+            id: point.id,
+            name: point.name,
+            coordinates: point.coordinates,
+            elevation: point.elevation,
+            color: point.color,
+            leafletId: point.leafletId,
+          });
+        }
+      }
+
+      // Restore coordinates
+      if (projectData.coordinates && Array.isArray(projectData.coordinates)) {
+        for (const coord of projectData.coordinates) {
+          coordinatesStore.addCoordinate(coord.name, coord.lat, coord.lon);
+        }
+      }
+
+      uiStore.addToast('Project imported successfully!', 'success');
+    } catch (error) {
+      uiStore.addToast(
+        `Error importing project: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+    }
+  });
+  input.click();
+}
 </script>
 
 <style scoped>
@@ -245,7 +207,9 @@
 }
 
 .btn-action:hover {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .dropdown-menu {

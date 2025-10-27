@@ -1,65 +1,65 @@
 /**
- * Coordinates store - Manages saved coordinates
+ * Coordinates store - Manages saved coordinates per project
  */
 
-import type { SavedCoordinate } from '@/services/storage'
-import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import * as storage from '@/services/storage'
+import type { SavedCoordinate } from '@/services/storage';
+import { defineStore } from 'pinia';
+import { v4 as uuidv4 } from 'uuid';
+import { computed, ref } from 'vue';
 
 export const useCoordinatesStore = defineStore('coordinates', () => {
-  // State
-  const savedCoordinates = ref<SavedCoordinate[]>([])
+  // State - coordinates are now stored in-memory per project (not global localStorage)
+  const savedCoordinates = ref<SavedCoordinate[]>([]);
 
   // Computed
-  const coordinateCount = computed(() => savedCoordinates.value.length)
+  const coordinateCount = computed(() => savedCoordinates.value.length);
 
   const sortedCoordinates = computed(() => {
-    return [...savedCoordinates.value].toSorted((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
-  })
+    return [...savedCoordinates.value].toSorted(
+      (a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)
+    );
+  });
 
   // Actions
-  function loadCoordinates (): void {
-    savedCoordinates.value = storage.getSavedCoordinates()
+  function addCoordinate(name: string, lat: number, lon: number, id?: string): SavedCoordinate {
+    const coord: SavedCoordinate = {
+      id: id || uuidv4(),
+      name,
+      lat,
+      lon,
+      timestamp: Date.now(),
+    };
+    savedCoordinates.value.push(coord);
+    return coord;
   }
 
-  function addCoordinate (name: string, lat: number, lon: number, id?: string): SavedCoordinate {
-    const coord = id
-      ? { id, name, lat, lon, timestamp: Date.now() }
-      : storage.saveCoordinate(name, lat, lon)
-
-    // If we have a custom ID, we need to save it directly
-    if (id) {
-      const coordinates = storage.getSavedCoordinates()
-      coordinates.push(coord)
-      storage.saveCoordinates(coordinates)
+  function deleteCoordinate(id: string): void {
+    const index = savedCoordinates.value.findIndex((c) => c.id === id);
+    if (index !== -1) {
+      savedCoordinates.value.splice(index, 1);
     }
-
-    loadCoordinates()
-    return coord
   }
 
-  function deleteCoordinate (id: string): void {
-    storage.deleteCoordinate(id)
-    loadCoordinates()
+  function updateCoordinate(id: string, name: string, lat: number, lon: number): void {
+    const coord = savedCoordinates.value.find((c) => c.id === id);
+    if (coord) {
+      coord.name = name;
+      coord.lat = lat;
+      coord.lon = lon;
+    }
   }
 
-  function updateCoordinate (id: string, name: string, lat: number, lon: number): void {
-    storage.updateCoordinate(id, name, lat, lon)
-    loadCoordinates()
+  function clearCoordinates(): void {
+    savedCoordinates.value = [];
   }
 
-  function clearAllCoordinates (): void {
-    storage.clearAllCoordinates()
-    savedCoordinates.value = []
+  function loadCoordinates(coordinates: SavedCoordinate[]): void {
+    savedCoordinates.value = [...coordinates];
   }
 
-  function getCoordinate (id: string): SavedCoordinate | undefined {
-    return savedCoordinates.value.find(c => c.id === id)
+  function getCoordinate(id: string): SavedCoordinate | undefined {
+    return savedCoordinates.value.find((c) => c.id === id);
   }
-
-  // Initialize on store creation
-  loadCoordinates()
 
   return {
     // State
@@ -70,11 +70,11 @@ export const useCoordinatesStore = defineStore('coordinates', () => {
     sortedCoordinates,
 
     // Actions
-    loadCoordinates,
     addCoordinate,
     deleteCoordinate,
     updateCoordinate,
-    clearAllCoordinates,
+    clearCoordinates,
+    loadCoordinates,
     getCoordinate,
-  }
-})
+  };
+});

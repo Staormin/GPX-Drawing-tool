@@ -1,5 +1,10 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeModal" @keydown.esc="closeModal">
+  <v-dialog
+    v-model="isOpen"
+    max-width="500px"
+    @click:outside="closeModal"
+    @keydown.esc="closeModal"
+  >
     <v-card>
       <v-card-title>Load Project</v-card-title>
       <v-card-text>
@@ -17,7 +22,9 @@
               <div class="w-full">
                 <div class="font-weight-medium">{{ project.name }}</div>
                 <div class="text-caption text-medium-emphasis">
-                  Circles: {{ project.data.circles?.length || 0 }} | Lines: {{ project.data.lineSegments?.length || 0 }} | Points: {{ project.data.points?.length || 0 }}
+                  Circles: {{ project.data.circles?.length || 0 }} | Lines:
+                  {{ project.data.lineSegments?.length || 0 }} | Points:
+                  {{ project.data.points?.length || 0 }}
                 </div>
                 <div v-if="project.updatedAt" class="text-caption text-disabled">
                   {{ new Date(project.updatedAt).toLocaleString() }}
@@ -27,8 +34,18 @@
 
             <template #append>
               <v-btn-group size="x-small">
-                <v-btn v-if="project.id" color="primary" icon="mdi-folder-open" @click="loadProject(project.id)" />
-                <v-btn v-if="project.id" color="error" icon="mdi-delete" @click="deleteProject(project.id)" />
+                <v-btn
+                  v-if="project.id"
+                  color="primary"
+                  icon="mdi-folder-open"
+                  @click="loadProject(project.id)"
+                />
+                <v-btn
+                  v-if="project.id"
+                  color="error"
+                  icon="mdi-delete"
+                  @click="deleteProject(project.id)"
+                />
               </v-btn-group>
             </template>
           </v-list-item>
@@ -44,68 +61,63 @@
 </template>
 
 <script lang="ts" setup>
-  import L from 'leaflet'
-  import { computed, inject } from 'vue'
-  import { useLayersStore } from '@/stores/layers'
-  import { useProjectsStore } from '@/stores/projects'
-  import { useUIStore } from '@/stores/ui'
+import { computed, inject } from 'vue';
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useLayersStore } from '@/stores/layers';
+import { useProjectsStore } from '@/stores/projects';
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
-  const layersStore = useLayersStore()
-  const projectsStore = useProjectsStore()
-  const mapContainer = inject('mapContainer') as any
-  const drawing = inject('drawing') as any
+const uiStore = useUIStore();
+const layersStore = useLayersStore();
+const coordinatesStore = useCoordinatesStore();
+const projectsStore = useProjectsStore();
+const mapContainer = inject('mapContainer') as any;
+const drawing = inject('drawing') as any;
 
-  const isOpen = computed({
-    get: () => uiStore.isModalOpen('loadProjectModal'),
-    set: value => {
-      if (!value) closeModal()
-    },
-  })
+const isOpen = computed({
+  get: () => uiStore.isModalOpen('loadProjectModal'),
+  set: (value) => {
+    if (!value) closeModal();
+  },
+});
 
-  function loadProject (projectId: string) {
-    const project = projectsStore.projects.find(p => p.id === projectId)
-    if (project) {
-      // Clear current map layers - collect them first, then remove (to avoid iteration issues)
-      if (mapContainer.map?.value) {
-        const layersToRemove: any[] = []
-        mapContainer.map.value.eachLayer((layer: any) => {
-          if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
-            layersToRemove.push(layer)
-          }
-        })
-        // Now remove them
-        for (const layer of layersToRemove) {
-          mapContainer.map?.value?.removeLayer(layer)
-        }
-      }
+function loadProject(projectId: string) {
+  const project = projectsStore.projects.find((p) => p.id === projectId);
+  if (project) {
+    // Clear current map layers and store
+    mapContainer.clearLayers();
+    layersStore.clearLayers();
+    coordinatesStore.clearCoordinates();
 
-      // Load new layers from project
-      layersStore.loadLayers(project.data)
+    // Load new layers from project
+    layersStore.loadLayers(project.data);
 
-      // Redraw on map
-      drawing.redrawAllElements()
+    // Load coordinates from project
+    coordinatesStore.loadCoordinates(project.data.savedCoordinates || []);
 
-      // Set this project as active so auto-save works correctly
-      projectsStore.setActiveProject(projectId)
+    // Redraw on map
+    drawing.redrawAllElements();
 
-      uiStore.addToast(`Project "${project.name}" loaded successfully!`, 'success')
-      closeModal()
+    // Set this project as active so auto-save works correctly
+    projectsStore.setActiveProject(projectId);
+
+    uiStore.addToast(`Project "${project.name}" loaded successfully!`, 'success');
+    closeModal();
+  }
+}
+
+function deleteProject(projectId: string) {
+  const project = projectsStore.projects.find((p) => p.id === projectId);
+  if (project && confirm(`Are you sure you want to delete "${project.name}"?`)) {
+    const index = projectsStore.projects.findIndex((p) => p.id === projectId);
+    if (index !== -1) {
+      projectsStore.deleteProject(index);
+      uiStore.addToast('Project deleted', 'success');
     }
   }
+}
 
-  function deleteProject (projectId: string) {
-    const project = projectsStore.projects.find(p => p.id === projectId)
-    if (project && confirm(`Are you sure you want to delete "${project.name}"?`)) {
-      const index = projectsStore.projects.findIndex(p => p.id === projectId)
-      if (index !== -1) {
-        projectsStore.deleteProject(index)
-        uiStore.addToast('Project deleted', 'success')
-      }
-    }
-  }
-
-  function closeModal () {
-    uiStore.closeModal('loadProjectModal')
-  }
+function closeModal() {
+  uiStore.closeModal('loadProjectModal');
+}
 </script>

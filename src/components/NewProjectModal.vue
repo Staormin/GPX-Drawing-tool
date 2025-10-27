@@ -32,67 +32,73 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref } from 'vue'
-  import { useCoordinatesStore } from '@/stores/coordinates'
-  import { useLayersStore } from '@/stores/layers'
-  import { useProjectsStore } from '@/stores/projects'
-  import { useUIStore } from '@/stores/ui'
+import { computed, inject, ref } from 'vue';
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useLayersStore } from '@/stores/layers';
+import { useProjectsStore } from '@/stores/projects';
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
-  const layersStore = useLayersStore()
-  const projectsStore = useProjectsStore()
-  const coordinatesStore = useCoordinatesStore()
+const uiStore = useUIStore();
+const layersStore = useLayersStore();
+const projectsStore = useProjectsStore();
+const coordinatesStore = useCoordinatesStore();
+const mapContainer = inject('mapContainer') as any;
 
-  const projectName = ref('')
+const projectName = ref('');
 
-  const isOpen = computed({
-    get: () => uiStore.isModalOpen('newProjectModal'),
-    set: value => {
-      if (!value) closeModal()
-    },
-  })
+const isOpen = computed({
+  get: () => uiStore.isModalOpen('newProjectModal'),
+  set: (value) => {
+    if (!value) closeModal();
+  },
+});
 
-  function submitForm () {
-    if (projectName.value.trim()) {
-      // Save current project if active before creating new one
-      if (projectsStore.activeProjectId) {
-        const currentProject = projectsStore.activeProject
-        if (currentProject) {
-          const layerData = layersStore.exportLayers()
-          projectsStore.updateProject(
-            projectsStore.projects.indexOf(currentProject),
-            currentProject.name,
-            {
-              circles: layerData.circles,
-              lineSegments: layerData.lineSegments,
-              points: layerData.points,
-              savedCoordinates: coordinatesStore.sortedCoordinates,
-            },
-          )
-        }
+function submitForm() {
+  if (projectName.value.trim()) {
+    // Save current project if active before creating new one
+    if (projectsStore.activeProjectId) {
+      const currentProject = projectsStore.activeProject;
+      if (currentProject) {
+        const layerData = layersStore.exportLayers();
+        projectsStore.updateProject(
+          projectsStore.projects.indexOf(currentProject),
+          currentProject.name,
+          {
+            circles: layerData.circles,
+            lineSegments: layerData.lineSegments,
+            points: layerData.points,
+            savedCoordinates: coordinatesStore.sortedCoordinates,
+          }
+        );
       }
-
-      // Create and switch to new project
-      projectsStore.createAndSwitchProject(projectName.value, {
-        circles: [],
-        lineSegments: [],
-        points: [],
-        savedCoordinates: [],
-      })
-
-      // Clear the current view
-      layersStore.clearLayers()
-      coordinatesStore.clearAllCoordinates()
-
-      uiStore.addToast(`Project "${projectName.value}" created!`, 'success')
-      closeModal()
-      projectName.value = ''
-    } else {
-      uiStore.addToast('Please enter a project name', 'error')
     }
-  }
 
-  function closeModal () {
-    uiStore.closeModal('newProjectModal')
+    // Create and switch to new project
+    projectsStore.createAndSwitchProject(projectName.value, {
+      circles: [],
+      lineSegments: [],
+      points: [],
+      savedCoordinates: [],
+    });
+
+    // Clear the current view
+    layersStore.clearLayers();
+    coordinatesStore.clearCoordinates();
+
+    // Clear Leaflet map layers
+    if (mapContainer) {
+      mapContainer.clearLayers();
+    }
+
+    uiStore.addToast(`Project "${projectName.value}" created!`, 'success');
+    closeModal();
+    projectName.value = '';
+  } else {
+    uiStore.addToast('Please enter a project name', 'error');
   }
+}
+
+function closeModal() {
+  uiStore.closeModal('newProjectModal');
+}
 </script>

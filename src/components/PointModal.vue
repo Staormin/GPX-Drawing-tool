@@ -34,13 +34,8 @@
               />
             </template>
             <v-list>
-              <v-list-item
-                v-if="coordinatesStore.sortedCoordinates.length === 0"
-                disabled
-              >
-                <v-list-item-title class="text-caption">
-                  No saved coordinates
-                </v-list-item-title>
+              <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
+                <v-list-item-title class="text-caption"> No saved coordinates </v-list-item-title>
               </v-list-item>
               <v-list-item
                 v-for="coord in coordinatesStore.sortedCoordinates"
@@ -56,120 +51,109 @@
               </v-list-item>
             </v-list>
           </v-menu>
-
-          <v-text-field
-            v-model.number="form.elevation"
-            class="mb-4"
-            density="compact"
-            label="Altitude (meters)"
-            type="number"
-            placeholder="Optional"
-            variant="outlined"
-            hint="Leave empty if not available"
-          />
         </v-form>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer />
         <v-btn text @click="closeModal">Cancel</v-btn>
-        <v-btn color="primary" @click="submitForm">{{ isEditing ? 'Update Point' : 'Add Point' }}</v-btn>
+        <v-btn color="primary" @click="submitForm">{{
+          isEditing ? 'Update Point' : 'Add Point'
+        }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script lang="ts" setup>
-  import type { SavedCoordinate } from '@/services/storage'
-  import { computed, inject, ref, watch } from 'vue'
-  import { useCoordinatesStore } from '@/stores/coordinates'
-  import { useLayersStore } from '@/stores/layers'
-  import { useUIStore } from '@/stores/ui'
+import type { SavedCoordinate } from '@/services/storage';
+import { computed, inject, ref, watch } from 'vue';
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useLayersStore } from '@/stores/layers';
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
-  const layersStore = useLayersStore()
-  const coordinatesStore = useCoordinatesStore()
-  inject('mapContainer')
-  const drawing = inject('drawing') as any
+const uiStore = useUIStore();
+const layersStore = useLayersStore();
+const coordinatesStore = useCoordinatesStore();
+inject('mapContainer');
+const drawing = inject('drawing') as any;
 
-  const form = ref({
+const form = ref({
+  name: '',
+  coordinates: '48.8566, 2.3522',
+});
+
+const isOpen = computed({
+  get: () => uiStore.isModalOpen('pointModal'),
+  set: (value) => {
+    if (!value) closeModal();
+  },
+});
+
+const isEditing = computed(() => {
+  return uiStore.isEditing('point', uiStore.editingElement?.id || '');
+});
+
+// Watch for modal opening - pre-fill form with current element data
+watch(
+  () => isOpen.value,
+  (newValue) => {
+    if (newValue && uiStore.editingElement?.type === 'point') {
+      const point = layersStore.points.find((p) => p.id === uiStore.editingElement?.id);
+      if (point) {
+        form.value = {
+          name: point.name,
+          coordinates: `${point.coordinates.lat}, ${point.coordinates.lon}`,
+        };
+      }
+    }
+  },
+  { immediate: true }
+);
+
+function selectCoordinate(coord: SavedCoordinate) {
+  form.value.coordinates = `${coord.lat}, ${coord.lon}`;
+  form.value.name = coord.name;
+}
+
+function submitForm() {
+  // Parse coordinates
+  const parts = form.value.coordinates.split(',').map((s) => Number.parseFloat(s.trim()));
+  if (parts.length !== 2 || parts.some((p) => Number.isNaN(p))) {
+    uiStore.addToast('Invalid coordinates format. Use: lat, lon (e.g., 48.8566, 2.3522)', 'error');
+    return;
+  }
+
+  const [lat, lon] = parts;
+
+  // Autogenerate name if empty (matches POC behavior)
+  const name = form.value.name.trim() || `Point ${layersStore.pointCount + 1}`;
+
+  if (isEditing.value && uiStore.editingElement) {
+    // Note: Point update not yet implemented in useDrawing
+    // For now, delete and recreate
+    drawing.deleteElement('point', uiStore.editingElement.id);
+    drawing.drawPoint(lat, lon, name);
+    uiStore.addToast('Point updated successfully!', 'success');
+    uiStore.stopEditing();
+  } else {
+    // Add new point
+    drawing.drawPoint(lat, lon, name);
+    uiStore.addToast('Point added successfully!', 'success');
+  }
+  closeModal();
+  resetForm();
+}
+
+function closeModal() {
+  uiStore.closeModal('pointModal');
+  uiStore.stopEditing();
+}
+
+function resetForm() {
+  form.value = {
     name: '',
     coordinates: '48.8566, 2.3522',
-    elevation: undefined as number | undefined,
-  })
-
-  const isOpen = computed({
-    get: () => uiStore.isModalOpen('pointModal'),
-    set: value => {
-      if (!value) closeModal()
-    },
-  })
-
-  const isEditing = computed(() => {
-    return uiStore.isEditing('point', uiStore.editingElement?.id || '')
-  })
-
-  // Watch for modal opening - pre-fill form with current element data
-  watch(
-    () => isOpen.value,
-    newValue => {
-      if (newValue && uiStore.editingElement?.type === 'point') {
-        const point = layersStore.points.find(p => p.id === uiStore.editingElement?.id)
-        if (point) {
-          form.value = {
-            name: point.name,
-            coordinates: `${point.coordinates.lat}, ${point.coordinates.lon}`,
-            elevation: point.elevation,
-          }
-        }
-      }
-    },
-    { immediate: true },
-  )
-
-  function selectCoordinate (coord: SavedCoordinate) {
-    form.value.coordinates = `${coord.lat}, ${coord.lon}`
-  }
-
-  function submitForm () {
-    // Parse coordinates
-    const parts = form.value.coordinates.split(',').map(s => Number.parseFloat(s.trim()))
-    if (parts.length !== 2 || parts.some(p => Number.isNaN(p))) {
-      uiStore.addToast('Invalid coordinates format. Use: lat, lon (e.g., 48.8566, 2.3522)', 'error')
-      return
-    }
-
-    const [lat, lon] = parts
-
-    // Autogenerate name if empty (matches POC behavior)
-    const name = form.value.name.trim() || `Point ${layersStore.pointCount + 1}`
-
-    if (isEditing.value && uiStore.editingElement) {
-      // Note: Point update not yet implemented in useDrawing
-      // For now, delete and recreate
-      drawing.deleteElement('point', uiStore.editingElement.id)
-      drawing.drawPoint(lat, lon, name, undefined, form.value.elevation)
-      uiStore.addToast('Point updated successfully!', 'success')
-      uiStore.stopEditing()
-    } else {
-      // Add new point
-      drawing.drawPoint(lat, lon, name, undefined, form.value.elevation)
-      uiStore.addToast('Point added successfully!', 'success')
-    }
-    closeModal()
-    resetForm()
-  }
-
-  function closeModal () {
-    uiStore.closeModal('pointModal')
-    uiStore.stopEditing()
-  }
-
-  function resetForm () {
-    form.value = {
-      name: '',
-      coordinates: '48.8566, 2.3522',
-      elevation: undefined,
-    }
-  }
+  };
+}
 </script>

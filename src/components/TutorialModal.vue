@@ -50,7 +50,10 @@
           <v-window-item value="getting-started">
             <div class="tutorial-section">
               <h3 class="mb-3">🎯 Welcome to GeoSketch</h3>
-              <p class="mb-2">GeoSketch is a map-based drawing tool for creating geographic shapes and managing spatial data.</p>
+              <p class="mb-2">
+                GeoSketch is a map-based drawing tool for creating geographic shapes and managing
+                spatial data.
+              </p>
               <p class="mb-3">Here's what you can do:</p>
               <ul class="tutorial-list">
                 <li><strong>Draw circles, lines, and points</strong> on an interactive map</li>
@@ -72,7 +75,9 @@
                 <p class="mb-2">Draw a circle on the map by specifying:</p>
                 <ul class="tutorial-list">
                   <li><strong>Name:</strong> Give your circle a name</li>
-                  <li><strong>Center Coordinates:</strong> Latitude, Longitude (e.g., 48.8566, 2.3522)</li>
+                  <li>
+                    <strong>Center Coordinates:</strong> Latitude, Longitude (e.g., 48.8566, 2.3522)
+                  </li>
                   <li><strong>Radius:</strong> Size in kilometers</li>
                 </ul>
               </div>
@@ -82,14 +87,18 @@
                 <p class="mb-2">Draw a line with multiple modes:</p>
                 <ul class="tutorial-list">
                   <li><strong>Coordinate Mode:</strong> Connect two points by their coordinates</li>
-                  <li><strong>Azimuth Mode:</strong> Create a line at a specific angle and distance</li>
+                  <li>
+                    <strong>Azimuth Mode:</strong> Create a line at a specific angle and distance
+                  </li>
                   <li><strong>Intersection Mode:</strong> Find where two lines meet</li>
                 </ul>
               </div>
 
               <div class="tutorial-step">
                 <h4 class="mb-2">📍 Point</h4>
-                <p>Mark specific locations on the map. Points can be saved as coordinates for reuse.</p>
+                <p>
+                  Mark specific locations on the map. Points can be saved as coordinates for reuse.
+                </p>
               </div>
             </div>
           </v-window-item>
@@ -205,26 +214,26 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch } from 'vue'
-  import { useUIStore } from '@/stores/ui'
+import { ref, watch } from 'vue';
+import { useUIStore } from '@/stores/ui';
 
-  const uiStore = useUIStore()
-  const activeTab = ref('getting-started')
+const uiStore = useUIStore();
+const activeTab = ref('getting-started');
 
-  const isOpen = ref(false)
+const isOpen = ref(false);
 
-  watch(
-    () => uiStore.showTutorial,
-    newValue => {
-      isOpen.value = newValue
-    },
-  )
+watch(
+  () => uiStore.showTutorial,
+  (newValue) => {
+    isOpen.value = newValue;
+  }
+);
 
-  watch(isOpen, newValue => {
-    if (!newValue) {
-      uiStore.setShowTutorial(false)
-    }
-  })
+watch(isOpen, (newValue) => {
+  if (!newValue) {
+    uiStore.setShowTutorial(false);
+  }
+});
 </script>
 
 <style scoped>
