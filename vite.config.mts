@@ -15,7 +15,7 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 // https://vitejs.dev/config/
 export default defineConfig({
   // Base public path when served in production. Required for GitHub Pages under a project subpath.
-  base: '/GPX-Drawing-tool/',
+  base: '/GeoChase/',
   plugins: [
     VueRouter({
       dts: 'src/typed-router.d.ts',

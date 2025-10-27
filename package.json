@@ -1,6 +1,6 @@
 {
-  "name": "geosketch",
-  "description": "A map-based drawing tool for creating and managing geographic shapes",
+  "name": "geochase",
+  "description": "A geoportail-based treasure hunt solver for discovering locations and analyzing geographic challenges",
   "private": true,
   "type": "module",
   "version": "0.0.0",

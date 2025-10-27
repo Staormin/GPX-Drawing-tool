@@ -1,82 +1,229 @@
-# Vuetify (Default)
+# GeoChase
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+A powerful, interactive geoportail-based treasure hunt solver for discovering locations, analyzing geographic challenges, and managing spatial data with advanced search and elevation capabilities.
 
-## ❗️ Important Links
+## 🎯 Overview
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
+GeoChase is a web application that helps you solve location-based treasure hunts and geographic puzzles by allowing you to:
 
-## 💿 Install
+- **Draw geographic shapes** (circles, lines, points) to map out challenge areas
+- **Search for locations** by address and discover nearby places of interest
+- **Find hidden locations** along paths with distance and altitude filtering
+- **View elevation data** to analyze terrain and find clues
+- **Organize challenges** into projects for multi-step treasure hunts
+- **Export findings as GPX** files for navigation apps and sharing
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
+Perfect for solving geocaching challenges, treasure hunt expeditions, geographic puzzles, location-based exploration, and outdoor adventure planning.
 
-| Package Manager                                           | Command        |
-| --------------------------------------------------------- | -------------- |
-| [yarn](https://yarnpkg.com/getting-started)               | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install) | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                      | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                    | `bun install`  |
+## ✨ Key Features
 
-After completing the installation, your environment is ready for Vuetify development.
+### 🔧 Challenge Mapping Tools
 
-## ✨ Features
+- **Search Radius**: Draw perfect circles to define search areas and challenge zones
+- **Path Analysis**: Create lines with multiple modes to analyze clue paths:
+  - **Coordinate Mode**: Connect waypoints by their exact coordinates
+  - **Azimuth Mode**: Calculate bearings and distances from known locations
+  - **Intersection Mode**: Find where clue paths converge
+- **Waypoint Marking**: Mark specific locations and clue points
+- **Color Coding**: Organize different treasure hunts and challenge types
 
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts-next for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts-next](https://github.com/loicduong/vite-plugin-vue-layouts-next)
-- 💻 **Enhanced Development Experience**: Benefit from TypeScript's static type checking and the ESLint plugin suite for Vue, ensuring code quality and consistency. [TypeScript](https://www.typescriptlang.org/) | [ESLint Plugin Vue](https://eslint.vuejs.org/)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
-- 🛠️ **Strongly-Typed Vue**: Use vue-tsc for type-checking your Vue components, and enjoy a robust development experience. [vue-tsc](https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc)
+### 🔍 Treasure Discovery
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+- **Location Search**: Find clues by address, city, or landmark name
+- **Path Exploration**: Discover hidden locations near challenge paths
+  - Adjustable search radius (0.5 - 25 km)
+  - Filter by elevation (find altitude-specific clues)
+  - Filter by location type (POIs, landmarks, amenities)
+- **Elevation Analysis**: Automatic terrain data for each location
 
-## 💡 Usage
+### 🗺️ Spatial Analysis
 
-This section covers how to start the development server and build your project for production.
+- **Navigation Mode**: Move along circles and line segments using arrow keys
+- **Elevation Data**: View and filter by altitude for terrain analysis
+- **Distance Calculations**: Calculate distances between points and lines
+- **Buffer Visualization**: See search zones on the map
 
-### Starting the Development Server
+### 💾 Project Management
 
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+- **Save/Load Projects**: Organize work into separate geographic projects
+- **Auto-save**: Projects are automatically saved to browser storage
+- **Import/Export**: Share projects as JSON or GPX files
+- **Multi-project Support**: Switch between different projects seamlessly
+
+### 📌 Coordinate Management
+
+- **Save Coordinates**: Right-click on the map to save locations
+- **Reusable Coordinates**: Quick access across all drawing tools
+- **Coordinate Display**: View saved coordinates with elevation data
+- **Named Locations**: Give meaningful names to frequently-used places
+
+### 🏘️ Map Integration
+
+- **Interactive Map**: Leaflet-based map with French Geoportail tiles
+- **Multiple Search Sources**: OSM Nominatim and Overpass API integration
+- **Elevation API**: Open-Elevation API for altitude data
+- **Zoom-Responsive Navigation**: Movement speed adjusts based on zoom level
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
-yarn dev
+# Install dependencies
+npm install
+
+# Start development server (available at http://localhost:3000)
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+### Using GeoSketch
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
+1. **Click on drawing tools** in the sidebar to start creating shapes
+2. **Use the search feature** to find locations by address
+3. **Draw on the map** to create circles, lines, and points
+4. **Right-click on the map** to save coordinates
+5. **Explore locations** using the search-along-path feature
+6. **Save your project** to persist your work
+7. **Export as GPX** to use in other applications
 
-### Building for Production
+For detailed instructions, open the **Tutorial** (help icon) within the application.
 
-To build your project for production, use:
+## 🛠️ Technology Stack
 
-```bash
-yarn build
+### Frontend
+
+- **Vue 3**: Modern reactive UI framework
+- **Vuetify 3**: Material Design component library
+- **TypeScript**: Static type checking for robust code
+- **Leaflet 1.9**: Interactive mapping library
+
+### State Management
+
+- **Pinia 3**: Vue state management
+- **Browser Storage**: LocalStorage for project persistence
+
+### Mapping & Geospatial
+
+- **Leaflet**: Map rendering
+- **Geoportail API**: French map tiles and address search
+- **Overpass API**: Location discovery from OpenStreetMap
+- **Open-Elevation API**: Global elevation data
+- **Turf.js**: Geospatial analysis library
+
+### Build & Development
+
+- **Vite 7**: Fast build tool and dev server
+- **ESLint**: Code quality and linting
+- **Prettier**: Code formatting
+- **vue-tsc**: Vue component type checking
+
+## 📊 Use Cases
+
+- **Treasure Hunt Solving**: Systematically solve multi-location treasure hunts
+- **Geocaching**: Find cache locations using search tools and clue mapping
+- **Urban Exploration**: Discover interesting locations based on clues
+- **Rally Navigation**: Plan routes and find checkpoints with precision
+- **Geoportail Challenges**: Solve location-based puzzles from Geoportail treasure hunts
+- **Route Planning**: Analyze clue paths and waypoints with elevation data
+- **Findings Sharing**: Export discovered locations as GPX for navigation apps
+
+## 📈 Architecture
+
+```
+src/
+├── components/          # Vue components (modals, panels, search)
+├── composables/         # Reusable logic (map, drawing, navigation)
+├── pages/              # Page-level components (main map view)
+├── services/           # Business logic (geometry, storage, API)
+├── stores/             # Pinia state management
+├── styles/             # Global SCSS styling
+└── plugins/            # Vue plugins (Vuetify, auto-imports)
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+### Key Modules
 
-Once the build process is completed, your application will be ready for deployment in a production environment.
+- **Geometry Service**: Vincenty formulas, distance calculations, coordinate transformations
+- **Geoportail Service**: Map tiles, address search, location discovery
+- **Storage Service**: Project persistence, coordinate management, GPX export
+- **Drawing Composable**: Circle, line, and point rendering
+- **Map Composable**: Leaflet integration and event handling
 
-## 💪 Support Vuetify Development
+## 🎨 User Interface
 
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
+- **Sidebar**: Drawing tools, search, coordinates, layers management
+- **Main Map**: Interactive Leaflet map for visualization
+- **Layers Panel**: Manage all drawn shapes (visibility, editing, deletion)
+- **Search Results**: Filter and explore location discoveries
+- **Tutorial Modal**: Comprehensive in-app documentation
 
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
+## 📝 Features in Detail
+
+### Drawing Workflows
+
+1. **Circle Creation**: Specify center, name, and radius
+2. **Line Drawing**: Choose mode (coordinates, azimuth, or intersection)
+3. **Point Marking**: Quick location marking on the map
+4. **Layer Management**: Edit, hide, or delete shapes
+
+### Search Workflows
+
+1. **Address Search**: Type location → view results with elevation
+2. **Path Search**: Draw shape → find nearby locations
+3. **Altitude Filtering**: Narrow results by elevation range
+4. **Result Selection**: Click to mark on map or use for drawing
+
+### Project Workflows
+
+1. **New Project**: Start fresh work
+2. **Save Project**: Auto-saves to browser
+3. **Load Project**: Switch between saved projects
+4. **Export/Import**: Share as GPX or JSON
+
+## 🔗 External APIs
+
+- **Geoportail**: French government mapping and address search
+- **Overpass API**: OpenStreetMap location queries
+- **Open-Elevation**: Global elevation data lookup
+- **Nominatim**: OSM address geocoding
+
+## 💾 Data Storage
+
+- **Browser LocalStorage**: Projects stored locally (no server required)
+- **Export Formats**: GPX files for compatibility with other tools
+- **Automatic Saving**: Projects auto-save to browser storage
+- **No Account Required**: All data stays on your device
+
+## 🎓 Learning Resources
+
+- **In-app Tutorial**: Open the help icon (?) for comprehensive documentation
+- **Interactive Map**: Learn by exploring the interface
+- **Keyboard Shortcuts**: Arrow keys for navigation, ESC to exit modes
+
+## 📋 System Requirements
+
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Internet connection for map tiles and location services
+- No additional software required
+
+## 🤝 Contributing
+
+This is a personal project focused on geographic data exploration and mapping.
 
 ## 📑 License
 
 [MIT](http://opensource.org/licenses/MIT)
 
-Copyright (c) 2016-present Vuetify, LLC
+## 🙏 Acknowledgments
+
+Built with modern web technologies including:
+
+- [Vue 3](https://vuejs.org/)
+- [Vuetify](https://vuetifyjs.com/)
+- [Leaflet](https://leafletjs.com/)
+- [Turf.js](https://turfjs.org/)
+- [Geoportail IGN](https://www.geoportail.gouv.fr/)
+- [Overpass API](https://overpass-api.de/)
+- [Open-Elevation](https://www.open-elevation.com/)

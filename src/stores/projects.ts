@@ -35,7 +35,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   function setActiveProject(projectId: string | null): void {
     activeProjectId.value = projectId;
-    localStorage.setItem('geosketch_activeProjectId', projectId || '');
+    localStorage.setItem('geochase_activeProjectId', projectId || '');
   }
 
   function createAndSwitchProject(name: string, _data: ProjectLayerData): void {
@@ -80,7 +80,7 @@ export const useProjectsStore = defineStore('projects', () => {
   }
 
   function loadActiveProject(): void {
-    const savedProjectId = localStorage.getItem('geosketch_activeProjectId');
+    const savedProjectId = localStorage.getItem('geochase_activeProjectId');
     if (savedProjectId) {
       activeProjectId.value = savedProjectId;
     }

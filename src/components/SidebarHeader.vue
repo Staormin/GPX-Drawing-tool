@@ -1,9 +1,9 @@
 <template>
   <div class="sidebar-header">
-    <img alt="GeoSketch Logo" class="logo-image" src="@/assets/logo.png" />
+    <img alt="GeoChase Logo" class="logo-image" src="@/assets/logo.png" />
     <div class="logo-text">
-      <h1 class="app-title">GeoSketch</h1>
-      <p class="app-subtitle">Map Drawing Tool</p>
+      <h1 class="app-title">GeoChase</h1>
+      <p class="app-subtitle">Treasure Hunt Solver</p>
     </div>
   </div>
 </template>

@@ -3,7 +3,7 @@
     <v-card class="tutorial-card">
       <v-card-title class="tutorial-title d-flex align-center gap-2">
         <v-icon icon="mdi-book-open-variant" />
-        GeoSketch Tutorial
+        GeoChase Tutorial
       </v-card-title>
 
       <v-card-text class="tutorial-content">
@@ -67,12 +67,13 @@
           <!-- Getting Started -->
           <v-window-item value="getting-started">
             <div class="tutorial-section">
-              <h3 class="mb-3">🎯 Welcome to GeoSketch</h3>
+              <h3 class="mb-3">🎯 Welcome to GeoChase</h3>
               <p class="mb-2">
-                GeoSketch is a powerful map-based drawing tool for creating and managing geographic
-                shapes, exploring locations, and analyzing spatial data.
+                GeoChase is a powerful treasure hunt solver designed to help you discover locations,
+                analyze clues, and find hidden treasures using advanced geographic mapping and
+                location search tools.
               </p>
-              <p class="mb-3">Here's what you can do:</p>
+              <p class="mb-3">Here's what you can do to solve treasure hunts:</p>
               <ul class="tutorial-list">
                 <li><strong>Draw circles, lines, and points</strong> on an interactive map</li>
                 <li><strong>Search for locations</strong> by address and explore nearby places</li>
@@ -273,7 +274,7 @@
             <div class="tutorial-section">
               <h3 class="mb-3">⛰️ Elevation Data</h3>
               <p class="mb-3">
-                GeoSketch automatically fetches elevation information for your locations:
+                GeoChase automatically fetches elevation information for all locations:
               </p>
 
               <div class="tutorial-step mb-4">

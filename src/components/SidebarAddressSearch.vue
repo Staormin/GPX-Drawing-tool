@@ -1,8 +1,8 @@
 <template>
   <div class="position-relative">
-    <!-- GeoSketch Title Header -->
-    <div class="geosketch-title-header d-flex align-center justify-center mb-4">
-      <h2 class="geosketch-title">GeoSketch</h2>
+    <!-- GeoChase Title Header -->
+    <div class="geochase-title-header d-flex align-center justify-center mb-4">
+      <h2 class="geochase-title">GeoChase</h2>
       <!-- Help icon button -->
       <v-btn
         aria-label="Show tutorial"
@@ -112,14 +112,14 @@ watch(addressSearchInput, (newVal) => {
 </script>
 
 <style scoped>
-.geosketch-title-header {
+.geochase-title-header {
   position: relative;
   padding: 12px 0;
   margin-bottom: 8px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
 
-.geosketch-title {
+.geochase-title {
   font-size: 24px;
   font-weight: 700;
   margin: 0;

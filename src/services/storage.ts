@@ -60,7 +60,7 @@ export interface PointElement {
   leafletId?: number;
 }
 
-const PROJECTS_STORAGE_KEY = 'geosketch_projects';
+const PROJECTS_STORAGE_KEY = 'geochase_projects';
 
 /**
  * Get all projects from localStorage
