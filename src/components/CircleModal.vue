@@ -80,6 +80,7 @@
 <script lang="ts" setup>
 import type { SavedCoordinate } from '@/services/storage';
 import { computed, inject, ref, watch } from 'vue';
+import { getReverseGeocodeAddress } from '@/services/address';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
@@ -157,7 +158,7 @@ function selectCoordinate(coord: SavedCoordinate, field: 'center') {
   }
 }
 
-function submitForm() {
+async function submitForm() {
   if (form.value.radius <= 0) {
     uiStore.addToast('Please enter a valid radius', 'error');
     return;
@@ -170,10 +171,30 @@ function submitForm() {
     return;
   }
 
-  const [centerLat, centerLon] = parts;
+  const centerLat = parts[0]!;
+  const centerLon = parts[1]!;
 
-  // Autogenerate name if empty (matches POC behavior)
-  const name = form.value.name.trim() || `Circle ${layersStore.circleCount + 1}`;
+  // Autogenerate name if empty
+  let name = form.value.name.trim();
+  if (!name) {
+    // Check if coordinates match a saved coordinate
+    const savedCoord = coordinatesStore.sortedCoordinates.find(
+      (c: any) => Math.abs(c.lat - centerLat) < 0.0001 && Math.abs(c.lon - centerLon) < 0.0001
+    );
+
+    if (savedCoord) {
+      name = `Circle at ${savedCoord.name}`;
+    } else {
+      // Try reverse geocoding
+      const { address } = await getReverseGeocodeAddress(centerLat, centerLon);
+      if (address) {
+        name = `Circle at ${address}`;
+      } else {
+        // Fallback to generic name
+        name = `Circle ${layersStore.circleCount + 1}`;
+      }
+    }
+  }
 
   if (isEditing.value && uiStore.editingElement) {
     // Update existing circle

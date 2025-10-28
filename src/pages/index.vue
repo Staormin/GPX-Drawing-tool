@@ -14,7 +14,7 @@
     <template v-else>
       <!-- Scrollable content area -->
       <div class="sidebar-inner">
-        <!-- Address search -->
+        <!-- Address search (includes title header) -->
         <SidebarAddressSearch />
 
         <!-- Drawing Tools -->
@@ -48,6 +48,15 @@
     @click="sidebarOpen = !sidebarOpen"
   >
     {{ sidebarOpen ? '←' : '→' }}
+  </button>
+
+  <!-- Floating help button (always visible) -->
+  <button
+    aria-label="Show tutorial"
+    class="floating-help-btn"
+    @click="uiStore.setShowTutorial(true)"
+  >
+    <span class="text-xl">?</span>
   </button>
 
   <!-- Modals -->
@@ -207,8 +216,41 @@ onMounted(async () => {
     uiStore.openModal('coordinatesModal');
   });
 
-  // Setup keyboard navigation
+  // Setup keyboard shortcuts and navigation
   const handleKeydown = (event: KeyboardEvent) => {
+    // Check if user is typing in an input field
+    const target = event.target as HTMLElement;
+    const isInputField =
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+    // Global keyboard shortcuts (only when not typing in input)
+    if (!isInputField && !uiStore.navigatingElement) {
+      // Check if any modal is open
+      const isAnyModalOpen = uiStore.openModals.size > 0;
+
+      if (!isAnyModalOpen) {
+        switch (event.key.toLowerCase()) {
+          case 'c': {
+            event.preventDefault();
+            uiStore.openModal('circleModal');
+            return;
+          }
+          case 'l': {
+            event.preventDefault();
+            uiStore.openModal('lineSegmentModal');
+            return;
+          }
+          case 'p': {
+            event.preventDefault();
+            uiStore.openModal('pointModal');
+            return;
+          }
+          // No default
+        }
+      }
+    }
+
+    // Navigation mode keyboard handling
     if (!uiStore.navigatingElement) return;
 
     const { navigatingElement } = uiStore;
@@ -296,6 +338,20 @@ onMounted(async () => {
   --accent: #3b82f6;
   --accent-600: #2563eb;
   --shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+}
+
+/* Global styles for keyboard hints */
+:global(.kbd-hint) {
+  display: inline-block;
+  padding: 2px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 html,
@@ -400,6 +456,46 @@ body,
 
 .sidebar-toggle:active {
   transform: translateY(-50%) scale(0.95);
+}
+
+/* Floating Help Button */
+.floating-help-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1050;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: rgba(59, 130, 246, 0.9);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.4),
+    var(--shadow);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.floating-help-btn:hover {
+  transform: scale(1.1);
+  background: rgba(59, 130, 246, 1);
+  box-shadow:
+    0 0 0 4px rgba(59, 130, 246, 0.2),
+    0 12px 32px rgba(59, 130, 246, 0.5);
+}
+
+.floating-help-btn:active {
+  transform: scale(0.95);
 }
 
 /* Footer */

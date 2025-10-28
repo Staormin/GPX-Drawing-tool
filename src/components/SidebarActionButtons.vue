@@ -1,4 +1,19 @@
 <template>
+  <!-- Element count badge -->
+  <div v-if="totalElements > 0" class="element-count-badge mb-2">
+    <span class="count-item">
+      <span class="count-number">{{ layersStore.circleCount }}</span> circles
+    </span>
+    <span class="count-divider">•</span>
+    <span class="count-item">
+      <span class="count-number">{{ layersStore.lineSegmentCount }}</span> lines
+    </span>
+    <span class="count-divider">•</span>
+    <span class="count-item">
+      <span class="count-number">{{ layersStore.pointCount }}</span> points
+    </span>
+  </div>
+
   <!-- All three buttons in a row with equal width -->
   <div class="action-buttons">
     <!-- Coords Button -->
@@ -24,17 +39,23 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { downloadGPX, generateCompleteGPX, getTimestamp } from '@/services/gpx';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
+import { useProjectsStore } from '@/stores/projects';
 import { useUIStore } from '@/stores/ui';
 
 const layersStore = useLayersStore();
 const uiStore = useUIStore();
 const coordinatesStore = useCoordinatesStore();
+const projectsStore = useProjectsStore();
 
 const saveMenuOpen = ref(false);
+
+const totalElements = computed(
+  () => layersStore.circleCount + layersStore.lineSegmentCount + layersStore.pointCount
+);
 
 function openCoordinatesModal() {
   saveMenuOpen.value = false;
@@ -64,7 +85,12 @@ function exportAsGPX() {
   const lineSegments = layersStore.lineSegments;
 
   const gpx = generateCompleteGPX(circles, radii, 360, lineSegments, layersStore.points);
-  const filename = `gpx-export_${getTimestamp()}.gpx`;
+
+  // Use project name in filename if available
+  const projectName = projectsStore.activeProject?.name || 'project';
+  const sanitizedName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const filename = `${sanitizedName}_${getTimestamp()}.gpx`;
+
   downloadGPX(gpx, filename);
   uiStore.addToast('GPX exported successfully!', 'success');
 }
@@ -84,7 +110,12 @@ function exportAsJSON() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `project-export_${getTimestamp()}.json`;
+
+  // Use project name in filename if available
+  const projectName = projectsStore.activeProject?.name || 'project';
+  const sanitizedName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  link.download = `${sanitizedName}_${getTimestamp()}.json`;
+
   link.click();
   URL.revokeObjectURL(url);
   uiStore.addToast('Project exported as JSON successfully!', 'success');
@@ -175,6 +206,34 @@ async function importFromJSON() {
 </script>
 
 <style scoped>
+.element-count-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.count-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.count-number {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.count-divider {
+  color: rgba(148, 163, 184, 0.3);
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;

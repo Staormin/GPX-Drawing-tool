@@ -5,11 +5,26 @@
 
     <!-- Buttons -->
     <div class="drawing-buttons">
-      <button class="btn-tool" title="Add a new circle" @click="openCircleModal">🔵 Circle</button>
-      <button class="btn-tool" title="Add a new line segment" @click="openLineSegmentModal">
-        ➖ Line
-      </button>
-      <button class="btn-tool" title="Add a new point" @click="openPointModal">📍 Point</button>
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
+          <button class="btn-tool" v-bind="props" @click="openCircleModal">🔵 Circle</button>
+        </template>
+        <span>Add a new circle <kbd class="kbd-hint">C</kbd></span>
+      </v-tooltip>
+
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
+          <button class="btn-tool" v-bind="props" @click="openLineSegmentModal">➖ Line</button>
+        </template>
+        <span>Add a new line segment <kbd class="kbd-hint">L</kbd></span>
+      </v-tooltip>
+
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
+          <button class="btn-tool" v-bind="props" @click="openPointModal">📍 Point</button>
+        </template>
+        <span>Add a new point <kbd class="kbd-hint">P</kbd></span>
+      </v-tooltip>
     </div>
   </div>
 </template>

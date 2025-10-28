@@ -3,19 +3,49 @@
     <!-- Title -->
     <h3 class="layers-panel-title">Layers</h3>
 
+    <!-- Search bar (only show when there are elements) -->
+    <div v-if="!layersStore.isEmpty" class="mb-3">
+      <v-text-field
+        v-model="searchQuery"
+        class="layers-search"
+        clearable
+        density="compact"
+        hide-details
+        placeholder="Filter layers..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+      />
+    </div>
+
     <!-- Empty state -->
     <div v-if="layersStore.isEmpty" class="layers-empty">
       <p>No elements added yet. Use the buttons above to add circles, line segments, or points.</p>
     </div>
 
+    <!-- No results state -->
+    <div
+      v-else-if="
+        filteredCircles.length === 0 && filteredLines.length === 0 && filteredPoints.length === 0
+      "
+      class="layers-empty"
+    >
+      <p>No layers match "{{ searchQuery }}"</p>
+    </div>
+
     <!-- Layers list -->
     <div v-else class="layers-list">
       <!-- Circles -->
-      <div v-if="layersStore.circleCount > 0">
-        <p class="layers-section-title">Circles ({{ layersStore.circleCount }})</p>
-        <div class="layer-items">
+      <div v-if="filteredCircles.length > 0">
+        <div class="layers-section-header" @click="circlesExpanded = !circlesExpanded">
+          <span class="layers-section-title"
+            >Circles ({{ filteredCircles.length
+            }}{{ searchQuery ? ` of ${layersStore.circleCount}` : '' }})</span
+          >
+          <span class="collapse-icon">{{ circlesExpanded ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="circlesExpanded" class="layer-items">
           <div
-            v-for="circle in layersStore.circles"
+            v-for="circle in filteredCircles"
             :key="circle.id"
             class="layer-item"
             :class="{
@@ -40,11 +70,17 @@
       </div>
 
       <!-- Line segments -->
-      <div v-if="layersStore.lineSegmentCount > 0">
-        <p class="layers-section-title">Lines ({{ layersStore.lineSegmentCount }})</p>
-        <div class="layer-items">
+      <div v-if="filteredLines.length > 0">
+        <div class="layers-section-header" @click="linesExpanded = !linesExpanded">
+          <span class="layers-section-title"
+            >Lines ({{ filteredLines.length
+            }}{{ searchQuery ? ` of ${layersStore.lineSegmentCount}` : '' }})</span
+          >
+          <span class="collapse-icon">{{ linesExpanded ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="linesExpanded" class="layer-items">
           <div
-            v-for="line in layersStore.lineSegments"
+            v-for="line in filteredLines"
             :key="line.id"
             class="layer-item"
             :class="{
@@ -69,11 +105,17 @@
       </div>
 
       <!-- Points -->
-      <div v-if="layersStore.pointCount > 0">
-        <p class="layers-section-title">Points ({{ layersStore.pointCount }})</p>
-        <div class="layer-items">
+      <div v-if="filteredPoints.length > 0">
+        <div class="layers-section-header" @click="pointsExpanded = !pointsExpanded">
+          <span class="layers-section-title"
+            >Points ({{ filteredPoints.length
+            }}{{ searchQuery ? ` of ${layersStore.pointCount}` : '' }})</span
+          >
+          <span class="collapse-icon">{{ pointsExpanded ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="pointsExpanded" class="layer-items">
           <div
-            v-for="point in layersStore.points"
+            v-for="point in filteredPoints"
             :key="point.id"
             class="layer-item"
             :class="{
@@ -102,7 +144,7 @@
 
 <script lang="ts" setup>
 import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage';
-import { inject } from 'vue';
+import { computed, inject, ref } from 'vue';
 import LayerContextMenu from '@/components/LayerContextMenu.vue';
 import { calculateBearing, calculateDistance, destinationPoint } from '@/services/geometry';
 import { useLayersStore } from '@/stores/layers';
@@ -112,6 +154,32 @@ const layersStore = useLayersStore();
 const uiStore = useUIStore();
 const drawing = inject('drawing') as any;
 const mapContainer = inject('mapContainer') as any;
+
+const searchQuery = ref('');
+
+// Filtered lists based on search query
+const filteredCircles = computed(() => {
+  if (!searchQuery.value) return layersStore.circles;
+  const query = searchQuery.value.toLowerCase();
+  return layersStore.circles.filter((c) => c.name.toLowerCase().includes(query));
+});
+
+const filteredLines = computed(() => {
+  if (!searchQuery.value) return layersStore.lineSegments;
+  const query = searchQuery.value.toLowerCase();
+  return layersStore.lineSegments.filter((l) => l.name.toLowerCase().includes(query));
+});
+
+const filteredPoints = computed(() => {
+  if (!searchQuery.value) return layersStore.points;
+  const query = searchQuery.value.toLowerCase();
+  return layersStore.points.filter((p) => p.name.toLowerCase().includes(query));
+});
+
+// Collapse states for each section
+const circlesExpanded = ref(true);
+const linesExpanded = ref(true);
+const pointsExpanded = ref(true);
 
 function getLineInfo(line: LineSegmentElement) {
   // Special handling for parallel mode
@@ -249,11 +317,33 @@ function handleGoTo(
   gap: 12px;
 }
 
+.layers-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 4px 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.layers-section-header:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
 .layers-section-title {
   font-size: 13px;
   font-weight: 600;
   color: #cbd5e1;
-  margin: 8px 0 4px 0;
+  margin: 0;
+}
+
+.collapse-icon {
+  font-size: 10px;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
 }
 
 .layer-items {

@@ -3,15 +3,6 @@
     <!-- GeoChase Title Header -->
     <div class="geochase-title-header d-flex align-center justify-center mb-4">
       <h2 class="geochase-title">GeoChase</h2>
-      <!-- Help icon button -->
-      <v-btn
-        aria-label="Show tutorial"
-        class="help-btn"
-        icon="mdi-help-circle"
-        size="small"
-        variant="text"
-        @click="uiStore.setShowTutorial(true)"
-      />
     </div>
 
     <!-- Search input with Vuetify -->
@@ -126,10 +117,5 @@ watch(addressSearchInput, (newVal) => {
   color: #f1f5f9;
   text-align: center;
   flex-grow: 1;
-}
-
-.help-btn {
-  position: absolute;
-  right: 0;
 }
 </style>
