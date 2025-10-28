@@ -213,10 +213,10 @@ async function importFromJSON() {
   gap: 8px;
   padding: 8px 12px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--v-theme-on-surface), 0.05);
   border: none;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
 .count-item {
@@ -227,11 +227,11 @@ async function importFromJSON() {
 
 .count-number {
   font-weight: 500;
-  color: #ffffff;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .count-divider {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--v-theme-on-surface), 0.3);
 }
 
 .action-buttons {
@@ -256,8 +256,8 @@ async function importFromJSON() {
   padding: 12px 14px;
   border-radius: 4px;
   border: none;
-  background: #2c2c2c;
-  color: #ffffff;
+  background: rgb(var(--v-theme-surface-bright));
+  color: rgb(var(--v-theme-on-surface));
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -266,7 +266,7 @@ async function importFromJSON() {
 }
 
 .btn-action:hover {
-  background: #3c3c3c;
+  background: rgb(var(--v-theme-surface-variant));
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -275,7 +275,7 @@ async function importFromJSON() {
   bottom: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: #2c2c2c;
+  background: rgb(var(--v-theme-surface-bright));
   border: none;
   border-radius: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
@@ -289,13 +289,13 @@ async function importFromJSON() {
   padding: 12px 16px;
   border: none;
   background: transparent;
-  color: #ffffff;
+  color: rgb(var(--v-theme-on-surface));
   text-align: left;
   cursor: pointer;
   font-size: 14px;
   font-weight: 400;
   transition: background-color 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .dropdown-item:last-of-type {
@@ -303,12 +303,12 @@ async function importFromJSON() {
 }
 
 .dropdown-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .dropdown-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--v-theme-on-surface), 0.08);
   margin: 0;
 }
 </style>

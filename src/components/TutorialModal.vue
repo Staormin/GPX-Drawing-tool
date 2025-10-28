@@ -457,8 +457,8 @@ watch(isOpen, (newValue) => {
 
 .tutorial-step {
   padding: 12px;
-  background: rgba(33, 150, 243, 0.15);
-  border-left: 3px solid #2196F3;
+  background: rgba(var(--v-theme-primary), 0.15);
+  border-left: 3px solid rgb(var(--v-theme-primary));
   border-radius: 4px;
 }
 
@@ -495,7 +495,7 @@ p {
 }
 
 :deep(.v-window) {
-  background-color: #1e1e1e;
+  background-color: rgb(var(--v-theme-surface));
 }
 
 :deep(.v-icon) {

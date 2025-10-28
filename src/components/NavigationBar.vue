@@ -30,7 +30,7 @@ function handleExitNavigation(): void {
   top: 0;
   left: 0;
   right: 0;
-  background: #2196F3;
+  background: rgb(var(--v-theme-primary));
   border-bottom: none;
   padding: 12px 24px;
   display: flex;

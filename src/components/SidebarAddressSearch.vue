@@ -107,14 +107,14 @@ watch(addressSearchInput, (newVal) => {
   position: relative;
   padding: 12px 0;
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .geochase-title {
   font-size: 24px;
   font-weight: 500;
   margin: 0;
-  color: #ffffff;
+  color: rgb(var(--v-theme-on-surface));
   text-align: center;
   flex-grow: 1;
 }

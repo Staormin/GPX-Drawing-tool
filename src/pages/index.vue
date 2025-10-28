@@ -328,17 +328,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Material Design Dark Theme Variables */
-:root {
-  --bg: #121212;
-  --panel: #1e1e1e;
-  --panel-border: rgba(255, 255, 255, 0.12);
-  --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.7);
-  --accent: #2196F3;
-  --accent-600: #1976D2;
-  --shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
+/* Use Vuetify theme colors via RGB */
 
 /* Global styles for keyboard hints */
 :global(.kbd-hint) {
@@ -360,7 +350,7 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: rgb(var(--v-theme-background));
   overflow: hidden;
 }
 
@@ -373,7 +363,7 @@ body,
 }
 
 :global(.leaflet-container) {
-  background: #0b1020;
+  background: rgb(var(--v-theme-background));
 }
 
 :global(.leaflet-grab),
@@ -388,12 +378,12 @@ body,
   left: -640px;
   height: 100vh;
   width: 640px;
-  background: #1e1e1e;
+  background: rgb(var(--v-theme-surface));
   opacity: 1;
-  border-right: 1px solid var(--panel-border);
-  box-shadow: var(--shadow);
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   z-index: 1000;
-  color: var(--text);
+  color: rgb(var(--v-theme-on-surface));
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: visible;
 }
@@ -423,11 +413,11 @@ body,
   height: 80px;
   border-radius: 4px;
   border: none;
-  background: #2c2c2c;
-  color: var(--text);
+  background: rgb(var(--v-theme-surface-bright));
+  color: rgb(var(--v-theme-on-surface));
   font-size: 18px;
   cursor: pointer;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   transition:
     box-shadow 0.3s ease,
     background 0.3s ease,
@@ -447,7 +437,7 @@ body,
 }
 
 .sidebar-toggle:hover {
-  background: #3c3c3c;
+  background: rgb(var(--v-theme-surface-variant));
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
@@ -465,8 +455,8 @@ body,
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: #2196F3;
-  color: #ffffff;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
   font-size: 24px;
   font-weight: 700;
   cursor: pointer;
@@ -483,7 +473,7 @@ body,
 
 .floating-help-btn:hover {
   transform: scale(1.05);
-  background: #1976D2;
+  background: rgb(var(--v-theme-primary-darken-1));
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
@@ -498,8 +488,8 @@ body,
   left: 0;
   right: 0;
   padding: 16px;
-  border-top: 1px solid var(--panel-border);
-  background: #1e1e1e;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background: rgb(var(--v-theme-surface));
 }
 
 /* Status Message */
@@ -511,12 +501,12 @@ body,
 }
 
 .status-message.success {
-  background: rgba(129, 199, 132, 0.15);
-  color: #81C784;
+  background: rgba(var(--v-theme-success), 0.15);
+  color: rgb(var(--v-theme-success));
 }
 
 .status-message.error {
-  background: rgba(207, 102, 121, 0.15);
-  color: #CF6679;
+  background: rgba(var(--v-theme-error), 0.15);
+  color: rgb(var(--v-theme-error));
 }
 </style>

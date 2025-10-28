@@ -128,8 +128,8 @@
             <thead>
               <tr
                 style="
-                  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
-                  background-color: rgba(255, 255, 255, 0.05);
+                  border-bottom: 2px solid rgba(var(--v-theme-on-surface), 0.12);
+                  background-color: rgba(var(--v-theme-on-surface), 0.05);
                 "
               >
                 <th
@@ -201,14 +201,14 @@
                 :key="`${result.main}-${index}`"
                 class="cursor-pointer"
                 style="
-                  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
                   transition: background-color 0.2s;
                 "
                 @click="handleResultClick(result)"
                 @mouseenter="
                   (e) =>
                     ((e.currentTarget as HTMLElement).style.backgroundColor =
-                      'rgba(33, 150, 243, 0.15)')
+                      'rgba(var(--v-theme-primary), 0.15)')
                 "
                 @mouseleave="
                   (e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')

@@ -48,7 +48,7 @@ const openPointModal = () => uiStore.openModal('pointModal');
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--v-theme-on-surface), 0.7);
   margin: 0 0 8px 4px;
   font-weight: 600;
 }
@@ -63,8 +63,8 @@ const openPointModal = () => uiStore.openModal('pointModal');
   padding: 12px 14px;
   border-radius: 4px;
   border: none;
-  background: #2c2c2c;
-  color: #ffffff;
+  background: rgb(var(--v-theme-surface-bright));
+  color: rgb(var(--v-theme-on-surface));
   cursor: pointer;
   font-weight: 500;
   font-size: 15px;
@@ -72,7 +72,7 @@ const openPointModal = () => uiStore.openModal('pointModal');
 }
 
 .btn-tool:hover {
-  background: #3c3c3c;
+  background: rgb(var(--v-theme-surface-variant));
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
