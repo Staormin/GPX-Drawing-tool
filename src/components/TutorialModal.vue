@@ -457,9 +457,9 @@ watch(isOpen, (newValue) => {
 
 .tutorial-step {
   padding: 12px;
-  background: rgba(59, 130, 246, 0.15);
-  border-left: 3px solid #3b82f6;
-  border-radius: 6px;
+  background: rgba(33, 150, 243, 0.15);
+  border-left: 3px solid #2196F3;
+  border-radius: 4px;
 }
 
 .tutorial-list {
@@ -487,7 +487,7 @@ p {
 }
 
 :deep(.v-tab) {
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 :deep(.v-tab--selected) {
@@ -495,7 +495,7 @@ p {
 }
 
 :deep(.v-window) {
-  background-color: #1e293b;
+  background-color: #1e1e1e;
 }
 
 :deep(.v-icon) {

@@ -109,7 +109,7 @@
             style="
               position: absolute;
               inset: 0;
-              background: rgba(255, 255, 255, 0.7);
+              background: rgba(0, 0, 0, 0.5);
               display: flex;
               align-items: center;
               justify-content: center;
@@ -128,8 +128,8 @@
             <thead>
               <tr
                 style="
-                  border-bottom: 2px solid rgba(148, 163, 184, 0.3);
-                  background-color: rgba(148, 163, 184, 0.05);
+                  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+                  background-color: rgba(255, 255, 255, 0.05);
                 "
               >
                 <th
@@ -201,14 +201,14 @@
                 :key="`${result.main}-${index}`"
                 class="cursor-pointer"
                 style="
-                  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                   transition: background-color 0.2s;
                 "
                 @click="handleResultClick(result)"
                 @mouseenter="
                   (e) =>
                     ((e.currentTarget as HTMLElement).style.backgroundColor =
-                      'rgba(59, 130, 246, 0.1)')
+                      'rgba(33, 150, 243, 0.15)')
                 "
                 @mouseleave="
                   (e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')

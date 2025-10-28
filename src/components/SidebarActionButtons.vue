@@ -212,11 +212,11 @@ async function importFromJSON() {
   justify-content: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(148, 163, 184, 0.05);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
   font-size: 13px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .count-item {
@@ -226,12 +226,12 @@ async function importFromJSON() {
 }
 
 .count-number {
-  font-weight: 600;
-  color: #f1f5f9;
+  font-weight: 500;
+  color: #ffffff;
 }
 
 .count-divider {
-  color: rgba(148, 163, 184, 0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .action-buttons {
@@ -254,21 +254,20 @@ async function importFromJSON() {
   justify-content: center;
   gap: 8px;
   padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  background: rgba(148, 163, 184, 0.08);
-  color: #f1f5f9;
+  border-radius: 4px;
+  border: none;
+  background: #2c2c2c;
+  color: #ffffff;
   cursor: pointer;
-  transition: all 0.25s ease;
-  font-weight: 600;
+  transition: all 0.2s ease;
+  font-weight: 500;
   font-size: 15px;
   width: 100%;
 }
 
 .btn-action:hover {
-  box-shadow:
-    0 0 0 2px rgba(59, 130, 246, 0.35),
-    0 8px 24px rgba(0, 0, 0, 0.25);
+  background: #3c3c3c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .dropdown-menu {
@@ -276,10 +275,10 @@ async function importFromJSON() {
   bottom: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: #2c2c2c;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   z-index: 1000;
 }
@@ -290,13 +289,13 @@ async function importFromJSON() {
   padding: 12px 16px;
   border: none;
   background: transparent;
-  color: #f1f5f9;
+  color: #ffffff;
   text-align: left;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   transition: background-color 0.2s ease;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dropdown-item:last-of-type {
@@ -304,12 +303,12 @@ async function importFromJSON() {
 }
 
 .dropdown-item:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dropdown-divider {
   height: 1px;
-  background: rgba(148, 163, 184, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   margin: 0;
 }
 </style>

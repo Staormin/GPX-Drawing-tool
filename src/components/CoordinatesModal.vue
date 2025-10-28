@@ -46,13 +46,13 @@
               :key="coord.id"
               class="d-flex justify-space-between align-center pa-3 rounded"
               style="
-                background-color: rgba(59, 130, 246, 0.05);
-                border: 1px solid rgba(59, 130, 246, 0.1);
+                background-color: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.12);
               "
             >
               <div class="flex-grow-1 min-width-0">
                 <div class="font-weight-medium text-sm">{{ coord.name }}</div>
-                <div class="text-caption" style="color: #94a3b8">
+                <div class="text-caption" style="color: rgba(255, 255, 255, 0.6)">
                   {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
                 </div>
               </div>

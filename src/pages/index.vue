@@ -328,16 +328,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* CSS Variables matching POC */
+/* Material Design Dark Theme Variables */
 :root {
-  --bg: #0f172a;
-  --panel: rgba(15, 23, 42, 0.78);
-  --panel-border: rgba(148, 163, 184, 0.15);
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-600: #2563eb;
-  --shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+  --bg: #121212;
+  --panel: #1e1e1e;
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.7);
+  --accent: #2196F3;
+  --accent-600: #1976D2;
+  --shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Global styles for keyboard hints */
@@ -388,9 +388,8 @@ body,
   left: -640px;
   height: 100vh;
   width: 640px;
-  background: var(--panel);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: #1e1e1e;
+  opacity: 1;
   border-right: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
   z-index: 1000;
@@ -408,9 +407,9 @@ body,
   flex-direction: column;
   gap: 16px;
   padding: 16px;
-  height: 100%;
-  overflow-y: auto;
-  padding-bottom: 96px;
+  padding-bottom: 80px;
+  height: calc(100% - 80px);
+  overflow: hidden;
 }
 
 /* Toggle Button */
@@ -422,9 +421,9 @@ body,
   z-index: 1050;
   width: 40px;
   height: 80px;
-  border-radius: 12px;
-  border: 1px solid var(--panel-border);
-  background: rgba(2, 6, 23, 0.85);
+  border-radius: 4px;
+  border: none;
+  background: #2c2c2c;
   color: var(--text);
   font-size: 18px;
   cursor: pointer;
@@ -444,14 +443,12 @@ body,
 
 .sidebar.open ~ .sidebar-toggle {
   left: 648px;
-  border-radius: 12px;
+  border-radius: 4px;
 }
 
 .sidebar-toggle:hover {
-  box-shadow:
-    0 0 0 2px rgba(16, 185, 129, 0.35),
-    var(--shadow);
-  background: rgba(2, 6, 23, 0.95);
+  background: #3c3c3c;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar-toggle:active {
@@ -467,19 +464,17 @@ body,
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 1px solid var(--panel-border);
-  background: rgba(59, 130, 246, 0.9);
+  border: none;
+  background: #2196F3;
   color: #ffffff;
   font-size: 24px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow:
-    0 8px 24px rgba(59, 130, 246, 0.4),
-    var(--shadow);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease,
-    background 0.3s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -487,11 +482,9 @@ body,
 }
 
 .floating-help-btn:hover {
-  transform: scale(1.1);
-  background: rgba(59, 130, 246, 1);
-  box-shadow:
-    0 0 0 4px rgba(59, 130, 246, 0.2),
-    0 12px 32px rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+  background: #1976D2;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
 .floating-help-btn:active {
@@ -506,26 +499,24 @@ body,
   right: 0;
   padding: 16px;
   border-top: 1px solid var(--panel-border);
-  background: rgba(15, 23, 42, 0.95);
+  background: #1e1e1e;
 }
 
 /* Status Message */
 .status-message {
   padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  border: none;
   font-size: 13px;
 }
 
 .status-message.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(129, 199, 132, 0.15);
+  color: #81C784;
 }
 
 .status-message.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(207, 102, 121, 0.15);
+  color: #CF6679;
 }
 </style>

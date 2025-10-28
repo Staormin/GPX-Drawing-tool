@@ -30,15 +30,14 @@ function handleExitNavigation(): void {
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(59, 130, 246, 0.95);
-  border-bottom: 2px solid rgba(59, 130, 246, 1);
+  background: #2196F3;
+  border-bottom: none;
   padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .navigation-bar-content {
@@ -80,11 +79,11 @@ function handleExitNavigation(): void {
 }
 
 .navigation-exit-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
   color: white;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
   font-size: 13px;
@@ -93,12 +92,11 @@ function handleExitNavigation(): void {
 }
 
 .navigation-exit-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .navigation-exit-btn:active {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(0.98);
 }
 

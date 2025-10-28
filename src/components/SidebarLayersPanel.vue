@@ -287,34 +287,49 @@ function handleGoTo(
 
 <style scoped>
 .layers-panel {
-  background: rgba(148, 163, 184, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 12px;
-  padding: 16px;
-  max-height: 400px;
-  overflow-y: auto;
+  background: #2c2c2c;
+  border: none;
+  border-radius: 4px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .layers-panel-title {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #94a3b8;
-  margin: 0 0 8px 0;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  padding: 16px 16px 8px 16px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .layers-empty {
   padding: 30px 20px;
   text-align: center;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
+}
+
+.mb-3 {
+  padding: 0 16px 8px 16px;
+  flex-shrink: 0;
+  background: #2c2c2c;
+  z-index: 1;
 }
 
 .layers-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 0 16px 16px 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .layers-section-header {
@@ -325,24 +340,24 @@ function handleGoTo(
   cursor: pointer;
   user-select: none;
   transition: background 0.2s ease;
-  border-radius: 6px;
+  border-radius: 4px;
   margin-bottom: 4px;
 }
 
 .layers-section-header:hover {
-  background: rgba(59, 130, 246, 0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .layers-section-title {
   font-size: 13px;
-  font-weight: 600;
-  color: #cbd5e1;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
 }
 
 .collapse-icon {
   font-size: 10px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
   transition: transform 0.2s ease;
 }
 
@@ -358,7 +373,7 @@ function handleGoTo(
   justify-content: space-between;
   align-items: center;
   transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .layer-item:last-child {
@@ -366,8 +381,8 @@ function handleGoTo(
 }
 
 .layer-item:hover {
-  background: rgba(59, 130, 246, 0.05);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
   padding-left: 4px;
   padding-right: 4px;
 }
@@ -380,16 +395,15 @@ function handleGoTo(
 
 .layer-item-name {
   font-weight: 500;
-  color: #f1f5f9;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #ffffff;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   font-size: 14px;
 }
 
 .layer-item-type {
   font-size: 12px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
   margin-top: 2px;
 }
 
@@ -404,27 +418,27 @@ function handleGoTo(
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 12px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
   transition: all 0.2s ease;
   white-space: nowrap;
   font-weight: 500;
 }
 
 .layer-action-btn:hover {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background-color: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
 }
 
 .layer-action-btn.delete:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: rgba(207, 102, 121, 0.15);
+  color: #CF6679;
 }
 
 .layer-action-btn.add:hover {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background-color: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
 }
 
 .layer-item-hidden {

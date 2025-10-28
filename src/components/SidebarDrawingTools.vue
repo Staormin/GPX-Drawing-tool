@@ -48,7 +48,7 @@ const openPointModal = () => uiStore.openModal('pointModal');
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 8px 4px;
   font-weight: 600;
 }
@@ -61,20 +61,19 @@ const openPointModal = () => uiStore.openModal('pointModal');
 .btn-tool {
   flex: 1;
   padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  background: rgba(148, 163, 184, 0.08);
-  color: #f1f5f9;
+  border-radius: 4px;
+  border: none;
+  background: #2c2c2c;
+  color: #ffffff;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 15px;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-tool:hover {
-  box-shadow:
-    0 0 0 2px rgba(59, 130, 246, 0.35),
-    0 8px 24px rgba(0, 0, 0, 0.25);
+  background: #3c3c3c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-tool:active {
