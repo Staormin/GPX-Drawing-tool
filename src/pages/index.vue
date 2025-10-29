@@ -295,10 +295,16 @@ onMounted(async () => {
     // Calculate distance and bearing
     const distance = calculateDistance(startLat, startLon, lat, lng);
     const bearing = calculateBearing(startLat, startLon, lat, lng);
+    const inverseBearing = (bearing + 180) % 360;
 
     // Update tooltip content
     cursorTooltip.value.distance = `${distance.toFixed(3)} km`;
-    cursorTooltip.value.azimuth = azimuth !== undefined ? `${azimuth.toFixed(2)}° (locked)` : `${bearing.toFixed(2)}°`;
+    if (azimuth !== undefined) {
+      const inverseAzimuth = (azimuth + 180) % 360;
+      cursorTooltip.value.azimuth = `${azimuth.toFixed(2)}° / ${inverseAzimuth.toFixed(2)}° (locked)`;
+    } else {
+      cursorTooltip.value.azimuth = `${bearing.toFixed(2)}° / ${inverseBearing.toFixed(2)}°`;
+    }
     cursorTooltip.value.visible = true;
 
     let endLat: number, endLon: number;
@@ -384,7 +390,14 @@ onMounted(async () => {
     }
 
     // Draw the actual line
-    const lineName = name || `Free Hand Line ${layersStore.lineSegmentCount + 1}`;
+    let lineName = name;
+    if (!lineName) {
+      // Generate a clever name with distance and azimuth info
+      const dist = calculateDistance(startLat, startLon, endLat, endLon);
+      const bearing = calculateBearing(startLat, startLon, endLat, endLon);
+      const inverseBearing = (bearing + 180) % 360;
+      lineName = `Line ${dist.toFixed(1)}km • ${bearing.toFixed(1)}°/${inverseBearing.toFixed(1)}°`;
+    }
     drawing.drawLineSegment(
       startLat,
       startLon,
