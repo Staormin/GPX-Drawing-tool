@@ -34,11 +34,14 @@
             <v-tab value="parallel">
               <span class="text-xs">Parallel</span>
             </v-tab>
+            <v-tab value="freehand">
+              <span class="text-xs">Free Hand</span>
+            </v-tab>
           </v-tabs>
 
           <div class="h-[280px]">
             <!-- Start Coordinates with picker -->
-            <v-menu v-if="form.mode !== 'parallel'">
+            <v-menu v-if="form.mode !== 'parallel' && form.mode !== 'freehand'">
               <template #activator="{ props }">
                 <v-text-field
                   v-model="form.startCoord"
@@ -215,6 +218,61 @@
                 variant="outlined"
               />
             </template>
+
+            <template v-if="form.mode === 'freehand'">
+              <!-- Free Hand mode -->
+              <v-menu>
+                <template #activator="{ props }">
+                  <v-text-field
+                    v-model="form.freehandStartCoord"
+                    append-inner-icon="mdi-map-marker"
+                    class="mb-4"
+                    density="compact"
+                    label="Start Coordinates (optional)"
+                    placeholder="48.8566, 2.3522 (leave empty to draw from any point)"
+                    variant="outlined"
+                    v-bind="props"
+                    @click:append-inner="() => {}"
+                  />
+                </template>
+                <v-list>
+                  <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
+                    <v-list-item-title class="text-caption">
+                      No saved coordinates
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item
+                    v-for="coord in coordinatesStore.sortedCoordinates"
+                    :key="coord.id"
+                    @click="selectCoordinate(coord, 'freehandStart')"
+                  >
+                    <v-list-item-title class="text-sm">
+                      {{ coord.name }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle class="text-xs">
+                      {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+
+              <v-text-field
+                v-model.number="form.freehandAzimuth"
+                class="mb-4"
+                density="compact"
+                label="Azimuth (degrees, optional)"
+                max="360"
+                min="0"
+                placeholder="Leave empty for free direction"
+                type="number"
+                variant="outlined"
+              />
+
+              <div class="text-sm text-medium-emphasis mb-4">
+                Click "Start Drawing" to enter drawing mode. Move your mouse to set the endpoint.
+                Press Escape to cancel.
+              </div>
+            </template>
           </div>
         </v-form>
       </v-card-text>
@@ -223,7 +281,7 @@
         <v-spacer />
         <v-btn text @click="closeModal">Cancel</v-btn>
         <v-btn color="primary" @click="submitForm">{{
-          isEditing ? 'Update Line' : 'Add Line'
+          form.mode === 'freehand' ? 'Start Drawing' : isEditing ? 'Update Line' : 'Add Line'
         }}</v-btn>
       </v-card-actions>
     </v-card>
@@ -247,12 +305,14 @@ const drawing = inject('drawing') as any;
 
 const form = ref({
   name: '',
-  mode: 'coordinate' as 'coordinate' | 'azimuth' | 'intersection' | 'parallel',
+  mode: 'coordinate' as 'coordinate' | 'azimuth' | 'intersection' | 'parallel' | 'freehand',
   startCoord: '48.8566, 2.3522',
   endCoord: '48.8866, 2.3822',
   azimuth: 45,
   distance: 10,
   intersectCoord: '48.8666, 2.3622',
+  freehandStartCoord: '',
+  freehandAzimuth: undefined as number | undefined,
 });
 
 const isOpen = computed({
@@ -275,7 +335,7 @@ watch(
       if (segment) {
         form.value = {
           name: segment.name,
-          mode: segment.mode as 'coordinate' | 'azimuth' | 'intersection' | 'parallel',
+          mode: segment.mode as 'coordinate' | 'azimuth' | 'intersection' | 'parallel' | 'freehand',
           startCoord: `${segment.center.lat}, ${segment.center.lon}`,
           endCoord: segment.endpoint
             ? `${segment.endpoint.lat}, ${segment.endpoint.lon}`
@@ -285,6 +345,8 @@ watch(
           intersectCoord: segment.intersectionPoint
             ? `${segment.intersectionPoint.lat}, ${segment.intersectionPoint.lon}`
             : '48.8666, 2.3622',
+          freehandStartCoord: '',
+          freehandAzimuth: undefined,
         };
       }
     }
@@ -306,6 +368,8 @@ watch(
         azimuth: 45,
         distance: 10,
         intersectCoord: '48.8666, 2.3622',
+        freehandStartCoord: '',
+        freehandAzimuth: undefined,
       };
 
       // Apply pre-fill values if they exist
@@ -323,7 +387,7 @@ watch(
 
 function selectCoordinate(
   coord: SavedCoordinate,
-  field: 'start' | 'end' | 'intersect' | 'parallel'
+  field: 'start' | 'end' | 'intersect' | 'parallel' | 'freehandStart'
 ) {
   switch (field) {
     case 'start': {
@@ -347,6 +411,11 @@ function selectCoordinate(
 
       break;
     }
+    case 'freehandStart': {
+      form.value.freehandStartCoord = `${coord.lat}, ${coord.lon}`;
+
+      break;
+    }
     // No default
   }
 }
@@ -361,6 +430,18 @@ function parseCoordinateString(coordString: string): [number, number] | null {
 
 async function submitForm() {
   try {
+    // Handle free hand mode separately
+    if (form.value.mode === 'freehand') {
+      // Enter free hand drawing mode
+      uiStore.startFreeHandDrawing(
+        form.value.freehandStartCoord || null,
+        form.value.freehandAzimuth,
+        form.value.name.trim()
+      );
+      closeModal();
+      return;
+    }
+
     // Handle parallel mode separately
     if (form.value.mode === 'parallel') {
       // Parse the latitude value from startCoord
@@ -637,6 +718,8 @@ function resetForm() {
     azimuth: 45,
     distance: 10,
     intersectCoord: '48.8666, 2.3622',
+    freehandStartCoord: '',
+    freehandAzimuth: undefined,
   };
 }
 </script>

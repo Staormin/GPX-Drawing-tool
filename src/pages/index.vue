@@ -3,7 +3,7 @@
   <NavigationBar />
 
   <!-- Fullscreen map -->
-  <div id="map" />
+  <div id="map" :class="{ 'freehand-drawing': uiStore.freeHandDrawing.isDrawing }" />
 
   <!-- Sidebar -->
   <aside class="sidebar" :class="{ open: sidebarOpen }">
@@ -73,12 +73,30 @@
   <v-snackbar
     v-for="toast in uiStore.toasts"
     :key="toast.id"
+    :color="toast.type"
     :model-value="true"
-    :type="toast.type"
     @update:model-value="uiStore.removeToast(toast.id)"
   >
     {{ toast.message }}
   </v-snackbar>
+
+  <!-- Free hand drawing cursor tooltip -->
+  <div
+    v-if="cursorTooltip.visible"
+    class="cursor-tooltip"
+    :style="{ left: cursorTooltip.x + 'px', top: cursorTooltip.y + 'px' }"
+  >
+    <div class="cursor-tooltip-content">
+      <div class="cursor-tooltip-row">
+        <span class="cursor-tooltip-label">Distance:</span>
+        <span class="cursor-tooltip-value">{{ cursorTooltip.distance }}</span>
+      </div>
+      <div class="cursor-tooltip-row">
+        <span class="cursor-tooltip-label">Azimuth:</span>
+        <span class="cursor-tooltip-value">{{ cursorTooltip.azimuth }}</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -100,6 +118,12 @@ import TutorialModal from '@/components/TutorialModal.vue';
 import { useDrawing } from '@/composables/useDrawing';
 import { useMap } from '@/composables/useMap';
 import { useNavigation } from '@/composables/useNavigation';
+import {
+  calculateBearing,
+  calculateDistance,
+  destinationPoint,
+  generateLinePointsLinear,
+} from '@/services/geometry';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
 import { useProjectsStore } from '@/stores/projects';
@@ -127,6 +151,21 @@ watch(
 );
 const lastMessage = ref<string>('');
 const lastMessageType = ref<'success' | 'error'>('success');
+
+// Free hand drawing cursor tooltip
+const cursorTooltip = ref<{
+  visible: boolean;
+  x: number;
+  y: number;
+  distance: string;
+  azimuth: string;
+}>({
+  visible: false,
+  x: 0,
+  y: 0,
+  distance: '',
+  azimuth: '',
+});
 
 // Auto-save on layers or coordinates change
 watch(
@@ -216,6 +255,160 @@ onMounted(async () => {
     uiStore.openModal('coordinatesModal');
   });
 
+  // Setup free hand drawing mode mouse tracking
+  let freeHandPreviewLayer: any = null;
+  const handleMouseMove = (event: any) => {
+    if (!uiStore.freeHandDrawing.isDrawing) {
+      cursorTooltip.value.visible = false;
+      return;
+    }
+
+    const map = mapContainer.map?.value;
+    if (!map) return;
+
+    const { lat, lng } = event.latlng;
+    const { startCoord, azimuth } = uiStore.freeHandDrawing;
+
+    // Update cursor tooltip position (offset from cursor)
+    const containerPoint = event.containerPoint;
+    cursorTooltip.value.x = containerPoint.x + 20;
+    cursorTooltip.value.y = containerPoint.y + 20;
+
+    // Parse start coordinates if provided, otherwise use current mouse position as start
+    let startLat: number, startLon: number;
+    if (startCoord && startCoord.trim() !== '') {
+      const parts = startCoord.split(',').map((s: string) => Number.parseFloat(s.trim()));
+      if (parts.length === 2 && !parts.some((p: number) => Number.isNaN(p))) {
+        startLat = parts[0]!;
+        startLon = parts[1]!;
+      } else {
+        // Invalid start coord, just return
+        cursorTooltip.value.visible = false;
+        return;
+      }
+    } else {
+      // No start point defined yet - hide tooltip
+      cursorTooltip.value.visible = false;
+      return;
+    }
+
+    // Calculate distance and bearing
+    const distance = calculateDistance(startLat, startLon, lat, lng);
+    const bearing = calculateBearing(startLat, startLon, lat, lng);
+
+    // Update tooltip content
+    cursorTooltip.value.distance = `${distance.toFixed(3)} km`;
+    cursorTooltip.value.azimuth = azimuth !== undefined ? `${azimuth.toFixed(1)}° (locked)` : `${bearing.toFixed(1)}°`;
+    cursorTooltip.value.visible = true;
+
+    let endLat: number, endLon: number;
+
+    // If azimuth is defined, constrain the line to that azimuth
+    if (azimuth !== undefined && startCoord && startCoord.trim() !== '') {
+      // Calculate the endpoint at the specified azimuth
+      const endpoint = destinationPoint(startLat, startLon, distance, azimuth);
+      endLat = endpoint.lat;
+      endLon = endpoint.lon;
+    } else {
+      // Free direction - endpoint is mouse position
+      endLat = lat;
+      endLon = lng;
+    }
+
+    // Remove previous preview layer
+    if (freeHandPreviewLayer) {
+      map.removeLayer(freeHandPreviewLayer);
+    }
+
+    // Draw preview line (using linear interpolation for straight line appearance)
+    const L = (window as any).L;
+    const linePoints = generateLinePointsLinear(startLat, startLon, endLat, endLon, 100);
+    freeHandPreviewLayer = L.polyline(
+      linePoints.map((p: any) => [p.lat, p.lon]),
+      {
+        color: '#000000',
+        weight: 3,
+        opacity: 0.8,
+      }
+    ).addTo(map);
+  };
+
+  const handleMapClick = async (event: any) => {
+    if (!uiStore.freeHandDrawing.isDrawing) return;
+
+    const map = mapContainer.map?.value;
+    if (!map) return;
+
+    const { lat, lng } = event.latlng;
+    const { startCoord, azimuth, name } = uiStore.freeHandDrawing;
+
+    // Parse start coordinates if provided
+    let startLat: number, startLon: number;
+    if (startCoord && startCoord.trim() !== '') {
+      const parts = startCoord.split(',').map((s: string) => Number.parseFloat(s.trim()));
+      if (parts.length === 2 && !parts.some((p: number) => Number.isNaN(p))) {
+        startLat = parts[0]!;
+        startLon = parts[1]!;
+      } else {
+        uiStore.addToast('Invalid start coordinates', 'error');
+        uiStore.stopFreeHandDrawing();
+        return;
+      }
+    } else {
+      // If no start coord was defined, this click sets the start point
+      uiStore.freeHandDrawing.startCoord = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      uiStore.addToast('Start point set. Click again to set the endpoint.', 'info');
+      return;
+    }
+
+    let endLat: number, endLon: number;
+
+    // If azimuth is defined, constrain the line to that azimuth
+    if (azimuth !== undefined) {
+      // Calculate distance from start to click position
+      const dist = calculateDistance(startLat, startLon, lat, lng);
+      // Calculate the endpoint at the specified azimuth
+      const endpoint = destinationPoint(startLat, startLon, dist, azimuth);
+      endLat = endpoint.lat;
+      endLon = endpoint.lon;
+    } else {
+      // Free direction - endpoint is click position
+      endLat = lat;
+      endLon = lng;
+    }
+
+    // Remove preview layer
+    if (freeHandPreviewLayer) {
+      map.removeLayer(freeHandPreviewLayer);
+      freeHandPreviewLayer = null;
+    }
+
+    // Draw the actual line
+    const lineName = name || `Free Hand Line ${layersStore.lineSegmentCount + 1}`;
+    drawing.drawLineSegment(
+      startLat,
+      startLon,
+      endLat,
+      endLon,
+      lineName,
+      'coordinate',
+      undefined,
+      azimuth,
+      undefined,
+      undefined,
+      undefined
+    );
+
+    uiStore.addToast('Line segment added successfully!', 'success');
+    uiStore.stopFreeHandDrawing();
+  };
+
+  // Add event listeners to the map
+  if (mapContainer.map?.value) {
+    mapContainer.map.value.on('mousemove', handleMouseMove);
+    mapContainer.map.value.on('click', handleMapClick);
+  }
+
   // Setup keyboard shortcuts and navigation
   const handleKeydown = (event: KeyboardEvent) => {
     // Check if user is typing in an input field
@@ -225,10 +418,13 @@ onMounted(async () => {
 
     // Global keyboard shortcuts (only when not typing in input)
     if (!isInputField && !uiStore.navigatingElement) {
+      // Skip if any modifier keys are pressed (Ctrl, Meta, Alt, Shift)
+      const hasModifier = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
+
       // Check if any modal is open
       const isAnyModalOpen = uiStore.openModals.size > 0;
 
-      if (!isAnyModalOpen) {
+      if (!isAnyModalOpen && !hasModifier) {
         switch (event.key.toLowerCase()) {
           case 'c': {
             event.preventDefault();
@@ -247,6 +443,16 @@ onMounted(async () => {
           }
           // No default
         }
+      }
+    }
+
+    // Free hand drawing mode keyboard handling
+    if (uiStore.freeHandDrawing.isDrawing) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        uiStore.stopFreeHandDrawing();
+        uiStore.addToast('Free hand drawing cancelled', 'info');
+        return;
       }
     }
 
@@ -318,10 +524,28 @@ onMounted(async () => {
 
   document.addEventListener('keydown', handleKeydown);
 
+  // Watch for free hand drawing mode changes to clean up preview
+  watch(
+    () => uiStore.freeHandDrawing.isDrawing,
+    (isDrawing) => {
+      if (!isDrawing && freeHandPreviewLayer && mapContainer.map?.value) {
+        mapContainer.map.value.removeLayer(freeHandPreviewLayer);
+        freeHandPreviewLayer = null;
+      }
+    }
+  );
+
   // Cleanup on unmount
   return () => {
     unsubscribe();
     document.removeEventListener('keydown', handleKeydown);
+    if (mapContainer.map?.value) {
+      mapContainer.map.value.off('mousemove', handleMouseMove);
+      mapContainer.map.value.off('click', handleMapClick);
+      if (freeHandPreviewLayer) {
+        mapContainer.map.value.removeLayer(freeHandPreviewLayer);
+      }
+    }
     mapContainer.destroyMap();
   };
 });
@@ -336,12 +560,18 @@ onMounted(async () => {
   padding: 2px 6px;
   margin-left: 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.95);
   font-family: monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+/* Fix tooltip text color */
+:global(.v-tooltip > .v-overlay__content) {
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
 html,
@@ -508,5 +738,49 @@ body,
 .status-message.error {
   background: rgba(var(--v-theme-error), 0.15);
   color: rgb(var(--v-theme-error));
+}
+
+/* Cursor change for free hand drawing */
+#map.freehand-drawing {
+  cursor: crosshair !important;
+}
+
+#map.freehand-drawing * {
+  cursor: crosshair !important;
+}
+
+/* Cursor tooltip for free hand drawing */
+.cursor-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.cursor-tooltip-content {
+  background: rgb(var(--v-theme-surface));
+  border: 2px solid rgb(var(--v-theme-primary));
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  min-width: 160px;
+}
+
+.cursor-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 2px 0;
+}
+
+.cursor-tooltip-label {
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-weight: 500;
+}
+
+.cursor-tooltip-value {
+  color: rgb(var(--v-theme-on-surface));
+  font-weight: 600;
+  font-family: monospace;
 }
 </style>

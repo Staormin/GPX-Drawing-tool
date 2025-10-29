@@ -35,6 +35,13 @@ export interface SearchAlongPanel {
   elementId: string | null;
 }
 
+export interface FreeHandDrawing {
+  isDrawing: boolean;
+  startCoord: string | null;
+  azimuth: number | undefined;
+  name: string;
+}
+
 export const useUIStore = defineStore('ui', () => {
   // State
   const openModals = ref<Set<string>>(new Set());
@@ -57,6 +64,12 @@ export const useUIStore = defineStore('ui', () => {
     isOpen: false,
     elementType: null,
     elementId: null,
+  });
+  const freeHandDrawing = ref<FreeHandDrawing>({
+    isDrawing: false,
+    startCoord: null,
+    azimuth: undefined,
+    name: '',
   });
 
   // Computed
@@ -226,6 +239,30 @@ export const useUIStore = defineStore('ui', () => {
     };
   }
 
+  function startFreeHandDrawing(
+    startCoord: string | null,
+    azimuth: number | undefined,
+    name: string
+  ): void {
+    freeHandDrawing.value = {
+      isDrawing: true,
+      startCoord,
+      azimuth,
+      name,
+    };
+    sidebarOpen.value = false;
+  }
+
+  function stopFreeHandDrawing(): void {
+    freeHandDrawing.value = {
+      isDrawing: false,
+      startCoord: null,
+      azimuth: undefined,
+      name: '',
+    };
+    sidebarOpen.value = true;
+  }
+
   return {
     // State
     openModals,
@@ -245,6 +282,7 @@ export const useUIStore = defineStore('ui', () => {
     navigatingElement,
     showTutorial,
     searchAlongPanel,
+    freeHandDrawing,
 
     // Computed
     isModalOpen,
@@ -283,5 +321,7 @@ export const useUIStore = defineStore('ui', () => {
     setShowTutorial,
     openSearchAlong,
     closeSearchAlong,
+    startFreeHandDrawing,
+    stopFreeHandDrawing,
   };
 });

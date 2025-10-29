@@ -1,4 +1,5 @@
 <template>
+  <!-- Navigation Mode -->
   <div v-if="uiStore.navigatingElement" class="navigation-bar">
     <div class="navigation-bar-content">
       <div class="navigation-instructions">
@@ -12,6 +13,27 @@
       </button>
     </div>
   </div>
+
+  <!-- Free Hand Drawing Mode -->
+  <div v-else-if="uiStore.freeHandDrawing.isDrawing" class="navigation-bar">
+    <div class="navigation-bar-content">
+      <div class="navigation-instructions">
+        <span class="navigation-icon">✏️</span>
+        <span class="navigation-text">
+          <template v-if="!uiStore.freeHandDrawing.startCoord">
+            Click to set start point
+          </template>
+          <template v-else>
+            Move mouse to set endpoint • Click to confirm
+          </template>
+          • Press <strong>ESC</strong> to cancel
+        </span>
+      </div>
+      <button class="navigation-exit-btn" type="button" @click="handleExitFreeHand">
+        Cancel Drawing
+      </button>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -21,6 +43,10 @@ const uiStore = useUIStore();
 
 function handleExitNavigation(): void {
   uiStore.stopNavigating();
+}
+
+function handleExitFreeHand(): void {
+  uiStore.stopFreeHandDrawing();
 }
 </script>
 
