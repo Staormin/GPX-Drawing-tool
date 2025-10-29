@@ -56,6 +56,15 @@ style.textContent = `
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Make placeholder text more visible */
+  input::placeholder,
+  textarea::placeholder,
+  .v-field input::placeholder,
+  .v-field textarea::placeholder {
+    opacity: 0.5 !important;
+    color: rgba(var(--v-theme-on-surface), 0.5) !important;
+  }
 `;
 document.head.append(style);
 

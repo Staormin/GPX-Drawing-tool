@@ -40,110 +40,68 @@
           </v-tabs>
 
           <div class="h-[280px]">
-            <!-- Start Coordinates with picker -->
-            <v-menu v-if="form.mode !== 'parallel' && form.mode !== 'freehand'">
-              <template #activator="{ props }">
-                <v-text-field
-                  v-model="form.startCoord"
-                  append-inner-icon="mdi-map-marker"
-                  class="mb-4"
-                  density="compact"
-                  label="Start Coordinates"
-                  placeholder="48.8566, 2.3522"
-                  variant="outlined"
-                  v-bind="props"
-                  @click:append-inner="() => {}"
-                />
+            <!-- Start Coordinates selector (except parallel) -->
+            <v-select
+              v-if="form.mode !== 'parallel'"
+              v-model="form.startCoord"
+              :items="coordinateItems"
+              class="mb-4"
+              clearable
+              density="compact"
+              item-title="label"
+              item-value="value"
+              :label="form.mode === 'freehand' ? 'Start Coordinates (optional)' : 'Start Coordinates'"
+              placeholder="Select a saved coordinate"
+              variant="outlined"
+            >
+              <template #no-data>
+                <v-list-item>
+                  <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+                </v-list-item>
               </template>
-              <v-list>
-                <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                  <v-list-item-title class="text-caption"> No saved coordinates </v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  v-for="coord in coordinatesStore.sortedCoordinates"
-                  :key="coord.id"
-                  @click="selectCoordinate(coord, 'start')"
-                >
-                  <v-list-item-title class="text-sm">
-                    {{ coord.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle class="text-xs">
-                    {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            </v-select>
 
-            <!-- Parallel mode with coordinate picker -->
-            <v-menu v-if="form.mode === 'parallel'">
-              <template #activator="{ props }">
-                <v-text-field
-                  v-model="form.startCoord"
-                  append-inner-icon="mdi-map-marker"
-                  class="mb-4"
-                  density="compact"
-                  label="Latitude"
-                  placeholder="0 (for Equator)"
-                  variant="outlined"
-                  v-bind="props"
-                  @click:append-inner="() => {}"
-                />
+            <!-- Parallel mode coordinate selector -->
+            <v-select
+              v-if="form.mode === 'parallel'"
+              v-model="form.startCoord"
+              :items="parallelCoordinateItems"
+              class="mb-4"
+              clearable
+              density="compact"
+              item-title="label"
+              item-value="value"
+              label="Latitude"
+              placeholder="Select a saved coordinate"
+              variant="outlined"
+            >
+              <template #no-data>
+                <v-list-item>
+                  <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+                </v-list-item>
               </template>
-              <v-list>
-                <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                  <v-list-item-title class="text-caption"> No saved coordinates </v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  v-for="coord in coordinatesStore.sortedCoordinates"
-                  :key="coord.id"
-                  @click="selectCoordinate(coord, 'parallel')"
-                >
-                  <v-list-item-title class="text-sm">
-                    {{ coord.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle class="text-xs">
-                    {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            </v-select>
 
             <template v-if="form.mode === 'coordinate'">
-              <!-- End Coordinates with picker -->
-              <v-menu>
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-model="form.endCoord"
-                    append-inner-icon="mdi-map-marker"
-                    class="mb-4"
-                    density="compact"
-                    label="End Coordinates"
-                    placeholder="48.8566, 2.3522"
-                    variant="outlined"
-                    v-bind="props"
-                    @click:append-inner="() => {}"
-                  />
+              <!-- End Coordinates selector -->
+              <v-select
+                v-model="form.endCoord"
+                :items="coordinateItems"
+                class="mb-4"
+                clearable
+                density="compact"
+                item-title="label"
+                item-value="value"
+                label="End Coordinates"
+                placeholder="Select a saved coordinate"
+                variant="outlined"
+              >
+                <template #no-data>
+                  <v-list-item>
+                    <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+                  </v-list-item>
                 </template>
-                <v-list>
-                  <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                    <v-list-item-title class="text-caption">
-                      No saved coordinates
-                    </v-list-item-title>
-                  </v-list-item>
-                  <v-list-item
-                    v-for="coord in coordinatesStore.sortedCoordinates"
-                    :key="coord.id"
-                    @click="selectCoordinate(coord, 'end')"
-                  >
-                    <v-list-item-title class="text-sm">
-                      {{ coord.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-xs">
-                      {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+              </v-select>
             </template>
 
             <template v-if="form.mode === 'azimuth'">
@@ -171,41 +129,25 @@
             </template>
 
             <template v-if="form.mode === 'intersection'">
-              <!-- Intersection Coordinates with picker -->
-              <v-menu>
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-model="form.intersectCoord"
-                    append-inner-icon="mdi-map-marker"
-                    class="mb-4"
-                    density="compact"
-                    label="Intersection Coordinates"
-                    placeholder="48.8566, 2.3522"
-                    variant="outlined"
-                    v-bind="props"
-                    @click:append-inner="() => {}"
-                  />
+              <!-- Intersection Coordinates selector -->
+              <v-select
+                v-model="form.intersectCoord"
+                :items="coordinateItems"
+                class="mb-4"
+                clearable
+                density="compact"
+                item-title="label"
+                item-value="value"
+                label="Intersection Coordinates"
+                placeholder="Select a saved coordinate"
+                variant="outlined"
+              >
+                <template #no-data>
+                  <v-list-item>
+                    <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+                  </v-list-item>
                 </template>
-                <v-list>
-                  <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                    <v-list-item-title class="text-caption">
-                      No saved coordinates
-                    </v-list-item-title>
-                  </v-list-item>
-                  <v-list-item
-                    v-for="coord in coordinatesStore.sortedCoordinates"
-                    :key="coord.id"
-                    @click="selectCoordinate(coord, 'intersect')"
-                  >
-                    <v-list-item-title class="text-sm">
-                      {{ coord.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-xs">
-                      {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+              </v-select>
 
               <v-text-field
                 v-model.number="form.distance"
@@ -221,41 +163,6 @@
 
             <template v-if="form.mode === 'freehand'">
               <!-- Free Hand mode -->
-              <v-menu>
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-model="form.freehandStartCoord"
-                    append-inner-icon="mdi-map-marker"
-                    class="mb-4"
-                    density="compact"
-                    label="Start Coordinates (optional)"
-                    placeholder="48.8566, 2.3522 (leave empty to draw from any point)"
-                    variant="outlined"
-                    v-bind="props"
-                    @click:append-inner="() => {}"
-                  />
-                </template>
-                <v-list>
-                  <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                    <v-list-item-title class="text-caption">
-                      No saved coordinates
-                    </v-list-item-title>
-                  </v-list-item>
-                  <v-list-item
-                    v-for="coord in coordinatesStore.sortedCoordinates"
-                    :key="coord.id"
-                    @click="selectCoordinate(coord, 'freehandStart')"
-                  >
-                    <v-list-item-title class="text-sm">
-                      {{ coord.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-xs">
-                      {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-
               <v-text-field
                 v-model.number="form.freehandAzimuth"
                 class="mb-4"
@@ -306,13 +213,26 @@ const drawing = inject('drawing') as any;
 const form = ref({
   name: '',
   mode: 'coordinate' as 'coordinate' | 'azimuth' | 'intersection' | 'parallel' | 'freehand',
-  startCoord: '48.8566, 2.3522',
-  endCoord: '48.8866, 2.3822',
+  startCoord: '',
+  endCoord: '',
   azimuth: 45,
   distance: 10,
-  intersectCoord: '48.8666, 2.3622',
-  freehandStartCoord: '',
+  intersectCoord: '',
   freehandAzimuth: undefined as number | undefined,
+});
+
+const coordinateItems = computed(() => {
+  return coordinatesStore.sortedCoordinates.map((coord) => ({
+    label: `${coord.name} (${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)})`,
+    value: `${coord.lat}, ${coord.lon}`,
+  }));
+});
+
+const parallelCoordinateItems = computed(() => {
+  return coordinatesStore.sortedCoordinates.map((coord) => ({
+    label: `${coord.name} (${coord.lat.toFixed(6)})`,
+    value: `${coord.lat}`,
+  }));
 });
 
 const isOpen = computed({
@@ -337,15 +257,12 @@ watch(
           name: segment.name,
           mode: segment.mode as 'coordinate' | 'azimuth' | 'intersection' | 'parallel' | 'freehand',
           startCoord: `${segment.center.lat}, ${segment.center.lon}`,
-          endCoord: segment.endpoint
-            ? `${segment.endpoint.lat}, ${segment.endpoint.lon}`
-            : '48.8866, 2.3822',
+          endCoord: segment.endpoint ? `${segment.endpoint.lat}, ${segment.endpoint.lon}` : '',
           azimuth: segment.azimuth === undefined ? 45 : segment.azimuth,
           distance: segment.distance === undefined ? 10 : segment.distance,
           intersectCoord: segment.intersectionPoint
             ? `${segment.intersectionPoint.lat}, ${segment.intersectionPoint.lon}`
-            : '48.8666, 2.3622',
-          freehandStartCoord: '',
+            : '',
           freehandAzimuth: undefined,
         };
       }
@@ -363,12 +280,11 @@ watch(
       form.value = {
         name: '',
         mode: 'coordinate',
-        startCoord: '48.8566, 2.3522',
-        endCoord: '48.8866, 2.3822',
+        startCoord: '',
+        endCoord: '',
         azimuth: 45,
         distance: 10,
-        intersectCoord: '48.8666, 2.3622',
-        freehandStartCoord: '',
+        intersectCoord: '',
         freehandAzimuth: undefined,
       };
 
@@ -385,41 +301,6 @@ watch(
   { immediate: true }
 );
 
-function selectCoordinate(
-  coord: SavedCoordinate,
-  field: 'start' | 'end' | 'intersect' | 'parallel' | 'freehandStart'
-) {
-  switch (field) {
-    case 'start': {
-      form.value.startCoord = `${coord.lat}, ${coord.lon}`;
-
-      break;
-    }
-    case 'end': {
-      form.value.endCoord = `${coord.lat}, ${coord.lon}`;
-
-      break;
-    }
-    case 'intersect': {
-      form.value.intersectCoord = `${coord.lat}, ${coord.lon}`;
-
-      break;
-    }
-    case 'parallel': {
-      // For parallel, we only want the latitude
-      form.value.startCoord = `${coord.lat}`;
-
-      break;
-    }
-    case 'freehandStart': {
-      form.value.freehandStartCoord = `${coord.lat}, ${coord.lon}`;
-
-      break;
-    }
-    // No default
-  }
-}
-
 function parseCoordinateString(coordString: string): [number, number] | null {
   const parts = coordString.split(',').map((s) => Number.parseFloat(s.trim()));
   if (parts.length !== 2 || parts.some((p) => Number.isNaN(p))) {
@@ -434,7 +315,7 @@ async function submitForm() {
     if (form.value.mode === 'freehand') {
       // Enter free hand drawing mode
       uiStore.startFreeHandDrawing(
-        form.value.freehandStartCoord || null,
+        form.value.startCoord || null,
         form.value.freehandAzimuth,
         form.value.name.trim()
       );
@@ -444,6 +325,11 @@ async function submitForm() {
 
     // Handle parallel mode separately
     if (form.value.mode === 'parallel') {
+      if (!form.value.startCoord) {
+        uiStore.addToast('Please select latitude coordinates', 'error');
+        return;
+      }
+
       // Parse the latitude value from startCoord
       const latStr = form.value.startCoord.trim();
       const latitude = Number.parseFloat(latStr);
@@ -484,6 +370,12 @@ async function submitForm() {
       return;
     }
 
+    // Validate start coordinates
+    if (!form.value.startCoord) {
+      uiStore.addToast('Please select start coordinates', 'error');
+      return;
+    }
+
     // Parse start coordinates for non-meridian modes
     const startCoord = parseCoordinateString(form.value.startCoord);
     if (!startCoord) {
@@ -503,6 +395,10 @@ async function submitForm() {
 
     switch (form.value.mode) {
       case 'coordinate': {
+        if (!form.value.endCoord) {
+          uiStore.addToast('Please select end coordinates', 'error');
+          return;
+        }
         const endCoord = parseCoordinateString(form.value.endCoord);
         if (!endCoord) {
           uiStore.addToast(
@@ -528,6 +424,10 @@ async function submitForm() {
         break;
       }
       case 'intersection': {
+        if (!form.value.intersectCoord) {
+          uiStore.addToast('Please select intersection coordinates', 'error');
+          return;
+        }
         const intersectCoord = parseCoordinateString(form.value.intersectCoord);
         if (!intersectCoord) {
           uiStore.addToast(
@@ -713,12 +613,11 @@ function resetForm() {
   form.value = {
     name: '',
     mode: 'coordinate',
-    startCoord: '48.8566, 2.3522',
-    endCoord: '48.8866, 2.3822',
+    startCoord: '',
+    endCoord: '',
     azimuth: 45,
     distance: 10,
-    intersectCoord: '48.8666, 2.3622',
-    freehandStartCoord: '',
+    intersectCoord: '',
     freehandAzimuth: undefined,
   };
 }

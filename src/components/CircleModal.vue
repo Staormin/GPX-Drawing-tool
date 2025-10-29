@@ -18,40 +18,25 @@
             variant="outlined"
           />
 
-          <!-- Center Coordinates with picker -->
-          <v-menu>
-            <template #activator="{ props }">
-              <v-text-field
-                v-model="form.centerCoord"
-                append-inner-icon="mdi-map-marker"
-                class="mb-4"
-                density="compact"
-                label="Center Coordinates"
-                placeholder="48.8566, 2.3522"
-                variant="outlined"
-                v-bind="props"
-                @click:append-inner="() => {}"
-                @update:model-value="parseCoordinateInput"
-              />
+          <!-- Center Coordinates selector -->
+          <v-select
+            v-model="form.centerCoord"
+            :items="coordinateItems"
+            class="mb-4"
+            clearable
+            density="compact"
+            item-title="label"
+            item-value="value"
+            label="Center Coordinates"
+            placeholder="Select a saved coordinate"
+            variant="outlined"
+          >
+            <template #no-data>
+              <v-list-item>
+                <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+              </v-list-item>
             </template>
-            <v-list>
-              <v-list-item v-if="coordinatesStore.sortedCoordinates.length === 0" disabled>
-                <v-list-item-title class="text-caption"> No saved coordinates </v-list-item-title>
-              </v-list-item>
-              <v-list-item
-                v-for="coord in coordinatesStore.sortedCoordinates"
-                :key="coord.id"
-                @click="selectCoordinate(coord, 'center')"
-              >
-                <v-list-item-title class="text-sm">
-                  {{ coord.name }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-xs">
-                  {{ coord.lat.toFixed(6) }}, {{ coord.lon.toFixed(6) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-menu>
+          </v-select>
 
           <v-text-field
             v-model.number="form.radius"
@@ -93,8 +78,15 @@ const drawing = inject('drawing') as any;
 
 const form = ref({
   name: '',
-  centerCoord: '48.8566, 2.3522',
+  centerCoord: '',
   radius: 5,
+});
+
+const coordinateItems = computed(() => {
+  return coordinatesStore.sortedCoordinates.map((coord) => ({
+    label: `${coord.name} (${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)})`,
+    value: `${coord.lat}, ${coord.lon}`,
+  }));
 });
 
 const isOpen = computed({
@@ -134,7 +126,7 @@ watch(
       // Reset form to defaults
       form.value = {
         name: '',
-        centerCoord: '48.8566, 2.3522',
+        centerCoord: '',
         radius: 5,
       };
 
@@ -147,18 +139,12 @@ watch(
   { immediate: true }
 );
 
-function parseCoordinateInput() {
-  // This function just validates the input format when needed
-  // Actual parsing happens in submitForm
-}
-
-function selectCoordinate(coord: SavedCoordinate, field: 'center') {
-  if (field === 'center') {
-    form.value.centerCoord = `${coord.lat}, ${coord.lon}`;
-  }
-}
-
 async function submitForm() {
+  if (!form.value.centerCoord) {
+    uiStore.addToast('Please select center coordinates', 'error');
+    return;
+  }
+
   if (form.value.radius <= 0) {
     uiStore.addToast('Please enter a valid radius', 'error');
     return;
@@ -214,7 +200,7 @@ function closeModal() {
 function resetForm() {
   form.value = {
     name: '',
-    centerCoord: '48.8566, 2.3522',
+    centerCoord: '',
     radius: 5,
   };
 }
