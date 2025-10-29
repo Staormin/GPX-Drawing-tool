@@ -298,7 +298,7 @@ onMounted(async () => {
 
     // Update tooltip content
     cursorTooltip.value.distance = `${distance.toFixed(3)} km`;
-    cursorTooltip.value.azimuth = azimuth !== undefined ? `${azimuth.toFixed(1)}° (locked)` : `${bearing.toFixed(1)}°`;
+    cursorTooltip.value.azimuth = azimuth !== undefined ? `${azimuth.toFixed(2)}° (locked)` : `${bearing.toFixed(2)}°`;
     cursorTooltip.value.visible = true;
 
     let endLat: number, endLon: number;

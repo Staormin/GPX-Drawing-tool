@@ -112,6 +112,7 @@
                 label="Azimuth (degrees)"
                 max="360"
                 min="0"
+                step="0.01"
                 type="number"
                 variant="outlined"
               />
@@ -171,6 +172,7 @@
                 max="360"
                 min="0"
                 placeholder="Leave empty for free direction"
+                step="0.01"
                 type="number"
                 variant="outlined"
               />

@@ -212,7 +212,7 @@ function getLineInfo(line: LineSegmentElement) {
         ? 'azimuth'
         : 'intersection';
 
-  return `${modeLabel} • ${azimuth.toFixed(1)}° / ${inverseAzimuth.toFixed(1)}° • ${segmentLength.toFixed(2)} km`;
+  return `${modeLabel} • ${azimuth.toFixed(2)}° / ${inverseAzimuth.toFixed(2)}° • ${segmentLength.toFixed(2)} km`;
 }
 
 function handleEditCircle(circle: CircleElement) {
