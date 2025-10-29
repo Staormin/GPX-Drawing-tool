@@ -29,6 +29,10 @@ export function useMap(containerId: string) {
         preferCanvas: true,
         zoomControl: false,
         attributionControl: false,
+        zoomDelta: 0.25,
+        wheelPxPerZoomLevel: 120,
+        zoomAnimation: true,
+        zoomAnimationThreshold: 4,
       } as any).setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lon], DEFAULT_MAP_ZOOM);
 
       // Add tile layer from Geoportail
