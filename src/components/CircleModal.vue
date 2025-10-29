@@ -187,12 +187,7 @@ async function submitForm() {
     } else {
       // Try reverse geocoding
       const { address } = await getReverseGeocodeAddress(centerLat, centerLon);
-      if (address) {
-        name = `Circle at ${address}`;
-      } else {
-        // Fallback to generic name
-        name = `Circle ${layersStore.circleCount + 1}`;
-      }
+      name = address ? `Circle at ${address}` : `Circle ${layersStore.circleCount + 1}`;
     }
   }
 

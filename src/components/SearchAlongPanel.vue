@@ -1,40 +1,32 @@
 <template>
   <!-- Match the sidebar-inner structure from index.vue -->
   <div
-    style="
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      height: 100%;
-      overflow-y: auto;
-      padding: 16px 16px 96px;
-    "
+    ref="scrollContainer"
+    style="display: flex; flex-direction: column; height: 100%; overflow-y: auto"
   >
-    <!-- Header -->
-    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0">
-      <v-btn icon="mdi-arrow-left" size="small" variant="text" @click="handleClose" />
-      <span class="text-subtitle-2">Search Results</span>
-    </div>
-
-    <!-- Loading Indicator -->
+    <!-- Sticky Header Section -->
     <div
-      v-if="isSearching"
       style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 200px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgb(var(--v-theme-surface));
+        padding: 16px 16px 0;
       "
     >
-      <v-progress-circular color="primary" indeterminate size="48" width="4" />
-      <div class="text-caption text-disabled mt-4">Searching...</div>
-    </div>
+      <!-- Header -->
+      <div
+        style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 16px"
+      >
+        <v-btn icon="mdi-arrow-left" size="small" variant="text" @click="handleClose" />
+        <span class="text-subtitle-2">Search Results</span>
+      </div>
 
-    <!-- Main Content Area -->
-    <template v-else>
-      <!-- Filter Section - Show for both line segments and points -->
-      <div style="display: flex; flex-direction: column; gap: 12px">
+      <!-- Filter Section - Show for both line segments and points (inside sticky header) -->
+      <div
+        v-if="!isSearching"
+        style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px"
+      >
         <v-text-field
           v-model="filterText"
           clearable
@@ -44,6 +36,72 @@
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
         />
+
+        <!-- Include Type Filter -->
+        <v-select
+          v-model="includedTypes"
+          chips
+          clearable
+          closable-chips
+          density="compact"
+          :disabled="isSearching"
+          :items="availableIncludeTypes"
+          label="Include types"
+          multiple
+          variant="outlined"
+        >
+          <template #selection="{ index }">
+            <!-- Show only first 3 chips and +X more -->
+            <template v-if="index < 3 && includedTypes[index]">
+              <v-chip
+                class="ma-1"
+                closable
+                color="success"
+                size="small"
+                @click:close="removeIncludedType(includedTypes[index]!)"
+              >
+                {{ includedTypes[index] }}
+              </v-chip>
+            </template>
+            <!-- Show +X more for remaining items after 3rd chip -->
+            <span v-else-if="index === 3" class="text-caption text-medium-emphasis ml-1">
+              +{{ includedTypes.length - 3 }} more
+            </span>
+          </template>
+        </v-select>
+
+        <!-- Exclude Type Filter -->
+        <v-select
+          v-model="excludedTypes"
+          chips
+          clearable
+          closable-chips
+          density="compact"
+          :disabled="isSearching"
+          :items="availableExcludeTypes"
+          label="Exclude types"
+          multiple
+          variant="outlined"
+        >
+          <template #selection="{ index }">
+            <!-- Show only first 3 chips and +X more -->
+            <template v-if="index < 3 && excludedTypes[index]">
+              <v-chip
+                class="ma-1"
+                closable
+                color="error"
+                size="small"
+                @click:close="removeExcludedType(excludedTypes[index]!)"
+              >
+                {{ excludedTypes[index] }}
+              </v-chip>
+            </template>
+            <!-- Show +X more for remaining items after 3rd chip -->
+            <span v-else-if="index === 3" class="text-caption text-medium-emphasis ml-1">
+              +{{ excludedTypes.length - 3 }} more
+            </span>
+          </template>
+        </v-select>
 
         <!-- Distance Slider -->
         <div>
@@ -55,10 +113,13 @@
           </div>
           <v-slider
             v-model="liveDisplayDistance"
+            color="primary"
             :disabled="isSearching"
             :max="maxSearchDistance"
             :min="0.5"
             :step="0.1"
+            thumb-size="20"
+            track-size="4"
             @mouseup="handleDisplayDistanceRelease"
             @touchend="handleDisplayDistanceRelease"
           />
@@ -84,192 +145,224 @@
             @mouseup="handleAltitudeRangeRelease"
             @touchend="handleAltitudeRangeRelease"
           />
-          <div class="text-caption text-disabled mt-2">
-            Min: {{ altitudeMinMax.min.toFixed(0) }} m | Max: {{ altitudeMinMax.max.toFixed(0) }} m
-          </div>
-        </div>
-
-        <div class="text-caption text-disabled mt-2">
-          Showing {{ filteredResults.length }} of {{ results.length }} result{{
-            results.length !== 1 ? 's' : ''
-          }}
         </div>
       </div>
+    </div>
 
-      <!-- Results Section -->
+    <!-- Scrollable Content Area -->
+    <div style="padding: 0 16px 96px 16px">
+      <!-- Loading Indicator -->
       <div
-        v-if="filteredResults.length > 0 || isFiltering"
-        style="display: flex; flex-direction: column; gap: 8px"
+        v-if="isSearching"
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 200px;
+        "
       >
-        <div class="text-subtitle-2">Results</div>
-        <div style="position: relative; min-height: 100px; overflow-x: auto">
-          <!-- Loading overlay -->
-          <div
-            v-if="isFiltering"
-            style="
-              position: absolute;
-              inset: 0;
-              background: rgba(0, 0, 0, 0.5);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-radius: 4px;
-              z-index: 10;
-            "
-          >
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
-              <v-progress-circular color="primary" indeterminate size="32" width="3" />
-              <div class="text-caption text-disabled">Filtering...</div>
+        <v-progress-circular color="primary" indeterminate size="48" width="4" />
+        <div class="text-caption text-disabled mt-4">Searching...</div>
+      </div>
+
+      <!-- Main Content Area -->
+      <template v-else>
+        <!-- Results Section -->
+        <div
+          v-if="filteredResults.length > 0 || isFiltering"
+          style="display: flex; flex-direction: column; gap: 8px"
+        >
+          <div style="position: relative; min-height: 100px; overflow-x: auto">
+            <!-- Loading overlay -->
+            <div
+              v-if="isFiltering"
+              style="
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                z-index: 10;
+              "
+            >
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+                <v-progress-circular color="primary" indeterminate size="32" width="3" />
+                <div class="text-caption text-disabled">Filtering...</div>
+              </div>
             </div>
-          </div>
 
-          <!-- Results table -->
-          <table style="min-width: 100%; border-collapse: collapse">
-            <thead>
-              <tr
-                style="
-                  border-bottom: 2px solid rgba(var(--v-theme-on-surface), 0.12);
-                  background-color: rgba(var(--v-theme-on-surface), 0.05);
-                "
-              >
-                <th
+            <!-- Results table -->
+            <table style="min-width: 100%; border-collapse: collapse">
+              <thead>
+                <tr
                   style="
-                    padding: 8px;
-                    text-align: left;
-                    cursor: pointer;
-                    width: 45%;
-                    min-width: 120px;
+                    border-bottom: 2px solid rgba(var(--v-theme-on-surface), 0.12);
+                    background-color: rgba(var(--v-theme-on-surface), 0.05);
                   "
-                  @click="toggleSort('name')"
                 >
-                  <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
-                    Name
-                    <v-icon
-                      v-if="sortBy === 'name'"
-                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                      size="16"
-                    />
-                  </div>
-                </th>
-                <th
-                  style="
-                    padding: 8px;
-                    text-align: right;
-                    cursor: pointer;
-                    width: 27%;
-                    min-width: 70px;
-                  "
-                  @click="toggleSort('distance')"
-                >
-                  <div
-                    class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-                  >
-                    Distance
-                    <v-icon
-                      v-if="sortBy === 'distance'"
-                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                      size="16"
-                    />
-                  </div>
-                </th>
-                <th
-                  style="
-                    padding: 8px;
-                    text-align: right;
-                    cursor: pointer;
-                    width: 28%;
-                    min-width: 70px;
-                  "
-                  @click="toggleSort('elevation')"
-                >
-                  <div
-                    class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-                  >
-                    Elevation
-                    <v-icon
-                      v-if="sortBy === 'elevation'"
-                      :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                      size="16"
-                    />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(result, index) in filteredResults"
-                :key="`${result.main}-${index}`"
-                class="cursor-pointer"
-                style="
-                  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-                  transition: background-color 0.2s;
-                "
-                @click="handleResultClick(result)"
-                @mouseenter="
-                  (e) =>
-                    ((e.currentTarget as HTMLElement).style.backgroundColor =
-                      'rgba(var(--v-theme-primary), 0.15)')
-                "
-                @mouseleave="
-                  (e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')
-                "
-              >
-                <td style="padding: 8px; width: 45%; min-width: 120px">
-                  <div
-                    class="font-medium text-sm"
+                  <th
                     style="
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                      max-width: 100%;
+                      padding: 8px;
+                      text-align: left;
+                      cursor: pointer;
+                      width: 45%;
+                      min-width: 120px;
                     "
-                    :title="result.main.length > 35 ? result.main : ''"
+                    @click="toggleSort('name')"
                   >
-                    {{
-                      result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main
-                    }}
-                  </div>
-                  <div class="text-xs text-slate-600 text-truncate" :title="result.type || 'N/A'">
-                    {{ result.type || 'N/A' }}
-                  </div>
-                </td>
-                <td
+                    <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
+                      Name
+                      <v-icon
+                        v-if="sortBy === 'name'"
+                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                        size="16"
+                      />
+                    </div>
+                  </th>
+                  <th
+                    style="
+                      padding: 8px;
+                      text-align: right;
+                      cursor: pointer;
+                      width: 27%;
+                      min-width: 70px;
+                    "
+                    @click="toggleSort('distance')"
+                  >
+                    <div
+                      class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
+                    >
+                      Distance
+                      <v-icon
+                        v-if="sortBy === 'distance'"
+                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                        size="16"
+                      />
+                    </div>
+                  </th>
+                  <th
+                    style="
+                      padding: 8px;
+                      text-align: right;
+                      cursor: pointer;
+                      width: 28%;
+                      min-width: 70px;
+                    "
+                    @click="toggleSort('elevation')"
+                  >
+                    <div
+                      class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
+                    >
+                      Elevation
+                      <v-icon
+                        v-if="sortBy === 'elevation'"
+                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
+                        size="16"
+                      />
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(result, index) in filteredResults"
+                  :key="`${result.main}-${index}`"
+                  class="cursor-pointer"
                   style="
-                    padding: 8px;
-                    text-align: right;
-                    width: 27%;
-                    min-width: 70px;
-                    white-space: nowrap;
+                    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+                    transition: background-color 0.2s;
+                  "
+                  @click="handleResultClick(result)"
+                  @mouseenter="
+                    (e) =>
+                      ((e.currentTarget as HTMLElement).style.backgroundColor =
+                        'rgba(var(--v-theme-primary), 0.15)')
+                  "
+                  @mouseleave="
+                    (e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')
                   "
                 >
-                  <div class="text-sm font-medium">
-                    {{ getResultDistance(result).toFixed(1) }} km
-                  </div>
-                </td>
-                <td
-                  style="
-                    padding: 8px;
-                    text-align: right;
-                    width: 28%;
-                    min-width: 70px;
-                    white-space: nowrap;
-                  "
-                >
-                  <div class="text-sm font-medium">
-                    {{ result.elevation ? `${result.elevation} m` : 'N/A' }}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  <td style="padding: 8px; width: 45%; min-width: 120px">
+                    <div
+                      class="font-medium text-sm"
+                      style="
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        max-width: 100%;
+                      "
+                      :title="result.main.length > 35 ? result.main : ''"
+                    >
+                      {{
+                        result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main
+                      }}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px">
+                      <div
+                        class="text-xs text-slate-600 text-truncate"
+                        :title="result.type || 'N/A'"
+                      >
+                        {{ result.type || 'N/A' }}
+                      </div>
+                      <v-btn
+                        v-if="!includedTypes.includes(result.type || 'N/A')"
+                        color="success"
+                        icon="mdi-plus"
+                        size="x-small"
+                        variant="text"
+                        @click.stop="addIncludedType(result.type || 'N/A')"
+                      />
+                      <v-btn
+                        v-if="!excludedTypes.includes(result.type || 'N/A')"
+                        color="error"
+                        icon="mdi-minus"
+                        size="x-small"
+                        variant="text"
+                        @click.stop="addExcludedType(result.type || 'N/A')"
+                      />
+                    </div>
+                  </td>
+                  <td
+                    style="
+                      padding: 8px;
+                      text-align: right;
+                      width: 27%;
+                      min-width: 70px;
+                      white-space: nowrap;
+                    "
+                  >
+                    <div class="text-sm font-medium">
+                      {{ getResultDistance(result).toFixed(1) }} km
+                    </div>
+                  </td>
+                  <td
+                    style="
+                      padding: 8px;
+                      text-align: right;
+                      width: 28%;
+                      min-width: 70px;
+                      white-space: nowrap;
+                    "
+                  >
+                    <div class="text-sm font-medium">
+                      {{ result.elevation ? `${result.elevation} m` : 'N/A' }}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      <div v-else class="text-caption text-disabled text-center" style="padding: 32px 16px">
-        <v-icon class="mb-2" icon="mdi-magnify" size="24" />
-        <div>No results match your filter.</div>
-      </div>
-    </template>
+        <div v-else class="text-caption text-disabled text-center" style="padding: 32px 16px">
+          <v-icon class="mb-2" icon="mdi-magnify" size="24" />
+          <div>No results match your filter.</div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -277,7 +370,7 @@
 import type L from 'leaflet';
 import type { AddressSearchResult } from '@/services/geoportail';
 import * as turf from '@turf/turf';
-import { computed, inject, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue';
 import { generateLinePointsLinear } from '@/services/geometry';
 import {
   distancePointToSegment,
@@ -291,11 +384,15 @@ import { useUIStore } from '@/stores/ui';
 const uiStore = useUIStore();
 const layersStore = useLayersStore();
 const mapContainer = inject('mapContainer') as any;
+const scrollContainer = ref<HTMLElement | null>(null);
 const searchDistance = ref(5); // Initial value, will be set based on element type
 const displayDistance = ref(1); // Committed value used for filtering
 const liveDisplayDistance = ref(1); // Live value shown while dragging slider
+const previousDisplayDistance = ref(1); // Track previous distance to detect increase vs decrease
 const results = ref<AddressSearchResult[]>([]);
 const filterText = ref('');
+const includedTypes = ref<string[]>([]); // Types to include (show only these)
+const excludedTypes = ref<string[]>([]); // Types to exclude (hide these)
 const isSearching = ref(false);
 const isFiltering = ref(false); // Track if filtering is in progress
 const sortBy = ref<'name' | 'type' | 'elevation' | 'distance'>('name');
@@ -329,10 +426,40 @@ const altitudeMinMax = computed(() => {
     return { min: 0, max: 0 };
   }
 
-  const min = Math.min(...elevations);
-  const max = Math.max(...elevations);
+  // Use reduce to avoid stack overflow with large arrays
+  let min = elevations[0]!;
+  let max = elevations[0]!;
+  for (const elev of elevations) {
+    if (elev < min) min = elev;
+    if (elev > max) max = elev;
+  }
 
   return { min, max };
+});
+
+// Get available types from cached filtered results (simpler approach to avoid circular dependencies)
+const availableTypes = computed(() => {
+  // Use cachedUnfilteredResults which contains results after all filters except type filter
+  const filtered = cachedUnfilteredResults.value;
+
+  // Extract unique types
+  const types = new Set<string>();
+  for (const result of filtered) {
+    const type = result.type || 'N/A';
+    types.add(type);
+  }
+
+  return Array.from(types).toSorted();
+});
+
+// Available types for the include dropdown (exclude those already excluded)
+const availableIncludeTypes = computed(() => {
+  return availableTypes.value.filter((type) => !excludedTypes.value.includes(type));
+});
+
+// Available types for the exclude dropdown (exclude those already included)
+const availableExcludeTypes = computed(() => {
+  return availableTypes.value.filter((type) => !includedTypes.value.includes(type));
 });
 
 // Get the path points for the current element
@@ -431,7 +558,7 @@ function applySorting() {
             break;
           }
           case 'type': {
-            compareValue = (a.secondary || '').localeCompare(b.secondary || '');
+            compareValue = (a.type || '').localeCompare(b.type || '');
 
             break;
           }
@@ -464,11 +591,11 @@ function applySorting() {
     clearTimeout(sortTimeoutId);
   }
 
-  // Schedule sorting to run on next idle time
+  // Schedule sorting to run immediately for better responsiveness
   if (typeof requestIdleCallback === 'undefined') {
-    sortTimeoutId = window.setTimeout(callback, 50);
+    sortTimeoutId = window.setTimeout(callback, 0);
   } else {
-    requestIdleCallback(callback, { timeout: 100 });
+    requestIdleCallback(callback, { timeout: 16 });
   }
 }
 
@@ -479,87 +606,109 @@ function performFiltering() {
   // Use requestIdleCallback if available, otherwise use setTimeout
   const callback = () => {
     try {
-      let filtered = results.value;
+      // Cache values to avoid reactive lookups
+      const allResults = results.value;
+      const query = filterText.value.trim().toLowerCase();
+      const paths = pathPoints.value;
+      const maxDist = displayDistance.value;
+      const [minAlt, maxAlt] = altitudeRange.value;
+      const hasIncluded = includedTypes.value.length > 0;
+      const hasExcluded = excludedTypes.value.length > 0;
 
-      // Apply text filter
-      if (filterText.value.trim()) {
-        const query = filterText.value.toLowerCase();
-        filtered = filtered.filter(
-          (result) =>
-            result.main.toLowerCase().includes(query) ||
-            (result.secondary && result.secondary.toLowerCase().includes(query))
-        );
-      }
+      // Convert arrays to Sets for O(1) lookup instead of O(n)
+      const includedSet = hasIncluded ? new Set(includedTypes.value) : null;
+      const excludedSet = hasExcluded ? new Set(excludedTypes.value) : null;
 
-      // Apply distance filter - only show results within displayDistance from the path
-      if (results.value.length > 0 && pathPoints.value.length > 0) {
-        filtered = filtered.filter((result) => {
+      // Single-pass filtering
+      const filtered = allResults.filter((result) => {
+        // Text filter
+        if (query) {
+          const mainLower = result.main.toLowerCase();
+          const typeLower = result.type?.toLowerCase() || '';
+          if (!mainLower.includes(query) && !typeLower.includes(query)) {
+            return false;
+          }
+        }
+
+        // Distance filter
+        if (paths.length > 0) {
           let minDist = Infinity;
-          if (pathPoints.value.length === 1) {
-            // For single point, calculate distance to that point
-            minDist = haversineDistance(result.coordinates, pathPoints.value[0]!);
+          if (paths.length === 1) {
+            minDist = haversineDistance(result.coordinates, paths[0]!);
           } else {
-            // For multiple points, use segment-based distance
-            for (let i = 0; i < pathPoints.value.length - 1; i++) {
-              const dist = distancePointToSegment(
-                result.coordinates,
-                pathPoints.value[i]!,
-                pathPoints.value[i + 1]!
-              );
-              minDist = Math.min(minDist, dist);
+            for (let i = 0; i < paths.length - 1; i++) {
+              const dist = distancePointToSegment(result.coordinates, paths[i]!, paths[i + 1]!);
+              if (dist < minDist) minDist = dist;
+              if (minDist <= maxDist) break; // Early exit if within range
             }
           }
-          return minDist <= displayDistance.value;
-        });
-      }
+          if (minDist > maxDist) return false;
+        }
 
-      // No type filter - show all results
+        // Altitude filter
+        const elevation = result.elevation ?? 0;
+        if (elevation < minAlt || elevation > maxAlt) {
+          return false;
+        }
 
-      // Apply altitude filter (only if we have search results and altitude range is set)
-      if (results.value.length > 0) {
-        const [minAlt, maxAlt] = altitudeRange.value;
-        filtered = filtered.filter((result) => {
-          const elevation = result.elevation ?? 0;
-          return elevation >= minAlt && elevation <= maxAlt;
-        });
-      }
+        // Type filters
+        if (hasIncluded || hasExcluded) {
+          const type = result.type || 'N/A';
+          if (hasIncluded && !includedSet!.has(type)) {
+            return false;
+          }
+          if (hasExcluded && excludedSet!.has(type)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
 
       // Store the filtered results before sorting
       cachedUnfilteredResults.value = filtered;
 
       // Apply sorting to the filtered results
-      cachedFilteredResults.value = [...filtered].toSorted((a, b) => {
+      const currentSort = sortBy.value;
+      const ascending = sortAsc.value;
+
+      // Cache distance calculations for distance sorting
+      const distanceCache =
+        currentSort === 'distance' ? new Map<AddressSearchResult, number>() : null;
+
+      cachedFilteredResults.value = filtered.toSorted((a, b) => {
         let compareValue = 0;
 
-        switch (sortBy.value) {
+        switch (currentSort) {
           case 'name': {
             compareValue = a.main.localeCompare(b.main);
-
             break;
           }
           case 'type': {
-            compareValue = (a.secondary || '').localeCompare(b.secondary || '');
-
+            compareValue = (a.type || '').localeCompare(b.type || '');
             break;
           }
           case 'elevation': {
-            const elevA = a.elevation ?? -1;
-            const elevB = b.elevation ?? -1;
-            compareValue = elevA - elevB;
-
+            compareValue = (a.elevation ?? -1) - (b.elevation ?? -1);
             break;
           }
           case 'distance': {
-            const distA = getResultDistance(a);
-            const distB = getResultDistance(b);
+            let distA = distanceCache!.get(a);
+            if (distA === undefined) {
+              distA = getResultDistance(a);
+              distanceCache!.set(a, distA);
+            }
+            let distB = distanceCache!.get(b);
+            if (distB === undefined) {
+              distB = getResultDistance(b);
+              distanceCache!.set(b, distB);
+            }
             compareValue = distA - distB;
-
             break;
           }
-          // No default
         }
 
-        return sortAsc.value ? compareValue : -compareValue;
+        return ascending ? compareValue : -compareValue;
       });
     } finally {
       isFiltering.value = false;
@@ -571,11 +720,11 @@ function performFiltering() {
     clearTimeout(filterTimeoutId);
   }
 
-  // Schedule filtering to run on next idle time
+  // Schedule filtering to run immediately for better responsiveness
   if (typeof requestIdleCallback === 'undefined') {
-    filterTimeoutId = window.setTimeout(callback, 50);
+    filterTimeoutId = window.setTimeout(callback, 0);
   } else {
-    requestIdleCallback(callback, { timeout: 100 });
+    requestIdleCallback(callback, { timeout: 16 });
   }
 }
 
@@ -620,6 +769,13 @@ watch(
   }
 );
 
+// Helper function to scroll results to top
+function scrollToTop() {
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = 0;
+  }
+}
+
 // Update search zone and trigger filtering when display distance changes
 watch(displayDistance, (newDistance) => {
   if (searchZoneLayer && mapContainer && pathPoints.value.length > 0) {
@@ -628,21 +784,73 @@ watch(displayDistance, (newDistance) => {
   }
   // Trigger background filtering
   performFiltering();
+  scrollToTop();
 });
 
 // Trigger background filtering when altitude range changes
 watch(altitudeRange, () => {
   performFiltering();
+  scrollToTop();
 });
 
 // Trigger background filtering when filter text changes
 watch(filterText, () => {
   performFiltering();
+  scrollToTop();
 });
 
 // Trigger sorting (only re-sort, don't re-filter) when sort changes
 watch([sortBy, sortAsc], () => {
   applySorting();
+  scrollToTop();
+});
+
+// Trigger background filtering when included types change
+watch(
+  includedTypes,
+  () => {
+    performFiltering();
+    scrollToTop();
+  },
+  { deep: true }
+);
+
+// Trigger background filtering when excluded types change
+watch(
+  excludedTypes,
+  () => {
+    performFiltering();
+    scrollToTop();
+  },
+  { deep: true }
+);
+
+// Watch for changes in filters that affect availableTypes and clean up type filters
+watch([displayDistance, altitudeRange, filterText], ([newDistance]) => {
+  // Only reset types when distance decreases or other filters change
+  const isDistanceDecrease = newDistance < previousDisplayDistance.value;
+
+  // Clean up type filters after a delay to avoid circular dependency
+  nextTick(() => {
+    const currentAvailable = availableTypes.value;
+
+    // Clean up included types
+    const oldIncludedLength = includedTypes.value.length;
+    const newIncluded = includedTypes.value.filter((type) => currentAvailable.includes(type));
+    if (isDistanceDecrease && newIncluded.length !== oldIncludedLength) {
+      includedTypes.value = newIncluded;
+    }
+
+    // Clean up excluded types
+    const oldExcludedLength = excludedTypes.value.length;
+    const newExcluded = excludedTypes.value.filter((type) => currentAvailable.includes(type));
+    if (isDistanceDecrease && newExcluded.length !== oldExcludedLength) {
+      excludedTypes.value = newExcluded;
+    }
+  });
+
+  // Update previous distance
+  previousDisplayDistance.value = newDistance;
 });
 
 // Handler for distance slider release
@@ -655,6 +863,34 @@ function handleAltitudeRangeRelease() {
   altitudeRange.value = liveAltitudeRange.value;
 }
 
+// Handler for adding a type to the include filter
+function addIncludedType(type: string) {
+  if (!includedTypes.value.includes(type)) {
+    includedTypes.value.push(type);
+  }
+  // Remove from excluded if present
+  excludedTypes.value = excludedTypes.value.filter((t) => t !== type);
+}
+
+// Handler for adding a type to the exclude filter
+function addExcludedType(type: string) {
+  if (!excludedTypes.value.includes(type)) {
+    excludedTypes.value.push(type);
+  }
+  // Remove from included if present
+  includedTypes.value = includedTypes.value.filter((t) => t !== type);
+}
+
+// Handler for removing a type from the include filter
+function removeIncludedType(type: string) {
+  includedTypes.value = includedTypes.value.filter((t) => t !== type);
+}
+
+// Handler for removing a type from the exclude filter
+function removeExcludedType(type: string) {
+  excludedTypes.value = excludedTypes.value.filter((t) => t !== type);
+}
+
 function handleClose() {
   uiStore.closeSearchAlong();
   results.value = [];
@@ -662,7 +898,10 @@ function handleClose() {
   searchDistance.value = uiStore.searchAlongPanel.elementType === 'point' ? 20 : 5;
   displayDistance.value = 1; // Reset to 1km default
   liveDisplayDistance.value = 1; // Reset live value
+  previousDisplayDistance.value = 1; // Reset previous distance
   filterText.value = ''; // Reset filter
+  includedTypes.value = []; // Reset include filter
+  excludedTypes.value = []; // Reset exclude filter
   altitudeRange.value = [0, 0]; // Reset altitude range
   liveAltitudeRange.value = [0, 0]; // Reset live value
   if (searchZoneLayer && mapContainer) {
@@ -694,6 +933,7 @@ async function handleSearch() {
     // Adjust display distance to 1km after getting results
     if (locations.length > 0) {
       displayDistance.value = 1;
+      previousDisplayDistance.value = 1;
     }
 
     // Update altitude range to match results
@@ -703,8 +943,13 @@ async function handleSearch() {
         .filter((e) => e !== null && e !== undefined);
 
       if (elevations.length > 0) {
-        const minElev = Math.min(...elevations);
-        const maxElev = Math.max(...elevations);
+        // Use loop to avoid stack overflow with large arrays
+        let minElev = elevations[0]!;
+        let maxElev = elevations[0]!;
+        for (const elev of elevations) {
+          if (elev < minElev) minElev = elev;
+          if (elev > maxElev) maxElev = elev;
+        }
         altitudeRange.value = [minElev, maxElev];
       }
     }

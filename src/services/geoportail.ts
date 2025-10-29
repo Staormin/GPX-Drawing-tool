@@ -389,20 +389,59 @@ const requestQueue = new RequestQueue();
  * Helper: Get type value from XML tags
  */
 function getTypeValueFromElement(element: Element): string {
-  const placeTag = element.querySelector('tag[k="place"]');
-  const amenityTag = element.querySelector('tag[k="amenity"]');
-  const tourismTag = element.querySelector('tag[k="tourism"]');
-  const naturalTag = element.querySelector('tag[k="natural"]');
-  const historicTag = element.querySelector('tag[k="historic"]');
+  // Priority order for tag keys
+  const priorityKeys = [
+    'place',
+    'amenity',
+    'tourism',
+    'historic',
+    'natural',
+    'leisure',
+    'shop',
+    'highway',
+    'waterway',
+    'railway',
+    'aeroway',
+    'landuse',
+    'building',
+  ];
 
-  return (
-    placeTag?.getAttribute('v') ||
-    amenityTag?.getAttribute('v') ||
-    tourismTag?.getAttribute('v') ||
-    naturalTag?.getAttribute('v') ||
-    historicTag?.getAttribute('v') ||
-    ''
-  );
+  // First, check priority keys in order
+  for (const key of priorityKeys) {
+    const tag = element.querySelector(`tag[k="${key}"]`);
+    const value = tag?.getAttribute('v');
+    if (value && value !== 'yes') {
+      // Skip generic 'yes' values
+      return value;
+    }
+  }
+
+  // If no priority key found, look for any other descriptive tag
+  // Exclude common non-descriptive keys
+  const excludeKeys = new Set([
+    'name',
+    'name:en',
+    'name:fr',
+    'source',
+    'created_by',
+    'source:name',
+    'wikidata',
+    'wikipedia',
+    'ref',
+    'ele',
+    'elevation',
+  ]);
+
+  const allTags = element.querySelectorAll('tag');
+  for (const tag of allTags) {
+    const key = tag.getAttribute('k');
+    const value = tag.getAttribute('v');
+    if (key && value && !excludeKeys.has(key) && !key.startsWith('name:') && value !== 'yes') {
+      return value;
+    }
+  }
+
+  return '';
 }
 
 /**

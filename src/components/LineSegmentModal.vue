@@ -493,78 +493,91 @@ async function submitForm() {
     // Smart name autogeneration
     let name = form.value.name.trim();
     if (!name) {
-      if (form.value.mode === 'coordinate') {
-        // Try to find saved coordinate names for smart naming
-        const startCoordSaved = coordinatesStore.sortedCoordinates.find(
-          (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
-        );
-        const endCoordSaved = coordinatesStore.sortedCoordinates.find(
-          (c: any) => Math.abs(c.lat - endLat) < 0.0001 && Math.abs(c.lon - endLon) < 0.0001
-        );
+      switch (form.value.mode) {
+        case 'coordinate': {
+          // Try to find saved coordinate names for smart naming
+          const startCoordSaved = coordinatesStore.sortedCoordinates.find(
+            (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
+          );
+          const endCoordSaved = coordinatesStore.sortedCoordinates.find(
+            (c: any) => Math.abs(c.lat - endLat) < 0.0001 && Math.abs(c.lon - endLon) < 0.0001
+          );
 
-        if (startCoordSaved && endCoordSaved) {
-          name = `${startCoordSaved.name} => ${endCoordSaved.name}`;
-        } else if (startCoordSaved || endCoordSaved) {
-          // One coordinate is saved, try reverse geocoding for the other
-          const startName = startCoordSaved?.name;
-          const endName = endCoordSaved?.name;
+          if (startCoordSaved && endCoordSaved) {
+            name = `${startCoordSaved.name} => ${endCoordSaved.name}`;
+          } else if (startCoordSaved || endCoordSaved) {
+            // One coordinate is saved, try reverse geocoding for the other
+            const startName = startCoordSaved?.name;
+            const endName = endCoordSaved?.name;
 
-          if (!startName) {
-            const { address } = await getReverseGeocodeAddress(startLat, startLon);
-            const generatedStartName = address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
-            name = `${generatedStartName} => ${endName}`;
+            if (startName) {
+              const { address } = await getReverseGeocodeAddress(endLat, endLon);
+              const generatedEndName = address || `${endLat.toFixed(4)}, ${endLon.toFixed(4)}`;
+              name = `${startName} => ${generatedEndName}`;
+            } else {
+              const { address } = await getReverseGeocodeAddress(startLat, startLon);
+              const generatedStartName =
+                address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
+              name = `${generatedStartName} => ${endName}`;
+            }
           } else {
-            const { address } = await getReverseGeocodeAddress(endLat, endLon);
-            const generatedEndName = address || `${endLat.toFixed(4)}, ${endLon.toFixed(4)}`;
-            name = `${startName} => ${generatedEndName}`;
+            // Neither coordinate is saved, try reverse geocoding for both
+            const [startResult, endResult] = await Promise.all([
+              getReverseGeocodeAddress(startLat, startLon),
+              getReverseGeocodeAddress(endLat, endLon),
+            ]);
+
+            const startName =
+              startResult.address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
+            const endName = endResult.address || `${endLat.toFixed(4)}, ${endLon.toFixed(4)}`;
+            name = `${startName} => ${endName}`;
           }
-        } else {
-          // Neither coordinate is saved, try reverse geocoding for both
-          const [startResult, endResult] = await Promise.all([
-            getReverseGeocodeAddress(startLat, startLon),
-            getReverseGeocodeAddress(endLat, endLon),
-          ]);
 
-          const startName = startResult.address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
-          const endName = endResult.address || `${endLat.toFixed(4)}, ${endLon.toFixed(4)}`;
-          name = `${startName} => ${endName}`;
+          break;
         }
-      } else if (form.value.mode === 'azimuth') {
-        // Azimuth mode: "From [location] at [azimuth]°"
-        const startCoordSaved = coordinatesStore.sortedCoordinates.find(
-          (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
-        );
+        case 'azimuth': {
+          // Azimuth mode: "From [location] at [azimuth]°"
+          const startCoordSaved = coordinatesStore.sortedCoordinates.find(
+            (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
+          );
 
-        if (startCoordSaved) {
-          name = `From ${startCoordSaved.name} at ${form.value.azimuth}°`;
-        } else {
-          const { address } = await getReverseGeocodeAddress(startLat, startLon);
-          const startName = address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
-          name = `From ${startName} at ${form.value.azimuth}°`;
+          if (startCoordSaved) {
+            name = `From ${startCoordSaved.name} at ${form.value.azimuth}°`;
+          } else {
+            const { address } = await getReverseGeocodeAddress(startLat, startLon);
+            const startName = address || `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
+            name = `From ${startName} at ${form.value.azimuth}°`;
+          }
+
+          break;
         }
-      } else if (form.value.mode === 'intersection') {
-        // Intersection mode: "From [start] via [intersection]"
-        const startCoordSaved = coordinatesStore.sortedCoordinates.find(
-          (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
-        );
-        const intersectCoordSaved = coordinatesStore.sortedCoordinates.find(
-          (c: any) =>
-            Math.abs(c.lat - intersectLat!) < 0.0001 && Math.abs(c.lon - intersectLon!) < 0.0001
-        );
+        case 'intersection': {
+          // Intersection mode: "From [start] via [intersection]"
+          const startCoordSaved = coordinatesStore.sortedCoordinates.find(
+            (c: any) => Math.abs(c.lat - startLat) < 0.0001 && Math.abs(c.lon - startLon) < 0.0001
+          );
+          const intersectCoordSaved = coordinatesStore.sortedCoordinates.find(
+            (c: any) =>
+              Math.abs(c.lat - intersectLat!) < 0.0001 && Math.abs(c.lon - intersectLon!) < 0.0001
+          );
 
-        const startName =
-          startCoordSaved?.name ||
-          (await getReverseGeocodeAddress(startLat, startLon)).address ||
-          `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
-        const intersectName =
-          intersectCoordSaved?.name ||
-          (await getReverseGeocodeAddress(intersectLat!, intersectLon!)).address ||
-          `${intersectLat!.toFixed(4)}, ${intersectLon!.toFixed(4)}`;
+          const startName =
+            startCoordSaved?.name ||
+            (await getReverseGeocodeAddress(startLat, startLon)).address ||
+            `${startLat.toFixed(4)}, ${startLon.toFixed(4)}`;
+          const intersectName =
+            intersectCoordSaved?.name ||
+            (await getReverseGeocodeAddress(intersectLat!, intersectLon!)).address ||
+            `${intersectLat!.toFixed(4)}, ${intersectLon!.toFixed(4)}`;
 
-        name = `From ${startName} via ${intersectName}`;
-      } else {
-        // Fallback
-        name = `Line ${layersStore.lineSegmentCount + 1}`;
+          name = `From ${startName} via ${intersectName}`;
+
+          break;
+        }
+        default: {
+          // Fallback
+          name = `Line ${layersStore.lineSegmentCount + 1}`;
+        }
       }
     }
 
