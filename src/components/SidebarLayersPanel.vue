@@ -157,23 +157,23 @@ const mapContainer = inject('mapContainer') as any;
 
 const searchQuery = ref('');
 
-// Filtered lists based on search query
+// Filtered lists based on search query (using sorted arrays)
 const filteredCircles = computed(() => {
-  if (!searchQuery.value) return layersStore.circles;
+  if (!searchQuery.value) return layersStore.sortedCircles;
   const query = searchQuery.value.toLowerCase();
-  return layersStore.circles.filter((c) => c.name.toLowerCase().includes(query));
+  return layersStore.sortedCircles.filter((c) => c.name.toLowerCase().includes(query));
 });
 
 const filteredLines = computed(() => {
-  if (!searchQuery.value) return layersStore.lineSegments;
+  if (!searchQuery.value) return layersStore.sortedLineSegments;
   const query = searchQuery.value.toLowerCase();
-  return layersStore.lineSegments.filter((l) => l.name.toLowerCase().includes(query));
+  return layersStore.sortedLineSegments.filter((l) => l.name.toLowerCase().includes(query));
 });
 
 const filteredPoints = computed(() => {
-  if (!searchQuery.value) return layersStore.points;
+  if (!searchQuery.value) return layersStore.sortedPoints;
   const query = searchQuery.value.toLowerCase();
-  return layersStore.points.filter((p) => p.name.toLowerCase().includes(query));
+  return layersStore.sortedPoints.filter((p) => p.name.toLowerCase().includes(query));
 });
 
 // Collapse states for each section

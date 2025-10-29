@@ -34,6 +34,7 @@ export interface CircleElement {
   radius: number;
   color?: string;
   leafletId?: number;
+  createdAt?: number;
 }
 
 export interface LineSegmentElement {
@@ -49,6 +50,7 @@ export interface LineSegmentElement {
   longitude?: number;
   color?: string;
   leafletId?: number;
+  createdAt?: number;
 }
 
 export interface PointElement {
@@ -58,6 +60,7 @@ export interface PointElement {
   elevation?: number;
   color?: string;
   leafletId?: number;
+  createdAt?: number;
 }
 
 const PROJECTS_STORAGE_KEY = 'geochase_projects';

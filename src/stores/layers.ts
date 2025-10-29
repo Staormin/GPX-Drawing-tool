@@ -30,8 +30,37 @@ export const useLayersStore = defineStore('layers', () => {
 
   const pointCount = computed(() => points.value.length);
 
+  // Sorted layers by creation date (newest first)
+  const sortedCircles = computed(() => {
+    return [...circles.value].sort((a, b) => {
+      const aTime = a.createdAt || 0;
+      const bTime = b.createdAt || 0;
+      return bTime - aTime; // Newest first
+    });
+  });
+
+  const sortedLineSegments = computed(() => {
+    return [...lineSegments.value].sort((a, b) => {
+      const aTime = a.createdAt || 0;
+      const bTime = b.createdAt || 0;
+      return bTime - aTime; // Newest first
+    });
+  });
+
+  const sortedPoints = computed(() => {
+    return [...points.value].sort((a, b) => {
+      const aTime = a.createdAt || 0;
+      const bTime = b.createdAt || 0;
+      return bTime - aTime; // Newest first
+    });
+  });
+
   // Actions
   function addCircle(circle: CircleElement): void {
+    // Add timestamp if not present
+    if (!circle.createdAt) {
+      circle.createdAt = Date.now();
+    }
     circles.value.push(circle);
   }
 
@@ -54,6 +83,10 @@ export const useLayersStore = defineStore('layers', () => {
   }
 
   function addLineSegment(segment: LineSegmentElement): void {
+    // Add timestamp if not present
+    if (!segment.createdAt) {
+      segment.createdAt = Date.now();
+    }
     lineSegments.value.push(segment);
   }
 
@@ -79,6 +112,10 @@ export const useLayersStore = defineStore('layers', () => {
   }
 
   function addPoint(point: PointElement): void {
+    // Add timestamp if not present
+    if (!point.createdAt) {
+      point.createdAt = Date.now();
+    }
     points.value.push(point);
   }
 
@@ -155,6 +192,9 @@ export const useLayersStore = defineStore('layers', () => {
     circleCount,
     lineSegmentCount,
     pointCount,
+    sortedCircles,
+    sortedLineSegments,
+    sortedPoints,
 
     // Actions
     addCircle,
