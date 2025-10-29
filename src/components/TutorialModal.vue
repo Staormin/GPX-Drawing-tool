@@ -346,6 +346,8 @@
                   </li>
                   <li><strong>ESC</strong> - Exit navigation mode or cancel free hand drawing</li>
                   <li><strong>Right-click on map</strong> - Save coordinates at that location</li>
+                  <li><strong>ALT</strong> - Hold during free hand drawing to lock azimuth (only when no predefined azimuth)</li>
+                  <li><strong>CTRL</strong> - Hold during free hand drawing to lock distance</li>
                 </ul>
               </div>
 
@@ -356,7 +358,16 @@
                     <strong>Save coordinates first</strong> - Right-click on the map to save locations before drawing shapes
                   </li>
                   <li>
-                    <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and end points, with optional azimuth lock for constrained directions
+                    <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and end points:
+                    <ul>
+                      <li>Click on the map to set the start point</li>
+                      <li>Move your mouse to preview the line with real-time distance and azimuth</li>
+                      <li>Hold <strong>ALT</strong> to lock the azimuth (direction) at the current angle - useful for drawing parallel lines or maintaining specific directions</li>
+                      <li>Hold <strong>CTRL</strong> to lock the distance at the current length - useful for drawing multiple lines of the same length</li>
+                      <li>The floating tooltip shows whether azimuth or distance is locked</li>
+                      <li>Click again to finalize the line</li>
+                      <li>When using predefined azimuth lock from the modal, ALT keybind is disabled</li>
+                    </ul>
                   </li>
                   <li>Create <strong>multiple line segments</strong> to map routes or paths</li>
                   <li>Use <strong>intersection mode</strong> to draw lines passing through specific points</li>

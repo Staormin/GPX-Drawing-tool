@@ -257,6 +257,9 @@ onMounted(async () => {
 
   // Setup free hand drawing mode mouse tracking
   let freeHandPreviewLayer: any = null;
+  let lockedAzimuth: number | null = null;
+  let lockedDistance: number | null = null;
+
   const handleMouseMove = (event: any) => {
     if (!uiStore.freeHandDrawing.isDrawing) {
       cursorTooltip.value.visible = false;
@@ -268,6 +271,10 @@ onMounted(async () => {
 
     const { lat, lng } = event.latlng;
     const { startCoord, azimuth } = uiStore.freeHandDrawing;
+
+    // Check for alt (lock azimuth) and ctrl (lock distance) keys
+    const isAltPressed = event.originalEvent?.altKey || false;
+    const isCtrlPressed = event.originalEvent?.ctrlKey || false;
 
     // Update cursor tooltip position (offset from cursor)
     const containerPoint = event.containerPoint;
@@ -293,15 +300,41 @@ onMounted(async () => {
     }
 
     // Calculate distance and bearing
-    const distance = calculateDistance(startLat, startLon, lat, lng);
-    const bearing = calculateBearing(startLat, startLon, lat, lng);
+    let distance = calculateDistance(startLat, startLon, lat, lng);
+    let bearing = calculateBearing(startLat, startLon, lat, lng);
+
+    // Handle alt key - lock azimuth (only if no predefined azimuth lock)
+    if (isAltPressed && azimuth === undefined) {
+      if (lockedAzimuth === null) {
+        lockedAzimuth = bearing;
+      }
+      bearing = lockedAzimuth;
+    } else if (azimuth === undefined) {
+      lockedAzimuth = null;
+    }
+
+    // Handle ctrl key - lock distance (only if no predefined azimuth lock)
+    if (isCtrlPressed && azimuth === undefined) {
+      if (lockedDistance === null) {
+        lockedDistance = distance;
+      }
+      distance = lockedDistance;
+    } else {
+      lockedDistance = null;
+    }
+
     const inverseBearing = (bearing + 180) % 360;
 
+    // Determine which azimuth to use (predefined or current/locked bearing)
+    const effectiveAzimuth = azimuth !== undefined ? azimuth : (isAltPressed ? bearing : null);
+
     // Update tooltip content
-    cursorTooltip.value.distance = `${distance.toFixed(3)} km`;
+    cursorTooltip.value.distance = `${distance.toFixed(3)} km${isCtrlPressed && azimuth === undefined ? ' (locked)' : ''}`;
     if (azimuth !== undefined) {
       const inverseAzimuth = (azimuth + 180) % 360;
       cursorTooltip.value.azimuth = `${azimuth.toFixed(2)}° / ${inverseAzimuth.toFixed(2)}° (locked)`;
+    } else if (isAltPressed) {
+      cursorTooltip.value.azimuth = `${bearing.toFixed(2)}° / ${inverseBearing.toFixed(2)}° (Alt)`;
     } else {
       cursorTooltip.value.azimuth = `${bearing.toFixed(2)}° / ${inverseBearing.toFixed(2)}°`;
     }
@@ -309,16 +342,22 @@ onMounted(async () => {
 
     let endLat: number, endLon: number;
 
-    // If azimuth is defined, constrain the line to that azimuth
-    if (azimuth !== undefined && startCoord && startCoord.trim() !== '') {
+    // If azimuth is defined or shift is pressed, constrain the line to that azimuth
+    if (effectiveAzimuth !== null && startCoord && startCoord.trim() !== '') {
       // Calculate the endpoint at the specified azimuth
-      const endpoint = destinationPoint(startLat, startLon, distance, azimuth);
+      const endpoint = destinationPoint(startLat, startLon, distance, effectiveAzimuth);
       endLat = endpoint.lat;
       endLon = endpoint.lon;
     } else {
-      // Free direction - endpoint is mouse position
-      endLat = lat;
-      endLon = lng;
+      // Free direction - endpoint is mouse position (but respect locked distance if no predefined azimuth)
+      if (isCtrlPressed && lockedDistance !== null && azimuth === undefined) {
+        const endpoint = destinationPoint(startLat, startLon, lockedDistance, bearing);
+        endLat = endpoint.lat;
+        endLon = endpoint.lon;
+      } else {
+        endLat = lat;
+        endLon = lng;
+      }
     }
 
     // Remove previous preview layer
