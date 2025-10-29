@@ -98,9 +98,9 @@
                 <h4 class="mb-2">🔵 Circle</h4>
                 <p class="mb-2">Draw a circle on the map by specifying:</p>
                 <ul class="tutorial-list">
-                  <li><strong>Name:</strong> Give your circle a name</li>
+                  <li><strong>Name:</strong> Give your circle a name (optional, auto-generated if empty)</li>
                   <li>
-                    <strong>Center Coordinates:</strong> Latitude, Longitude (e.g., 48.8566, 2.3522)
+                    <strong>Center Coordinates:</strong> Select from your saved coordinates
                   </li>
                   <li><strong>Radius:</strong> Size in kilometers</li>
                 </ul>
@@ -110,11 +110,13 @@
                 <h4 class="mb-2">➖ Line Segment</h4>
                 <p class="mb-2">Draw a line with multiple modes:</p>
                 <ul class="tutorial-list">
-                  <li><strong>Coordinate Mode:</strong> Connect two points by their coordinates</li>
+                  <li><strong>Two Points:</strong> Connect two saved coordinates</li>
                   <li>
-                    <strong>Azimuth Mode:</strong> Create a line at a specific angle and distance
+                    <strong>Azimuth Mode:</strong> Create a line at a specific angle (azimuth) and distance
                   </li>
-                  <li><strong>Intersection Mode:</strong> Find where two lines meet</li>
+                  <li><strong>Intersection Mode:</strong> Draw a line passing through a point at a specific distance</li>
+                  <li><strong>Parallel Mode:</strong> Draw a parallel line (latitude) across the map</li>
+                  <li><strong>Free Hand Mode:</strong> Draw lines interactively by clicking on the map with optional azimuth lock</li>
                 </ul>
               </div>
 
@@ -228,16 +230,19 @@
                 <ol class="tutorial-list">
                   <li><strong>Right-click on the map</strong> to save a location</li>
                   <li>Enter a <strong>name</strong> for the coordinate</li>
-                  <li>Use saved coordinates in drawing tools via the <strong>📍 picker</strong></li>
+                  <li>Coordinates are automatically saved and available in dropdown selectors</li>
+                  <li>All drawing tools use saved coordinates via <strong>dropdown selectors</strong></li>
                 </ol>
               </div>
 
               <div class="tutorial-step">
                 <h4 class="mb-2">💡 Use Cases</h4>
                 <ul class="tutorial-list">
-                  <li>Save your home office or frequently visited locations</li>
+                  <li>Save locations before drawing - all shapes require saved coordinates</li>
+                  <li>Build a library of important locations for your treasure hunt</li>
                   <li>Quick reference points for multiple projects</li>
-                  <li>Reuse coordinates across different drawings</li>
+                  <li>Reuse coordinates across different drawings without re-entering them</li>
+                  <li>Coordinates are sorted by creation date (newest first)</li>
                 </ul>
               </div>
             </div>
@@ -332,11 +337,14 @@
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">⌨️ Keyboard Shortcuts</h4>
                 <ul class="tutorial-list">
+                  <li><strong>C</strong> - Open Circle modal to create a new circle</li>
+                  <li><strong>L</strong> - Open Line Segment modal to create a new line</li>
+                  <li><strong>P</strong> - Open Point modal to create a new point</li>
                   <li>
                     <strong>Arrow Keys (← →)</strong> - Navigate along circles/lines during
                     navigation mode
                   </li>
-                  <li><strong>ESC</strong> - Exit navigation mode</li>
+                  <li><strong>ESC</strong> - Exit navigation mode or cancel free hand drawing</li>
                   <li><strong>Right-click on map</strong> - Save coordinates at that location</li>
                 </ul>
               </div>
@@ -345,16 +353,18 @@
                 <h4 class="mb-2">🎯 Drawing Tips</h4>
                 <ul class="tutorial-list">
                   <li>
-                    Use <strong>saved coordinates</strong> to quickly reference frequently-used
-                    points
+                    <strong>Save coordinates first</strong> - Right-click on the map to save locations before drawing shapes
+                  </li>
+                  <li>
+                    <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and end points, with optional azimuth lock for constrained directions
                   </li>
                   <li>Create <strong>multiple line segments</strong> to map routes or paths</li>
-                  <li>Use <strong>intersection mode</strong> to find where paths cross</li>
+                  <li>Use <strong>intersection mode</strong> to draw lines passing through specific points</li>
                   <li>
-                    Combine <strong>azimuth mode</strong> with specific angles and distances for
-                    precise positioning
+                    Use <strong>azimuth mode</strong> with precise angles (supports 2 decimal places, e.g., 45.67°) for exact positioning
                   </li>
-                  <li>Color code your shapes for better organization in complex projects</li>
+                  <li><strong>Parallel mode</strong> draws latitude lines across the entire map</li>
+                  <li>Names are auto-generated based on locations if left empty</li>
                 </ul>
               </div>
 
@@ -457,7 +467,7 @@ watch(isOpen, (newValue) => {
 
 .tutorial-step {
   padding: 12px;
-  background: rgba(var(--v-theme-primary), 0.15);
+  background: transparent;
   border-left: 3px solid rgb(var(--v-theme-primary));
   border-radius: 4px;
 }
@@ -495,7 +505,7 @@ p {
 }
 
 :deep(.v-window) {
-  background-color: rgb(var(--v-theme-surface));
+  background-color: transparent;
 }
 
 :deep(.v-icon) {

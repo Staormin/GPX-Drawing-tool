@@ -62,11 +62,13 @@ import {
   mercatorProject,
   mercatorUnproject,
 } from '@/services/geometry';
+import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
 
 const uiStore = useUIStore();
 const layersStore = useLayersStore();
+const coordinatesStore = useCoordinatesStore();
 const drawing = inject('drawing') as any;
 
 const distanceFromOptions = [
@@ -263,8 +265,22 @@ function submitForm() {
 
   const name = form.value.name.trim() || `Point ${layersStore.pointCount + 1}`;
 
+  // Create a simpler coordinate name (without the full line segment details)
+  let coordinateName = name;
+  if (!form.value.name.trim()) {
+    // If auto-generated, use a simple format
+    coordinateName = `Point ${layersStore.pointCount + 1}`;
+  } else if (name.includes(' - Midpoint')) {
+    // For midpoint, extract just the essential part
+    coordinateName = `Midpoint ${layersStore.pointCount + 1}`;
+  }
+
+  // Save the coordinate first
+  coordinatesStore.addCoordinate(coordinateName, pointOnSegment.lat, pointOnSegment.lon);
+
+  // Then draw the point (use the full name for the point on the map)
   drawing.drawPoint(pointOnSegment.lat, pointOnSegment.lon, name);
-  uiStore.addToast('Point added successfully!', 'success');
+  uiStore.addToast('Point and coordinate added successfully!', 'success');
   closeModal();
 }
 
