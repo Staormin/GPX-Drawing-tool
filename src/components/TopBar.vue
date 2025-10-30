@@ -144,11 +144,24 @@
 
             <v-btn
               color="surface-bright"
-              icon="mdi-vector-intersection"
+              icon
               variant="elevated"
               @click="uiStore.openModal('intersectionLineModal')"
             >
-              <v-icon>mdi-vector-intersection</v-icon>
+              <v-icon>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                >
+                  <!-- Diagonal line -->
+                  <path d="M4,20 L20,4" stroke="currentColor" stroke-width="2" fill="none" />
+                  <!-- Center point/circle -->
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+              </v-icon>
               <v-tooltip activator="parent" location="bottom">Line (Intersection)</v-tooltip>
             </v-btn>
 

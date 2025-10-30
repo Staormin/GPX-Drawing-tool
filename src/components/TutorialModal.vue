@@ -163,11 +163,10 @@
                 <p class="mb-2">Find locations by address and explore nearby places:</p>
                 <ol class="tutorial-list">
                   <li>
-                    Open the <strong>left sidebar</strong> using the menu button in the top-left
+                    Use the <strong>search bar in the top bar</strong> next to the GeoChase title
                   </li>
-                  <li>Click the <strong>search icon</strong> in the left sidebar</li>
                   <li>Type an <strong>address, city, or place name</strong></li>
-                  <li>View results with their <strong>coordinates and elevation</strong></li>
+                  <li>View results with their <strong>coordinates</strong> in the dropdown</li>
                   <li>Click a result to <strong>center the map</strong> on that location</li>
                   <li>Create circles or points at the selected location</li>
                 </ol>
@@ -178,7 +177,7 @@
                 <p class="mb-2">Find locations near your drawn lines and points:</p>
                 <ol class="tutorial-list">
                   <li>Draw a <strong>line segment or point</strong> on the map</li>
-                  <li>Open the <strong>Layers panel</strong> in the right sidebar</li>
+                  <li>Open the <strong>Layers panel</strong> in the left sidebar</li>
                   <li>Click the <strong>⋮ menu</strong> on a line or point</li>
                   <li>Select <strong>Search Along</strong> from the menu</li>
                   <li>Adjust the <strong>search distance</strong> with the slider (0.5 - 25 km)</li>
@@ -232,13 +231,13 @@
           <v-window-item value="layers">
             <div class="tutorial-section">
               <h3 class="mb-3">📚 Layers Panel</h3>
-              <p class="mb-3">Manage all your drawings in the right sidebar:</p>
+              <p class="mb-3">Manage all your drawings in the left sidebar:</p>
 
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">Accessing the Layers Panel</h4>
                 <ul class="tutorial-list">
-                  <li>The layers panel is located in the <strong>right sidebar</strong></li>
-                  <li>Toggle the right sidebar using the button in the top-right corner</li>
+                  <li>The layers panel is located in the <strong>left sidebar</strong></li>
+                  <li>Toggle the left sidebar using the button on the left edge of the screen</li>
                   <li>All circles, lines, and points are listed in separate sections</li>
                 </ul>
               </div>
@@ -335,9 +334,6 @@
                     Click the <strong>save icon</strong> in the top bar to access project options
                   </li>
                   <li>A dropdown menu shows all project actions</li>
-                  <li>
-                    Projects are listed in the <strong>left sidebar</strong> under the Projects tab
-                  </li>
                 </ul>
               </div>
 
@@ -346,8 +342,7 @@
                 <ul class="tutorial-list">
                   <li><strong>New Project:</strong> Create a new empty project</li>
                   <li>
-                    <strong>Load Project:</strong> Switch to another saved project from the left
-                    sidebar
+                    <strong>Load Project:</strong> Switch to another saved project from the modal
                   </li>
                   <li><strong>Export JSON:</strong> Save your project as a JSON file for backup</li>
                   <li><strong>Import JSON:</strong> Load a project from a JSON file</li>
@@ -363,8 +358,7 @@
                 <ul class="tutorial-list">
                   <li>Each project stores all your drawings and coordinates separately</li>
                   <li>Projects are saved automatically to your browser's local storage</li>
-                  <li>Rename projects by clicking the edit icon in the Projects list</li>
-                  <li>Delete projects by clicking the trash icon in the Projects list</li>
+                  <li>Rename or delete projects from the Load Project modal</li>
                   <li>Export as GPX to use your drawings in other mapping applications</li>
                 </ul>
               </div>
