@@ -41,7 +41,7 @@
           <!-- Coordinates Tab -->
           <v-tab value="coordinates">
             <v-icon class="me-2" icon="mdi-map-marker" />
-            Saved Coordinates
+            Coordinates
           </v-tab>
 
           <!-- Projects Tab -->
@@ -95,6 +95,16 @@
               <h3 class="mb-3">🔧 Drawing Tools</h3>
 
               <div class="tutorial-step mb-4">
+                <h4 class="mb-2">Accessing Drawing Tools</h4>
+                <p class="mb-2">All drawing tools are located in the <strong>top bar</strong>:</p>
+                <ul class="tutorial-list">
+                  <li>Click the buttons in the center of the top bar to open drawing modals</li>
+                  <li>The top bar can be collapsed/expanded using the chevron button</li>
+                  <li>Drawing tools include: Circle, Lines (multiple types), and Point</li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step mb-4">
                 <h4 class="mb-2">🔵 Circle</h4>
                 <p class="mb-2">Draw a circle on the map by specifying:</p>
                 <ul class="tutorial-list">
@@ -117,6 +127,7 @@
                   <li><strong>Intersection Mode:</strong> Draw a line passing through a point at a specific distance</li>
                   <li><strong>Parallel Mode:</strong> Draw a parallel line (latitude) across the map</li>
                   <li><strong>Free Hand Mode:</strong> Draw lines interactively by clicking on the map with optional azimuth lock</li>
+                  <li><strong>Drag & Drop:</strong> Drag a point to another point in the layers panel to create a line between them</li>
                 </ul>
               </div>
 
@@ -138,7 +149,8 @@
                 <h4 class="mb-2">🏘️ Address Search</h4>
                 <p class="mb-2">Find locations by address and explore nearby places:</p>
                 <ol class="tutorial-list">
-                  <li>Click the <strong>search icon</strong> in the sidebar</li>
+                  <li>Open the <strong>left sidebar</strong> using the menu button in the top-left</li>
+                  <li>Click the <strong>search icon</strong> in the left sidebar</li>
                   <li>Type an <strong>address, city, or place name</strong></li>
                   <li>View results with their <strong>coordinates and elevation</strong></li>
                   <li>Click a result to <strong>center the map</strong> on that location</li>
@@ -151,7 +163,9 @@
                 <p class="mb-2">Find locations near your drawn lines and points:</p>
                 <ol class="tutorial-list">
                   <li>Draw a <strong>line segment or point</strong> on the map</li>
-                  <li>Click the <strong>search icon</strong> on the layer action menu</li>
+                  <li>Open the <strong>Layers panel</strong> in the right sidebar</li>
+                  <li>Click the <strong>⋮ menu</strong> on a line or point</li>
+                  <li>Select <strong>Search Along</strong> from the menu</li>
                   <li>Adjust the <strong>search distance</strong> with the slider (0.5 - 25 km)</li>
                   <li>Filter results by <strong>altitude range</strong> for elevation analysis</li>
                   <li>Filter by <strong>name</strong> to find specific locations</li>
@@ -203,7 +217,16 @@
           <v-window-item value="layers">
             <div class="tutorial-section">
               <h3 class="mb-3">📚 Layers Panel</h3>
-              <p class="mb-3">Manage all your drawings in one place:</p>
+              <p class="mb-3">Manage all your drawings in the right sidebar:</p>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">Accessing the Layers Panel</h4>
+                <ul class="tutorial-list">
+                  <li>The layers panel is located in the <strong>right sidebar</strong></li>
+                  <li>Toggle the right sidebar using the button in the top-right corner</li>
+                  <li>All circles, lines, and points are listed in separate sections</li>
+                </ul>
+              </div>
 
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">Layer Actions</h4>
@@ -213,7 +236,20 @@
                   <li><strong>👁 Hide/Show:</strong> Toggle visibility on the map</li>
                   <li><strong>✏️ Edit:</strong> Modify the shape's properties</li>
                   <li><strong>🗑️ Delete:</strong> Remove the shape permanently</li>
+                  <li><strong>🔍 Search Along:</strong> Find locations near the element (lines and points)</li>
+                  <li><strong>🧭 Navigate:</strong> Use arrow keys to move around the shape (circles and lines)</li>
                   <li><strong>➕ Create with:</strong> Create new shapes from a point</li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step">
+                <h4 class="mb-2">Drag & Drop</h4>
+                <p class="mb-2">Quickly create lines between points:</p>
+                <ul class="tutorial-list">
+                  <li><strong>Drag a point</strong> from the Points section to another point</li>
+                  <li>A line will automatically be created connecting the two points</li>
+                  <li>The line is named "Point A → Point B" with distance and azimuth info</li>
+                  <li>This is the fastest way to connect existing points</li>
                 </ul>
               </div>
             </div>
@@ -229,10 +265,22 @@
                 <h4 class="mb-2">How to Save Coordinates</h4>
                 <ol class="tutorial-list">
                   <li><strong>Right-click on the map</strong> to save a location</li>
-                  <li>Enter a <strong>name</strong> for the coordinate</li>
-                  <li>Coordinates are automatically saved and available in dropdown selectors</li>
-                  <li>All drawing tools use saved coordinates via <strong>dropdown selectors</strong></li>
+                  <li>A modal will open with the coordinates pre-filled</li>
+                  <li>Enter a <strong>name</strong> for the coordinate (or leave empty for auto-generated address)</li>
+                  <li>Click <strong>Save</strong> to add it to your coordinates library</li>
+                  <li>Click <strong>Save & Point</strong> to save and create a point on the map</li>
                 </ol>
+              </div>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">Managing Coordinates</h4>
+                <ul class="tutorial-list">
+                  <li>Access the coordinates modal from the <strong>top bar</strong> (book icon)</li>
+                  <li>View all saved coordinates with their lat/lon values</li>
+                  <li>Edit existing coordinates by clicking the pencil icon</li>
+                  <li>Delete coordinates by clicking the trash icon</li>
+                  <li>Coordinates are sorted by creation date (newest first)</li>
+                </ul>
               </div>
 
               <div class="tutorial-step">
@@ -242,7 +290,7 @@
                   <li>Build a library of important locations for your treasure hunt</li>
                   <li>Quick reference points for multiple projects</li>
                   <li>Reuse coordinates across different drawings without re-entering them</li>
-                  <li>Coordinates are sorted by creation date (newest first)</li>
+                  <li>Auto-generated names use reverse geocoding to find addresses</li>
                 </ul>
               </div>
             </div>
@@ -255,20 +303,33 @@
               <p class="mb-3">Organize your work into separate projects:</p>
 
               <div class="tutorial-step mb-4">
-                <h4 class="mb-2">Project Management</h4>
+                <h4 class="mb-2">Accessing Project Management</h4>
                 <ul class="tutorial-list">
-                  <li><strong>💾 Save:</strong> Save current project (auto-saves)</li>
-                  <li><strong>📁 Load:</strong> Switch between saved projects</li>
-                  <li><strong>📥 Import/Export:</strong> Share or backup as GPX files</li>
+                  <li>Click the <strong>save icon</strong> in the top bar to access project options</li>
+                  <li>A dropdown menu shows all project actions</li>
+                  <li>Projects are listed in the <strong>left sidebar</strong> under the Projects tab</li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">Project Actions</h4>
+                <ul class="tutorial-list">
+                  <li><strong>New Project:</strong> Create a new empty project</li>
+                  <li><strong>Load Project:</strong> Switch to another saved project from the left sidebar</li>
+                  <li><strong>Export JSON:</strong> Save your project as a JSON file for backup</li>
+                  <li><strong>Import JSON:</strong> Load a project from a JSON file</li>
+                  <li><strong>Export GPX:</strong> Export your drawings as GPX for use in other apps (download icon in top bar)</li>
                 </ul>
               </div>
 
               <div class="tutorial-step">
                 <h4 class="mb-2">Features</h4>
                 <ul class="tutorial-list">
-                  <li>Each project stores all your drawings separately</li>
-                  <li>Projects are saved automatically to your browser</li>
-                  <li>Export as GPX for use in other mapping applications</li>
+                  <li>Each project stores all your drawings and coordinates separately</li>
+                  <li>Projects are saved automatically to your browser's local storage</li>
+                  <li>Rename projects by clicking the edit icon in the Projects list</li>
+                  <li>Delete projects by clicking the trash icon in the Projects list</li>
+                  <li>Export as GPX to use your drawings in other mapping applications</li>
                 </ul>
               </div>
             </div>
@@ -337,9 +398,6 @@
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">⌨️ Keyboard Shortcuts</h4>
                 <ul class="tutorial-list">
-                  <li><strong>C</strong> - Open Circle modal to create a new circle</li>
-                  <li><strong>L</strong> - Open Line Segment modal to create a new line</li>
-                  <li><strong>P</strong> - Open Point modal to create a new point</li>
                   <li>
                     <strong>Arrow Keys (← →)</strong> - Navigate along circles/lines during
                     navigation mode
@@ -356,6 +414,9 @@
                 <ul class="tutorial-list">
                   <li>
                     <strong>Save coordinates first</strong> - Right-click on the map to save locations before drawing shapes
+                  </li>
+                  <li>
+                    <strong>Quick line creation</strong> - Drag a point to another point in the layers panel to instantly create a line
                   </li>
                   <li>
                     <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and end points:

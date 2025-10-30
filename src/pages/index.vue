@@ -1,66 +1,69 @@
 <template>
-  <!-- Navigation bar -->
+  <!-- Top bar (only shown when not in navigation/free hand mode) -->
+  <TopBar />
+
+  <!-- Navigation bar (shown during navigation/free hand modes) -->
   <NavigationBar />
 
   <!-- Fullscreen map -->
   <div id="map" :class="{ 'freehand-drawing': uiStore.freeHandDrawing.isDrawing }" />
 
   <!-- Sidebar -->
-  <aside class="sidebar" :class="{ open: sidebarOpen }">
+  <v-navigation-drawer
+    v-model="sidebarOpen"
+    location="left"
+    :width="640"
+    style="top: 64px; height: calc(100vh - 64px)"
+  >
     <!-- Search Along Panel (when active) -->
     <SearchAlongPanelInline v-if="uiStore.searchAlongPanel.isOpen" />
 
     <!-- Normal sidebar content (when not in search mode) -->
     <template v-else>
       <!-- Scrollable content area -->
-      <div class="sidebar-inner">
+      <div class="pa-4 d-flex flex-column ga-4 h-100 overflow-y-auto">
         <!-- Address search (includes title header) -->
         <SidebarAddressSearch />
-
-        <!-- Drawing Tools -->
-        <SidebarDrawingTools />
 
         <!-- Layers panel -->
         <SidebarLayersPanel />
 
         <!-- Status messages -->
-        <div
-          v-if="lastMessage"
-          class="status-message"
-          :class="{ success: lastMessageType === 'success', error: lastMessageType === 'error' }"
-        >
+        <v-alert v-if="lastMessage" :type="lastMessageType" density="compact" class="mb-0">
           {{ lastMessage }}
-        </div>
-      </div>
-
-      <!-- Action buttons footer - sticky at bottom -->
-      <div class="sidebar-footer">
-        <SidebarActionButtons />
+        </v-alert>
       </div>
     </template>
-  </aside>
+  </v-navigation-drawer>
 
   <!-- Sidebar toggle button -->
-  <button
+  <v-btn
+    icon
+    size="large"
     :aria-label="sidebarOpen ? 'Close sidebar' : 'Open sidebar'"
     :aria-pressed="sidebarOpen"
-    class="sidebar-toggle"
+    color="surface-bright"
+    elevation="4"
+    :style="{
+      position: 'fixed',
+      top: '50%',
+      left: sidebarOpen ? '648px' : '8px',
+      transform: 'translateY(-50%)',
+      zIndex: 1050,
+      transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    }"
     @click="sidebarOpen = !sidebarOpen"
   >
-    {{ sidebarOpen ? '←' : '→' }}
-  </button>
-
-  <!-- Floating help button (always visible) -->
-  <button
-    aria-label="Show tutorial"
-    class="floating-help-btn"
-    @click="uiStore.setShowTutorial(true)"
-  >
-    <span class="text-xl">?</span>
-  </button>
+    <v-icon>{{ sidebarOpen ? 'mdi-chevron-left' : 'mdi-chevron-right' }}</v-icon>
+  </v-btn>
 
   <!-- Modals -->
   <CircleModal v-if="uiStore.isModalOpen('circleModal')" />
+  <TwoPointsLineModal v-if="uiStore.isModalOpen('twoPointsLineModal')" />
+  <AzimuthLineModal v-if="uiStore.isModalOpen('azimuthLineModal')" />
+  <IntersectionLineModal v-if="uiStore.isModalOpen('intersectionLineModal')" />
+  <ParallelLineModal v-if="uiStore.isModalOpen('parallelLineModal')" />
+  <FreeHandLineModal v-if="uiStore.isModalOpen('freeHandLineModal')" />
   <LineSegmentModal v-if="uiStore.isModalOpen('lineSegmentModal')" />
   <PointModal v-if="uiStore.isModalOpen('pointModal')" />
   <AddPointOnSegmentModal v-if="uiStore.isModalOpen('addPointOnSegmentModal')" />
@@ -106,14 +109,18 @@ import CircleModal from '@/components/CircleModal.vue';
 import CoordinatesModal from '@/components/CoordinatesModal.vue';
 import LineSegmentModal from '@/components/LineSegmentModal.vue';
 import LoadProjectModal from '@/components/LoadProjectModal.vue';
+import AzimuthLineModal from '@/components/modals/AzimuthLineModal.vue';
+import FreeHandLineModal from '@/components/modals/FreeHandLineModal.vue';
+import IntersectionLineModal from '@/components/modals/IntersectionLineModal.vue';
+import ParallelLineModal from '@/components/modals/ParallelLineModal.vue';
+import TwoPointsLineModal from '@/components/modals/TwoPointsLineModal.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
 import NewProjectModal from '@/components/NewProjectModal.vue';
 import PointModal from '@/components/PointModal.vue';
 import SearchAlongPanelInline from '@/components/SearchAlongPanel.vue';
-import SidebarActionButtons from '@/components/SidebarActionButtons.vue';
 import SidebarAddressSearch from '@/components/SidebarAddressSearch.vue';
-import SidebarDrawingTools from '@/components/SidebarDrawingTools.vue';
 import SidebarLayersPanel from '@/components/SidebarLayersPanel.vue';
+import TopBar from '@/components/TopBar.vue';
 import TutorialModal from '@/components/TutorialModal.vue';
 import { useDrawing } from '@/composables/useDrawing';
 import { useMap } from '@/composables/useMap';
@@ -463,41 +470,6 @@ onMounted(async () => {
 
   // Setup keyboard shortcuts and navigation
   const handleKeydown = (event: KeyboardEvent) => {
-    // Check if user is typing in an input field
-    const target = event.target as HTMLElement;
-    const isInputField =
-      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-
-    // Global keyboard shortcuts (only when not typing in input)
-    if (!isInputField && !uiStore.navigatingElement) {
-      // Skip if any modifier keys are pressed (Ctrl, Meta, Alt, Shift)
-      const hasModifier = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
-
-      // Check if any modal is open
-      const isAnyModalOpen = uiStore.openModals.size > 0;
-
-      if (!isAnyModalOpen && !hasModifier) {
-        switch (event.key.toLowerCase()) {
-          case 'c': {
-            event.preventDefault();
-            uiStore.openModal('circleModal');
-            return;
-          }
-          case 'l': {
-            event.preventDefault();
-            uiStore.openModal('lineSegmentModal');
-            return;
-          }
-          case 'p': {
-            event.preventDefault();
-            uiStore.openModal('pointModal');
-            return;
-          }
-          // No default
-        }
-      }
-    }
-
     // Free hand drawing mode keyboard handling
     if (uiStore.freeHandDrawing.isDrawing) {
       if (event.key === 'Escape') {
@@ -651,145 +623,6 @@ body,
 :global(.leaflet-grab),
 :global(.leaflet-grab:active) {
   cursor: default !important;
-}
-
-/* Sidebar */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -640px;
-  height: 100vh;
-  width: 640px;
-  background: rgb(var(--v-theme-surface));
-  opacity: 1;
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  color: rgb(var(--v-theme-on-surface));
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: visible;
-}
-
-.sidebar.open {
-  left: 0;
-}
-
-.sidebar-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  padding-bottom: 80px;
-  height: calc(100% - 80px);
-  overflow: hidden;
-}
-
-/* Toggle Button */
-.sidebar-toggle {
-  position: fixed;
-  top: 50%;
-  left: 8px;
-  transform: translateY(-50%);
-  z-index: 1050;
-  width: 40px;
-  height: 80px;
-  border-radius: 4px;
-  border: none;
-  background: rgb(var(--v-theme-surface-bright));
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 18px;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  transition:
-    box-shadow 0.3s ease,
-    background 0.3s ease,
-    right 0.3s ease,
-    left 0.3s ease;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sidebar.open ~ .sidebar-toggle {
-  left: 648px;
-  border-radius: 4px;
-}
-
-.sidebar-toggle:hover {
-  background: rgb(var(--v-theme-surface-variant));
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
-}
-
-.sidebar-toggle:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-/* Floating Help Button */
-.floating-help-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1050;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.floating-help-btn:hover {
-  transform: scale(1.05);
-  background: rgb(var(--v-theme-primary-darken-1));
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
-}
-
-.floating-help-btn:active {
-  transform: scale(0.95);
-}
-
-/* Footer */
-.sidebar-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  background: rgb(var(--v-theme-surface));
-}
-
-/* Status Message */
-.status-message {
-  padding: 12px 14px;
-  border-radius: 4px;
-  border: none;
-  font-size: 13px;
-}
-
-.status-message.success {
-  background: rgba(var(--v-theme-success), 0.15);
-  color: rgb(var(--v-theme-success));
-}
-
-.status-message.error {
-  background: rgba(var(--v-theme-error), 0.15);
-  color: rgb(var(--v-theme-error));
 }
 
 /* Cursor change for free hand drawing */

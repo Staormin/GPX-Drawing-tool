@@ -1,10 +1,5 @@
 <template>
   <div class="position-relative">
-    <!-- GeoChase Title Header -->
-    <div class="geochase-title-header d-flex align-center justify-center mb-4">
-      <h2 class="geochase-title">GeoChase</h2>
-    </div>
-
     <!-- Search input with Vuetify -->
     <v-text-field
       v-model="addressSearchInput"

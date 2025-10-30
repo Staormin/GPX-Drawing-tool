@@ -120,13 +120,22 @@
             class="layer-item"
             :class="{
               'layer-item-hidden': point.id && !uiStore.isElementVisible('point', point.id),
+              'drag-over': dragOverPointId === point.id,
             }"
+            draggable="true"
+            @dragstart="handleDragStart($event, point)"
+            @dragend="handleDragEnd"
+            @dragover.prevent="handleDragOver($event, point)"
+            @dragenter.prevent
+            @dragleave="handleDragLeave($event, point)"
+            @drop.prevent="handleDrop($event, point)"
+            @click="handlePointClick($event, point)"
           >
-            <div class="layer-item-info" @click="handleGoTo('point', point)">
+            <div class="layer-item-info">
               <div class="layer-item-name">{{ point.name }}</div>
               <div class="layer-item-type">Point</div>
             </div>
-            <div class="layer-item-actions">
+            <div class="layer-item-actions" @click.stop>
               <LayerContextMenu
                 v-if="point.id"
                 :element-id="point.id"
@@ -156,6 +165,11 @@ const drawing = inject('drawing') as any;
 const mapContainer = inject('mapContainer') as any;
 
 const searchQuery = ref('');
+const draggedPoint = ref<PointElement | null>(null);
+const dragOverPointId = ref<string | null>(null);
+const isDragging = ref(false);
+const lastDropTarget = ref<PointElement | null>(null);
+let dragLeaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Filtered lists based on search query (using sorted arrays)
 const filteredCircles = computed(() => {
@@ -282,6 +296,115 @@ function handleGoTo(
 
   mapContainer.setCenter(lat, lon, zoom);
   uiStore.addToast(`Going to ${element.name}`, 'info');
+}
+
+// Drag and drop handlers for creating lines between points
+function handleDragStart(event: DragEvent, point: PointElement) {
+  isDragging.value = true;
+  draggedPoint.value = point;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'link';
+  }
+}
+
+function handlePointClick(event: MouseEvent, point: PointElement) {
+  if (!isDragging.value) {
+    handleGoTo('point', point);
+  }
+}
+
+function handleDragOver(event: DragEvent, point: PointElement) {
+  if (dragLeaveTimeout) {
+    clearTimeout(dragLeaveTimeout);
+    dragLeaveTimeout = null;
+  }
+
+  if (draggedPoint.value && draggedPoint.value.id !== point.id) {
+    lastDropTarget.value = point;
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'link';
+    }
+    if (dragOverPointId.value !== point.id) {
+      dragOverPointId.value = point.id || null;
+    }
+  }
+}
+
+function handleDragLeave(event: DragEvent, point: PointElement) {
+  const currentTarget = event.currentTarget as HTMLElement;
+  const relatedTarget = event.relatedTarget as HTMLElement;
+
+  if (!currentTarget.contains(relatedTarget)) {
+    dragLeaveTimeout = setTimeout(() => {
+      if (dragOverPointId.value === point.id) {
+        dragOverPointId.value = null;
+      }
+    }, 50);
+  }
+}
+
+function handleDrop(event: DragEvent, targetPoint: PointElement) {
+  if (dragLeaveTimeout) {
+    clearTimeout(dragLeaveTimeout);
+    dragLeaveTimeout = null;
+  }
+
+  dragOverPointId.value = null;
+
+  if (!draggedPoint.value || draggedPoint.value.id === targetPoint.id) {
+    return;
+  }
+
+  const startPoint = draggedPoint.value;
+  const distance = calculateDistance(
+    startPoint.coordinates.lat,
+    startPoint.coordinates.lon,
+    targetPoint.coordinates.lat,
+    targetPoint.coordinates.lon
+  );
+  const azimuth = calculateBearing(
+    startPoint.coordinates.lat,
+    startPoint.coordinates.lon,
+    targetPoint.coordinates.lat,
+    targetPoint.coordinates.lon
+  );
+  const inverseAzimuth = (azimuth + 180) % 360;
+  const lineName = `${startPoint.name} → ${targetPoint.name}`;
+
+  drawing.drawLineSegment(
+    startPoint.coordinates.lat,
+    startPoint.coordinates.lon,
+    targetPoint.coordinates.lat,
+    targetPoint.coordinates.lon,
+    lineName,
+    'coordinate',
+    distance,
+    undefined,
+    undefined,
+    undefined,
+    undefined
+  );
+
+  uiStore.addToast(
+    `Line created: ${lineName} (${distance.toFixed(2)}km • ${azimuth.toFixed(1)}°/${inverseAzimuth.toFixed(1)}°)`,
+    'success'
+  );
+}
+
+function handleDragEnd(event: DragEvent) {
+  const dropWasSuccessful = event.dataTransfer?.dropEffect !== 'none';
+
+  // If drop didn't fire but we have a last drop target, create the line anyway
+  if (!dropWasSuccessful && lastDropTarget.value && draggedPoint.value) {
+    handleDrop(event, lastDropTarget.value);
+  }
+
+  setTimeout(() => {
+    isDragging.value = false;
+    draggedPoint.value = null;
+    dragOverPointId.value = null;
+    lastDropTarget.value = null;
+  }, 50);
 }
 </script>
 
@@ -447,5 +570,18 @@ function handleGoTo(
 
 .layer-item-hidden .layer-item-name {
   text-decoration: line-through;
+}
+
+/* Drag and drop styles */
+.layer-item[draggable='true'] {
+  cursor: pointer;
+}
+
+.layer-item.drag-over {
+  background: rgba(var(--v-theme-primary), 0.15) !important;
+  border: 2px solid rgb(var(--v-theme-primary)) !important;
+  border-radius: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 </style>

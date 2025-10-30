@@ -3,7 +3,7 @@
     v-model="isOpen"
     max-width="500px"
     @click:outside="closeModal"
-    @keydown.enter="isEditing ? updateCoordinate() : saveCoordinate()"
+    @keydown.enter="isEditing ? updateCoordinate() : saveAndAddAsPoint()"
     @keydown.esc="closeModal"
   >
     <v-card>
@@ -12,12 +12,14 @@
         <!-- Input section -->
         <div>
           <v-text-field
+            ref="nameInput"
             v-model="form.name"
             class="mb-4"
             density="compact"
             label="Coordinate Name (optional)"
             placeholder="e.g., Paris Center"
             variant="outlined"
+            autofocus
           />
 
           <v-text-field
@@ -90,7 +92,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, ref, watch } from 'vue';
+import { computed, inject, nextTick, ref, watch } from 'vue';
 import { getReverseGeocodeAddress } from '@/services/address';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useUIStore } from '@/stores/ui';
@@ -99,6 +101,7 @@ const uiStore = useUIStore();
 const coordinatesStore = useCoordinatesStore();
 const drawing = inject('drawing') as any;
 const isFetchingAddress = ref(false);
+const nameInput = ref<any>(null);
 
 const form = ref({
   name: '',
@@ -126,6 +129,14 @@ const isOpen = computed({
   set: (value) => {
     if (!value) closeModal();
   },
+});
+
+// Focus the name input when modal opens
+watch(isOpen, async (newValue) => {
+  if (newValue) {
+    await nextTick();
+    nameInput.value?.focus();
+  }
 });
 
 function validateAndParseCoordinates(): { lat: number; lon: number } | null {

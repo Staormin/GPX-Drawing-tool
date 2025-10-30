@@ -50,6 +50,7 @@ export const useUIStore = defineStore('ui', () => {
   const isLoading = ref(false);
   const selectedProjectIndex = ref<number | null>(null);
   const sidebarOpen = ref(true);
+  const leftSidebarOpen = ref(false);
   const coordinatesFormData = ref<{ name: string; coordinates: string } | null>(null);
   const elementVisibility = ref<Record<string, boolean>>({});
   const editingElement = ref<EditingElement | null>(null);
@@ -146,6 +147,14 @@ export const useUIStore = defineStore('ui', () => {
     sidebarOpen.value = open;
   }
 
+  function toggleLeftSidebar(): void {
+    leftSidebarOpen.value = !leftSidebarOpen.value;
+  }
+
+  function setLeftSidebarOpen(open: boolean): void {
+    leftSidebarOpen.value = open;
+  }
+
   function setCoordinatesFormData(data: { name: string; coordinates: string } | null): void {
     coordinatesFormData.value = data;
   }
@@ -212,7 +221,6 @@ export const useUIStore = defineStore('ui', () => {
 
   function stopNavigating(): void {
     navigatingElement.value = null;
-    sidebarOpen.value = true;
   }
 
   function isNavigating(type: 'circle' | 'lineSegment', id: string): boolean {
@@ -260,7 +268,6 @@ export const useUIStore = defineStore('ui', () => {
       azimuth: undefined,
       name: '',
     };
-    sidebarOpen.value = true;
   }
 
   return {
@@ -271,6 +278,7 @@ export const useUIStore = defineStore('ui', () => {
     isLoading,
     selectedProjectIndex,
     sidebarOpen,
+    leftSidebarOpen,
     coordinatesFormData,
     elementVisibility,
     editingElement,
@@ -302,6 +310,8 @@ export const useUIStore = defineStore('ui', () => {
     setSelectedProjectIndex,
     toggleSidebar,
     setSidebarOpen,
+    toggleLeftSidebar,
+    setLeftSidebarOpen,
     setCoordinatesFormData,
     toggleElementVisibility,
     isElementVisible,

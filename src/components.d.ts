@@ -12,13 +12,18 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AddPointOnSegmentModal: typeof import('./components/AddPointOnSegmentModal.vue')['default']
+    AzimuthLineModal: typeof import('./components/modals/AzimuthLineModal.vue')['default']
     CircleModal: typeof import('./components/CircleModal.vue')['default']
+    CoordinateSelector: typeof import('./components/shared/CoordinateSelector.vue')['default']
     CoordinatesModal: typeof import('./components/CoordinatesModal.vue')['default']
+    FreeHandLineModal: typeof import('./components/modals/FreeHandLineModal.vue')['default']
+    IntersectionLineModal: typeof import('./components/modals/IntersectionLineModal.vue')['default']
     LayerContextMenu: typeof import('./components/LayerContextMenu.vue')['default']
     LineSegmentModal: typeof import('./components/LineSegmentModal.vue')['default']
     LoadProjectModal: typeof import('./components/LoadProjectModal.vue')['default']
     NavigationBar: typeof import('./components/NavigationBar.vue')['default']
     NewProjectModal: typeof import('./components/NewProjectModal.vue')['default']
+    ParallelLineModal: typeof import('./components/modals/ParallelLineModal.vue')['default']
     PointModal: typeof import('./components/PointModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -27,9 +32,10 @@ declare module 'vue' {
     SidebarActionButtons: typeof import('./components/SidebarActionButtons.vue')['default']
     SidebarAddressSearch: typeof import('./components/SidebarAddressSearch.vue')['default']
     SidebarCoordinatesPanel: typeof import('./components/SidebarCoordinatesPanel.vue')['default']
-    SidebarDrawingTools: typeof import('./components/SidebarDrawingTools.vue')['default']
     SidebarHeader: typeof import('./components/SidebarHeader.vue')['default']
     SidebarLayersPanel: typeof import('./components/SidebarLayersPanel.vue')['default']
+    TopBar: typeof import('./components/TopBar.vue')['default']
     TutorialModal: typeof import('./components/TutorialModal.vue')['default']
+    TwoPointsLineModal: typeof import('./components/modals/TwoPointsLineModal.vue')['default']
   }
 }

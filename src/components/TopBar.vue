@@ -1,0 +1,326 @@
+<template>
+  <div v-if="!uiStore.navigatingElement && !uiStore.freeHandDrawing.isDrawing">
+    <!-- Expanded app bar -->
+    <template v-if="topBarOpen">
+      <v-app-bar color="surface" elevation="4">
+        <!-- App title -->
+        <v-app-bar-title class="text-h6 font-weight-bold ml-4">GeoChase</v-app-bar-title>
+
+        <v-spacer />
+
+        <!-- Action buttons section -->
+        <v-divider vertical class="mx-2" />
+
+        <v-btn-group density="compact">
+          <v-btn
+            icon="mdi-book-open-variant"
+            variant="elevated"
+            color="surface-bright"
+            @click="uiStore.openModal('coordinatesModal')"
+          >
+            <v-icon>mdi-book-open-variant</v-icon>
+            <v-tooltip activator="parent" location="bottom">Saved Coordinates</v-tooltip>
+          </v-btn>
+
+          <v-menu location="bottom">
+            <template #activator="{ props }">
+              <v-btn icon="mdi-content-save" variant="elevated" color="surface-bright" v-bind="props">
+                <v-icon>mdi-content-save</v-icon>
+                <v-tooltip activator="parent" location="bottom">Save/Load Project</v-tooltip>
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item @click="handleNewProject">
+                <template #prepend>
+                  <v-icon size="small">mdi-plus-circle</v-icon>
+                </template>
+                <v-list-item-title>New Project</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="handleLoadProject">
+                <template #prepend>
+                  <v-icon size="small">mdi-folder-open</v-icon>
+                </template>
+                <v-list-item-title>Load Project</v-list-item-title>
+              </v-list-item>
+              <v-divider />
+              <v-list-item @click="handleExportJSON">
+                <template #prepend>
+                  <v-icon size="small">mdi-file-export</v-icon>
+                </template>
+                <v-list-item-title>Export JSON</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="handleImportJSON">
+                <template #prepend>
+                  <v-icon size="small">mdi-file-import</v-icon>
+                </template>
+                <v-list-item-title>Import JSON</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <v-btn icon="mdi-download" variant="elevated" color="surface-bright" @click="handleExportGPX">
+            <v-icon>mdi-download</v-icon>
+            <v-tooltip activator="parent" location="bottom">Export GPX</v-tooltip>
+          </v-btn>
+        </v-btn-group>
+
+        <v-divider vertical class="mx-2" />
+
+        <!-- Help button -->
+        <v-btn icon="mdi-help-circle" variant="elevated" color="surface-bright" class="mr-2" @click="uiStore.setShowTutorial(true)">
+          <v-icon>mdi-help-circle</v-icon>
+          <v-tooltip activator="parent" location="bottom">Help & Tutorial</v-tooltip>
+        </v-btn>
+
+        <!-- Drawing tools - absolutely centered -->
+        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-center align-center" style="pointer-events: none; overflow: hidden">
+          <v-btn-group density="compact" style="pointer-events: auto; position: relative; z-index: 1">
+            <v-btn
+              icon="mdi-circle-outline"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('circleModal')"
+            >
+              <v-icon>mdi-circle-outline</v-icon>
+              <v-tooltip activator="parent" location="bottom">Circle</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-vector-line"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('twoPointsLineModal')"
+            >
+              <v-icon>mdi-vector-line</v-icon>
+              <v-tooltip activator="parent" location="bottom">Line (Two Points)</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-compass-outline"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('azimuthLineModal')"
+            >
+              <v-icon>mdi-compass-outline</v-icon>
+              <v-tooltip activator="parent" location="bottom">Line (Azimuth)</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-vector-intersection"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('intersectionLineModal')"
+            >
+              <v-icon>mdi-vector-intersection</v-icon>
+              <v-tooltip activator="parent" location="bottom">Line (Intersection)</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-minus"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('parallelLineModal')"
+            >
+              <v-icon>mdi-minus</v-icon>
+              <v-tooltip activator="parent" location="bottom">Parallel Line</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-gesture"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('freeHandLineModal')"
+            >
+              <v-icon>mdi-gesture</v-icon>
+              <v-tooltip activator="parent" location="bottom">Free Hand Line</v-tooltip>
+            </v-btn>
+
+            <v-btn
+              icon="mdi-map-marker"
+              variant="elevated"
+              color="surface-bright"
+              @click="uiStore.openModal('pointModal')"
+            >
+              <v-icon>mdi-map-marker</v-icon>
+              <v-tooltip activator="parent" location="bottom">Point</v-tooltip>
+            </v-btn>
+          </v-btn-group>
+        </div>
+      </v-app-bar>
+
+      <!-- Collapse button (below app bar, centered) -->
+      <div class="position-fixed w-100 d-flex justify-center pt-2" style="top: 64px; z-index: 1050; pointer-events: none">
+        <v-btn
+          icon="mdi-chevron-up"
+          size="small"
+          variant="elevated"
+          color="surface-bright"
+          aria-label="Collapse top bar"
+          elevation="4"
+          style="pointer-events: auto"
+          @click="topBarOpen = false"
+        />
+      </div>
+    </template>
+
+    <!-- Collapsed state - only toggle button -->
+    <div v-else class="position-fixed top-0 w-100 d-flex justify-center pt-2" style="z-index: 1050; pointer-events: none">
+      <v-btn
+        icon="mdi-chevron-down"
+        size="small"
+        variant="elevated"
+        color="surface-bright"
+        aria-label="Expand top bar"
+        elevation="4"
+        style="pointer-events: auto"
+        @click="topBarOpen = true"
+      />
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref } from 'vue';
+import { downloadGPX, generateCompleteGPX, getTimestamp } from '@/services/gpx';
+import { useCoordinatesStore } from '@/stores/coordinates';
+import { useLayersStore } from '@/stores/layers';
+import { useProjectsStore } from '@/stores/projects';
+import { useUIStore } from '@/stores/ui';
+
+const uiStore = useUIStore();
+const layersStore = useLayersStore();
+const coordinatesStore = useCoordinatesStore();
+const projectsStore = useProjectsStore();
+
+const topBarOpen = ref(true);
+
+function handleNewProject() {
+  uiStore.openModal('newProjectModal');
+}
+
+function handleLoadProject() {
+  uiStore.openModal('loadProjectModal');
+}
+
+function handleExportGPX() {
+  const circles = layersStore.circles.map((c) => ({
+    lat: c.center.lat,
+    lon: c.center.lon,
+    radius: c.radius,
+    name: c.name,
+  }));
+
+  const radii = [...new Set(circles.map((c) => c.radius))];
+  const lineSegments = layersStore.lineSegments;
+
+  const gpx = generateCompleteGPX(circles, radii, 360, lineSegments, layersStore.points);
+
+  const projectName = projectsStore.activeProject?.name || 'project';
+  const sanitizedName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const filename = `${sanitizedName}_${getTimestamp()}.gpx`;
+
+  downloadGPX(gpx, filename);
+  uiStore.addToast('GPX exported successfully!', 'success');
+}
+
+function handleExportJSON() {
+  const projectData = {
+    circles: layersStore.circles,
+    lineSegments: layersStore.lineSegments,
+    points: layersStore.points,
+    coordinates: coordinatesStore.savedCoordinates,
+    exportedAt: new Date().toISOString(),
+  };
+
+  const jsonString = JSON.stringify(projectData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+
+  const projectName = projectsStore.activeProject?.name || 'project';
+  const sanitizedName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  link.download = `${sanitizedName}_${getTimestamp()}.json`;
+
+  link.click();
+  URL.revokeObjectURL(url);
+  uiStore.addToast('Project exported as JSON successfully!', 'success');
+}
+
+async function handleImportJSON() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.addEventListener('change', async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const projectData = JSON.parse(content);
+
+      layersStore.clearLayers();
+      coordinatesStore.clearCoordinates();
+
+      if (projectData.circles && Array.isArray(projectData.circles)) {
+        for (const circle of projectData.circles) {
+          layersStore.addCircle({
+            id: circle.id,
+            name: circle.name,
+            center: circle.center,
+            radius: circle.radius,
+            color: circle.color,
+            leafletId: circle.leafletId,
+          });
+        }
+      }
+
+      if (projectData.lineSegments && Array.isArray(projectData.lineSegments)) {
+        for (const line of projectData.lineSegments) {
+          layersStore.addLineSegment({
+            id: line.id,
+            name: line.name,
+            center: line.center,
+            endpoint: line.endpoint,
+            mode: line.mode,
+            distance: line.distance,
+            azimuth: line.azimuth,
+            intersectionPoint: line.intersectionPoint,
+            intersectionDistance: line.intersectionDistance,
+            longitude: line.longitude,
+            color: line.color,
+            leafletId: line.leafletId,
+          });
+        }
+      }
+
+      if (projectData.points && Array.isArray(projectData.points)) {
+        for (const point of projectData.points) {
+          layersStore.addPoint({
+            id: point.id,
+            name: point.name,
+            coordinates: point.coordinates,
+            elevation: point.elevation,
+            color: point.color,
+            leafletId: point.leafletId,
+          });
+        }
+      }
+
+      if (projectData.coordinates && Array.isArray(projectData.coordinates)) {
+        for (const coord of projectData.coordinates) {
+          coordinatesStore.addCoordinate(coord.name, coord.lat, coord.lon);
+        }
+      }
+
+      uiStore.addToast('Project imported successfully!', 'success');
+    } catch (error) {
+      uiStore.addToast(
+        `Error importing project: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
+    }
+  });
+  input.click();
+}
+</script>
