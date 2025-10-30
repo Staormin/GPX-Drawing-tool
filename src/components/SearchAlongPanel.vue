@@ -1,13 +1,13 @@
 <template>
-  <!-- Match the sidebar-inner structure from index.vue -->
   <div
     ref="scrollContainer"
-    style="display: flex; flex-direction: column; height: 100%; overflow-y: auto"
+    class="d-flex flex-column h-100"
+    style="overflow-y: auto"
   >
     <!-- Sticky Header Section -->
     <div
+      class="position-sticky"
       style="
-        position: sticky;
         top: 0;
         z-index: 10;
         background: rgb(var(--v-theme-surface));
@@ -15,138 +15,29 @@
       "
     >
       <!-- Header -->
-      <div
-        style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 16px"
-      >
+      <div class="d-flex align-center gap-2 flex-shrink-0 mb-4">
         <v-btn icon="mdi-arrow-left" size="small" variant="text" @click="handleClose" />
         <span class="text-subtitle-2">Search Results</span>
       </div>
 
-      <!-- Filter Section - Show for both line segments and points (inside sticky header) -->
-      <div
-        v-if="!isSearching"
-        style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px"
-      >
-        <v-text-field
-          v-model="filterText"
-          clearable
-          density="compact"
-          :disabled="isSearching"
-          placeholder="Filter results by name..."
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-        />
-
-        <!-- Include Type Filter -->
-        <v-select
-          v-model="includedTypes"
-          chips
-          clearable
-          closable-chips
-          density="compact"
-          :disabled="isSearching"
-          :items="availableIncludeTypes"
-          label="Include types"
-          multiple
-          variant="outlined"
-        >
-          <template #selection="{ index }">
-            <!-- Show only first 3 chips and +X more -->
-            <template v-if="index < 3 && includedTypes[index]">
-              <v-chip
-                class="ma-1"
-                closable
-                color="success"
-                size="small"
-                @click:close="removeIncludedType(includedTypes[index]!)"
-              >
-                {{ includedTypes[index] }}
-              </v-chip>
-            </template>
-            <!-- Show +X more for remaining items after 3rd chip -->
-            <span v-else-if="index === 3" class="text-caption text-medium-emphasis ml-1">
-              +{{ includedTypes.length - 3 }} more
-            </span>
-          </template>
-        </v-select>
-
-        <!-- Exclude Type Filter -->
-        <v-select
-          v-model="excludedTypes"
-          chips
-          clearable
-          closable-chips
-          density="compact"
-          :disabled="isSearching"
-          :items="availableExcludeTypes"
-          label="Exclude types"
-          multiple
-          variant="outlined"
-        >
-          <template #selection="{ index }">
-            <!-- Show only first 3 chips and +X more -->
-            <template v-if="index < 3 && excludedTypes[index]">
-              <v-chip
-                class="ma-1"
-                closable
-                color="error"
-                size="small"
-                @click:close="removeExcludedType(excludedTypes[index]!)"
-              >
-                {{ excludedTypes[index] }}
-              </v-chip>
-            </template>
-            <!-- Show +X more for remaining items after 3rd chip -->
-            <span v-else-if="index === 3" class="text-caption text-medium-emphasis ml-1">
-              +{{ excludedTypes.length - 3 }} more
-            </span>
-          </template>
-        </v-select>
-
-        <!-- Distance Slider -->
-        <div>
-          <div class="d-flex align-center justify-space-between mb-2">
-            <label class="text-subtitle-2">Search Distance</label>
-            <span class="text-subtitle-2 font-weight-bold text-primary"
-              >{{ liveDisplayDistance.toFixed(1) }} km</span
-            >
-          </div>
-          <v-slider
-            v-model="liveDisplayDistance"
-            color="primary"
-            :disabled="isSearching"
-            :max="maxSearchDistance"
-            :min="0.5"
-            :step="0.1"
-            thumb-size="20"
-            track-size="4"
-            @mouseup="handleDisplayDistanceRelease"
-            @touchend="handleDisplayDistanceRelease"
-          />
-        </div>
-
-        <!-- Altitude Range Slider -->
-        <div>
-          <div class="d-flex align-center justify-space-between mb-2">
-            <label class="text-subtitle-2">Altitude Range</label>
-            <span class="text-subtitle-2 font-weight-bold text-primary">
-              {{ liveAltitudeRange[0].toFixed(0) }} m - {{ liveAltitudeRange[1].toFixed(0) }} m
-            </span>
-          </div>
-          <v-range-slider
-            v-model="liveAltitudeRange"
-            color="primary"
-            :disabled="isSearching"
-            :max="altitudeMinMax.max"
-            :min="altitudeMinMax.min"
-            :step="10"
-            thumb-size="20"
-            track-size="4"
-            @mouseup="handleAltitudeRangeRelease"
-            @touchend="handleAltitudeRangeRelease"
-          />
-        </div>
-      </div>
+      <!-- Filter Section -->
+      <SearchFilters
+        v-model:filter-text="filterText"
+        v-model:included-types="includedTypes"
+        v-model:excluded-types="excludedTypes"
+        v-model:live-display-distance="liveDisplayDistance"
+        v-model:live-altitude-range="liveAltitudeRange"
+        :available-include-types="availableIncludeTypes"
+        :available-exclude-types="availableExcludeTypes"
+        :max-search-distance="maxSearchDistance"
+        :altitude-min="altitudeMinMax.min"
+        :altitude-max="altitudeMinMax.max"
+        :is-searching="isSearching"
+        @remove-included-type="removeIncludedType"
+        @remove-excluded-type="removeExcludedType"
+        @distance-release="handleDisplayDistanceRelease"
+        @altitude-release="handleAltitudeRangeRelease"
+      />
     </div>
 
     <!-- Scrollable Content Area -->
@@ -154,13 +45,8 @@
       <!-- Loading Indicator -->
       <div
         v-if="isSearching"
-        style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 200px;
-        "
+        class="d-flex flex-column align-center justify-center"
+        style="min-height: 200px"
       >
         <v-progress-circular color="primary" indeterminate size="48" width="4" />
         <div class="text-caption text-disabled mt-4">Searching...</div>
@@ -168,199 +54,19 @@
 
       <!-- Main Content Area -->
       <template v-else>
-        <!-- Results Section -->
-        <div
-          v-if="filteredResults.length > 0 || isFiltering"
-          style="display: flex; flex-direction: column; gap: 8px"
-        >
-          <div style="position: relative; min-height: 100px; overflow-x: auto">
-            <!-- Loading overlay -->
-            <div
-              v-if="isFiltering"
-              style="
-                position: absolute;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
-                z-index: 10;
-              "
-            >
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
-                <v-progress-circular color="primary" indeterminate size="32" width="3" />
-                <div class="text-caption text-disabled">Filtering...</div>
-              </div>
-            </div>
-
-            <!-- Results table -->
-            <table style="min-width: 100%; border-collapse: collapse">
-              <thead>
-                <tr
-                  style="
-                    border-bottom: 2px solid rgba(var(--v-theme-on-surface), 0.12);
-                    background-color: rgba(var(--v-theme-on-surface), 0.05);
-                  "
-                >
-                  <th
-                    style="
-                      padding: 8px;
-                      text-align: left;
-                      cursor: pointer;
-                      width: 45%;
-                      min-width: 120px;
-                    "
-                    @click="toggleSort('name')"
-                  >
-                    <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
-                      Name
-                      <v-icon
-                        v-if="sortBy === 'name'"
-                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                        size="16"
-                      />
-                    </div>
-                  </th>
-                  <th
-                    style="
-                      padding: 8px;
-                      text-align: right;
-                      cursor: pointer;
-                      width: 27%;
-                      min-width: 70px;
-                    "
-                    @click="toggleSort('distance')"
-                  >
-                    <div
-                      class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-                    >
-                      Distance
-                      <v-icon
-                        v-if="sortBy === 'distance'"
-                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                        size="16"
-                      />
-                    </div>
-                  </th>
-                  <th
-                    style="
-                      padding: 8px;
-                      text-align: right;
-                      cursor: pointer;
-                      width: 28%;
-                      min-width: 70px;
-                    "
-                    @click="toggleSort('elevation')"
-                  >
-                    <div
-                      class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-                    >
-                      Elevation
-                      <v-icon
-                        v-if="sortBy === 'elevation'"
-                        :icon="sortAsc ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
-                        size="16"
-                      />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(result, index) in filteredResults"
-                  :key="`${result.main}-${index}`"
-                  class="cursor-pointer"
-                  style="
-                    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-                    transition: background-color 0.2s;
-                  "
-                  @click="handleResultClick(result)"
-                  @mouseenter="
-                    (e) =>
-                      ((e.currentTarget as HTMLElement).style.backgroundColor =
-                        'rgba(var(--v-theme-primary), 0.15)')
-                  "
-                  @mouseleave="
-                    (e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')
-                  "
-                >
-                  <td style="padding: 8px; width: 45%; min-width: 120px">
-                    <div
-                      class="font-medium text-sm"
-                      style="
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                        max-width: 100%;
-                      "
-                      :title="result.main.length > 35 ? result.main : ''"
-                    >
-                      {{
-                        result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main
-                      }}
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px">
-                      <div
-                        class="text-xs text-slate-600 text-truncate"
-                        :title="result.type || 'N/A'"
-                      >
-                        {{ result.type || 'N/A' }}
-                      </div>
-                      <v-btn
-                        v-if="!includedTypes.includes(result.type || 'N/A')"
-                        color="success"
-                        icon="mdi-plus"
-                        size="x-small"
-                        variant="text"
-                        @click.stop="addIncludedType(result.type || 'N/A')"
-                      />
-                      <v-btn
-                        v-if="!excludedTypes.includes(result.type || 'N/A')"
-                        color="error"
-                        icon="mdi-minus"
-                        size="x-small"
-                        variant="text"
-                        @click.stop="addExcludedType(result.type || 'N/A')"
-                      />
-                    </div>
-                  </td>
-                  <td
-                    style="
-                      padding: 8px;
-                      text-align: right;
-                      width: 27%;
-                      min-width: 70px;
-                      white-space: nowrap;
-                    "
-                  >
-                    <div class="text-sm font-medium">
-                      {{ getResultDistance(result).toFixed(1) }} km
-                    </div>
-                  </td>
-                  <td
-                    style="
-                      padding: 8px;
-                      text-align: right;
-                      width: 28%;
-                      min-width: 70px;
-                      white-space: nowrap;
-                    "
-                  >
-                    <div class="text-sm font-medium">
-                      {{ result.elevation ? `${result.elevation} m` : 'N/A' }}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div v-else class="text-caption text-disabled text-center" style="padding: 32px 16px">
-          <v-icon class="mb-2" icon="mdi-magnify" size="24" />
-          <div>No results match your filter.</div>
-        </div>
+        <SearchResultsTable
+          :filtered-results="filteredResults"
+          :is-filtering="isFiltering"
+          :sort-by="sortBy"
+          :sort-asc="sortAsc"
+          :included-types="includedTypes"
+          :excluded-types="excludedTypes"
+          :path-points="pathPoints"
+          @toggle-sort="toggleSort"
+          @result-click="handleResultClick"
+          @add-included-type="addIncludedType"
+          @add-excluded-type="addExcludedType"
+        />
       </template>
     </div>
   </div>
@@ -380,6 +86,8 @@ import {
 import { createSearchZoneLayer, removeSearchZoneLayer } from '@/services/searchZone';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
+import SearchFilters from '@/components/search/SearchFilters.vue';
+import SearchResultsTable from '@/components/search/SearchResultsTable.vue';
 
 const uiStore = useUIStore();
 const layersStore = useLayersStore();
@@ -989,10 +697,9 @@ function handleResultClick(result: AddressSearchResult) {
   uiStore.addToast(`Navigating to ${result.main}`, 'success');
 }
 
+// Helper function for distance calculation (used in sorting)
 function getResultDistance(result: AddressSearchResult): number {
   if (pathPoints.value.length === 0) return 0;
-
-  // Always use the first point (center of circle or start of segment)
   return haversineDistance(result.coordinates, pathPoints.value[0]!);
 }
 
