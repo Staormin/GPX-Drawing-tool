@@ -267,8 +267,8 @@ function handleGoTo(
     const circle = element as CircleElement;
     lat = circle.center.lat;
     lon = circle.center.lon;
-    // Calculate zoom based on radius: 13 - log2(radius/2)
-    zoom = Math.max(2, Math.min(18, 13 - Math.log2(circle.radius / 2)));
+    // Calculate zoom based on radius: more zoomed in formula
+    zoom = Math.max(6, Math.min(18, 15 - Math.log2(circle.radius / 1.5)));
   } else if (elementType === 'lineSegment') {
     const segment = element as LineSegmentElement;
     if (segment.mode === 'parallel') {
@@ -280,7 +280,15 @@ function handleGoTo(
       // Center on segment midpoint
       lat = (segment.center.lat + segment.endpoint.lat) / 2;
       lon = (segment.center.lon + segment.endpoint.lon) / 2;
-      zoom = 13;
+
+      // Calculate zoom based on line length: more zoomed in formula
+      const length = calculateDistance(
+        segment.center.lat,
+        segment.center.lon,
+        segment.endpoint.lat,
+        segment.endpoint.lon
+      );
+      zoom = Math.max(6, Math.min(18, 15 - Math.log2(length / 1.5)));
     } else {
       // Fallback to segment start
       lat = segment.center.lat;
@@ -291,7 +299,7 @@ function handleGoTo(
     const point = element as PointElement;
     lat = point.coordinates.lat;
     lon = point.coordinates.lon;
-    zoom = 13;
+    zoom = 16; // Closer zoom for points
   }
 
   mapContainer.setCenter(lat, lon, zoom);
