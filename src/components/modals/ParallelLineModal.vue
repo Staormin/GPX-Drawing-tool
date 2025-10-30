@@ -1,50 +1,46 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="600px" @click:outside="closeModal" @keydown.esc="closeModal">
-    <v-card>
-      <v-card-title>{{ isEditing ? 'Edit Parallel Line' : 'Add Parallel Line' }}</v-card-title>
+  <BaseModal
+    :is-open="isOpen"
+    :submit-text="isEditing ? 'Update' : 'Add'"
+    :title="isEditing ? 'Edit Parallel Line' : 'Add Parallel Line'"
+    @close="closeModal"
+    @submit="submitForm"
+  >
+    <v-form @submit.prevent="submitForm">
+      <v-text-field
+        v-model="form.name"
+        class="mb-4"
+        density="compact"
+        label="Line Name"
+        variant="outlined"
+      />
 
-      <v-card-text>
-        <v-form @submit.prevent="submitForm">
-          <v-text-field
-            v-model="form.name"
-            label="Line Name"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
-
-          <v-select
-            v-model="form.latitude"
-            :items="latitudeItems"
-            label="Latitude"
-            placeholder="Select a saved coordinate for latitude"
-            clearable
-            density="compact"
-            item-title="label"
-            item-value="value"
-            variant="outlined"
-            class="mb-4"
-          >
-            <template #no-data>
-              <v-list-item>
-                <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
-              </v-list-item>
-            </template>
-          </v-select>
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn @click="closeModal">Cancel</v-btn>
-        <v-btn color="primary" @click="submitForm">{{ isEditing ? 'Update' : 'Add' }}</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      <v-select
+        v-model="form.latitude"
+        class="mb-4"
+        clearable
+        density="compact"
+        item-title="label"
+        item-value="value"
+        :items="latitudeItems"
+        label="Latitude"
+        placeholder="Select a saved coordinate for latitude"
+        variant="outlined"
+      >
+        <template #no-data>
+          <v-list-item>
+            <v-list-item-title class="text-caption">No saved coordinates</v-list-item-title>
+          </v-list-item>
+        </template>
+      </v-select>
+    </v-form>
+  </BaseModal>
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from 'vue';
+import { computed, inject, reactive, watch } from 'vue';
+import BaseModal from '@/components/shared/BaseModal.vue';
+import { useLineNameGeneration } from '@/composables/useLineNameGeneration';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
@@ -52,6 +48,8 @@ import { useUIStore } from '@/stores/ui';
 const uiStore = useUIStore();
 const coordinatesStore = useCoordinatesStore();
 const layersStore = useLayersStore();
+const { generateParallelName } = useLineNameGeneration();
+const drawing = inject('drawing') as any;
 
 const isOpen = computed(() => uiStore.isModalOpen('parallelLineModal'));
 const isEditing = computed(() => !!uiStore.editingElement);
@@ -94,14 +92,25 @@ function submitForm() {
     return;
   }
 
+  // Validate latitude range
+  if (form.latitude < -90 || form.latitude > 90) {
+    uiStore.addToast('Latitude must be between -90 and 90 degrees', 'error');
+    return;
+  }
+
+  // Auto-generate name if empty
+  let name = form.name.trim();
+  if (!name) {
+    name = generateParallelName(form.latitude);
+  }
+
   if (isEditing.value && uiStore.editingElement) {
-    layersStore.updateLineSegment(uiStore.editingElement.id, {
-      name: form.name,
-      mode: 'parallel',
-      longitude: form.latitude,
-    });
+    // Update existing parallel
+    drawing.updateParallel(uiStore.editingElement.id, form.latitude, name);
     uiStore.addToast('Parallel line updated successfully!', 'success');
   } else {
+    // Create new parallel line
+    drawing.drawParallel(form.latitude, name);
     uiStore.addToast('Parallel line added successfully!', 'success');
   }
 

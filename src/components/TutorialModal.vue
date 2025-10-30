@@ -108,10 +108,11 @@
                 <h4 class="mb-2">🔵 Circle</h4>
                 <p class="mb-2">Draw a circle on the map by specifying:</p>
                 <ul class="tutorial-list">
-                  <li><strong>Name:</strong> Give your circle a name (optional, auto-generated if empty)</li>
                   <li>
-                    <strong>Center Coordinates:</strong> Select from your saved coordinates
+                    <strong>Name:</strong> Give your circle a name (optional, auto-generated if
+                    empty)
                   </li>
+                  <li><strong>Center Coordinates:</strong> Select from your saved coordinates</li>
                   <li><strong>Radius:</strong> Size in kilometers</li>
                 </ul>
               </div>
@@ -122,12 +123,24 @@
                 <ul class="tutorial-list">
                   <li><strong>Two Points:</strong> Connect two saved coordinates</li>
                   <li>
-                    <strong>Azimuth Mode:</strong> Create a line at a specific angle (azimuth) and distance
+                    <strong>Azimuth Mode:</strong> Create a line at a specific angle (azimuth) and
+                    distance
                   </li>
-                  <li><strong>Intersection Mode:</strong> Draw a line passing through a point at a specific distance</li>
-                  <li><strong>Parallel Mode:</strong> Draw a parallel line (latitude) across the map</li>
-                  <li><strong>Free Hand Mode:</strong> Draw lines interactively by clicking on the map with optional azimuth lock</li>
-                  <li><strong>Drag & Drop:</strong> Drag a point to another point in the layers panel to create a line between them</li>
+                  <li>
+                    <strong>Intersection Mode:</strong> Draw a line passing through a point at a
+                    specific distance
+                  </li>
+                  <li>
+                    <strong>Parallel Mode:</strong> Draw a parallel line (latitude) across the map
+                  </li>
+                  <li>
+                    <strong>Free Hand Mode:</strong> Draw lines interactively by clicking on the map
+                    with optional azimuth lock
+                  </li>
+                  <li>
+                    <strong>Drag & Drop:</strong> Drag a point to another point in the layers panel
+                    to create a line between them
+                  </li>
                 </ul>
               </div>
 
@@ -149,7 +162,9 @@
                 <h4 class="mb-2">🏘️ Address Search</h4>
                 <p class="mb-2">Find locations by address and explore nearby places:</p>
                 <ol class="tutorial-list">
-                  <li>Open the <strong>left sidebar</strong> using the menu button in the top-left</li>
+                  <li>
+                    Open the <strong>left sidebar</strong> using the menu button in the top-left
+                  </li>
                   <li>Click the <strong>search icon</strong> in the left sidebar</li>
                   <li>Type an <strong>address, city, or place name</strong></li>
                   <li>View results with their <strong>coordinates and elevation</strong></li>
@@ -236,8 +251,14 @@
                   <li><strong>👁 Hide/Show:</strong> Toggle visibility on the map</li>
                   <li><strong>✏️ Edit:</strong> Modify the shape's properties</li>
                   <li><strong>🗑️ Delete:</strong> Remove the shape permanently</li>
-                  <li><strong>🔍 Search Along:</strong> Find locations near the element (lines and points)</li>
-                  <li><strong>🧭 Navigate:</strong> Use arrow keys to move around the shape (circles and lines)</li>
+                  <li>
+                    <strong>🔍 Search Along:</strong> Find locations near the element (lines and
+                    points)
+                  </li>
+                  <li>
+                    <strong>🧭 Navigate:</strong> Use arrow keys to move around the shape (circles
+                    and lines)
+                  </li>
                   <li><strong>➕ Create with:</strong> Create new shapes from a point</li>
                 </ul>
               </div>
@@ -266,7 +287,10 @@
                 <ol class="tutorial-list">
                   <li><strong>Right-click on the map</strong> to save a location</li>
                   <li>A modal will open with the coordinates pre-filled</li>
-                  <li>Enter a <strong>name</strong> for the coordinate (or leave empty for auto-generated address)</li>
+                  <li>
+                    Enter a <strong>name</strong> for the coordinate (or leave empty for
+                    auto-generated address)
+                  </li>
                   <li>Click <strong>Save</strong> to add it to your coordinates library</li>
                   <li>Click <strong>Save & Point</strong> to save and create a point on the map</li>
                 </ol>
@@ -275,7 +299,9 @@
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">Managing Coordinates</h4>
                 <ul class="tutorial-list">
-                  <li>Access the coordinates modal from the <strong>top bar</strong> (book icon)</li>
+                  <li>
+                    Access the coordinates modal from the <strong>top bar</strong> (book icon)
+                  </li>
                   <li>View all saved coordinates with their lat/lon values</li>
                   <li>Edit existing coordinates by clicking the pencil icon</li>
                   <li>Delete coordinates by clicking the trash icon</li>
@@ -305,9 +331,13 @@
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">Accessing Project Management</h4>
                 <ul class="tutorial-list">
-                  <li>Click the <strong>save icon</strong> in the top bar to access project options</li>
+                  <li>
+                    Click the <strong>save icon</strong> in the top bar to access project options
+                  </li>
                   <li>A dropdown menu shows all project actions</li>
-                  <li>Projects are listed in the <strong>left sidebar</strong> under the Projects tab</li>
+                  <li>
+                    Projects are listed in the <strong>left sidebar</strong> under the Projects tab
+                  </li>
                 </ul>
               </div>
 
@@ -315,10 +345,16 @@
                 <h4 class="mb-2">Project Actions</h4>
                 <ul class="tutorial-list">
                   <li><strong>New Project:</strong> Create a new empty project</li>
-                  <li><strong>Load Project:</strong> Switch to another saved project from the left sidebar</li>
+                  <li>
+                    <strong>Load Project:</strong> Switch to another saved project from the left
+                    sidebar
+                  </li>
                   <li><strong>Export JSON:</strong> Save your project as a JSON file for backup</li>
                   <li><strong>Import JSON:</strong> Load a project from a JSON file</li>
-                  <li><strong>Export GPX:</strong> Export your drawings as GPX for use in other apps (download icon in top bar)</li>
+                  <li>
+                    <strong>Export GPX:</strong> Export your drawings as GPX for use in other apps
+                    (download icon in top bar)
+                  </li>
                 </ul>
               </div>
 
@@ -404,7 +440,10 @@
                   </li>
                   <li><strong>ESC</strong> - Exit navigation mode or cancel free hand drawing</li>
                   <li><strong>Right-click on map</strong> - Save coordinates at that location</li>
-                  <li><strong>ALT</strong> - Hold during free hand drawing to lock azimuth (only when no predefined azimuth)</li>
+                  <li>
+                    <strong>ALT</strong> - Hold during free hand drawing to lock azimuth (only when
+                    no predefined azimuth)
+                  </li>
                   <li><strong>CTRL</strong> - Hold during free hand drawing to lock distance</li>
                 </ul>
               </div>
@@ -413,27 +452,44 @@
                 <h4 class="mb-2">🎯 Drawing Tips</h4>
                 <ul class="tutorial-list">
                   <li>
-                    <strong>Save coordinates first</strong> - Right-click on the map to save locations before drawing shapes
+                    <strong>Save coordinates first</strong> - Right-click on the map to save
+                    locations before drawing shapes
                   </li>
                   <li>
-                    <strong>Quick line creation</strong> - Drag a point to another point in the layers panel to instantly create a line
+                    <strong>Quick line creation</strong> - Drag a point to another point in the
+                    layers panel to instantly create a line
                   </li>
                   <li>
-                    <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and end points:
+                    <strong>Free Hand Mode</strong> - Draw lines interactively by clicking start and
+                    end points:
                     <ul>
                       <li>Click on the map to set the start point</li>
-                      <li>Move your mouse to preview the line with real-time distance and azimuth</li>
-                      <li>Hold <strong>ALT</strong> to lock the azimuth (direction) at the current angle - useful for drawing parallel lines or maintaining specific directions</li>
-                      <li>Hold <strong>CTRL</strong> to lock the distance at the current length - useful for drawing multiple lines of the same length</li>
+                      <li>
+                        Move your mouse to preview the line with real-time distance and azimuth
+                      </li>
+                      <li>
+                        Hold <strong>ALT</strong> to lock the azimuth (direction) at the current
+                        angle - useful for drawing parallel lines or maintaining specific directions
+                      </li>
+                      <li>
+                        Hold <strong>CTRL</strong> to lock the distance at the current length -
+                        useful for drawing multiple lines of the same length
+                      </li>
                       <li>The floating tooltip shows whether azimuth or distance is locked</li>
                       <li>Click again to finalize the line</li>
-                      <li>When using predefined azimuth lock from the modal, ALT keybind is disabled</li>
+                      <li>
+                        When using predefined azimuth lock from the modal, ALT keybind is disabled
+                      </li>
                     </ul>
                   </li>
                   <li>Create <strong>multiple line segments</strong> to map routes or paths</li>
-                  <li>Use <strong>intersection mode</strong> to draw lines passing through specific points</li>
                   <li>
-                    Use <strong>azimuth mode</strong> with precise angles (supports 2 decimal places, e.g., 45.67°) for exact positioning
+                    Use <strong>intersection mode</strong> to draw lines passing through specific
+                    points
+                  </li>
+                  <li>
+                    Use <strong>azimuth mode</strong> with precise angles (supports 2 decimal
+                    places, e.g., 45.67°) for exact positioning
                   </li>
                   <li><strong>Parallel mode</strong> draws latitude lines across the entire map</li>
                   <li>Names are auto-generated based on locations if left empty</li>

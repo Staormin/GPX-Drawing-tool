@@ -123,13 +123,13 @@
               'drag-over': dragOverPointId === point.id,
             }"
             draggable="true"
-            @dragstart="handleDragStart($event, point)"
+            @click="handlePointClick($event, point)"
             @dragend="handleDragEnd"
-            @dragover.prevent="handleDragOver($event, point)"
             @dragenter.prevent
             @dragleave="handleDragLeave($event, point)"
+            @dragover.prevent="handleDragOver($event, point)"
+            @dragstart="handleDragStart($event, point)"
             @drop.prevent="handleDrop($event, point)"
-            @click="handlePointClick($event, point)"
           >
             <div class="layer-item-info">
               <div class="layer-item-name">{{ point.name }}</div>

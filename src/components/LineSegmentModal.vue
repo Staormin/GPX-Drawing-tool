@@ -44,13 +44,15 @@
             <v-select
               v-if="form.mode !== 'parallel'"
               v-model="form.startCoord"
-              :items="coordinateItems"
               class="mb-4"
               clearable
               density="compact"
               item-title="label"
               item-value="value"
-              :label="form.mode === 'freehand' ? 'Start Coordinates (optional)' : 'Start Coordinates'"
+              :items="coordinateItems"
+              :label="
+                form.mode === 'freehand' ? 'Start Coordinates (optional)' : 'Start Coordinates'
+              "
               placeholder="Select a saved coordinate"
               variant="outlined"
             >
@@ -65,12 +67,12 @@
             <v-select
               v-if="form.mode === 'parallel'"
               v-model="form.startCoord"
-              :items="parallelCoordinateItems"
               class="mb-4"
               clearable
               density="compact"
               item-title="label"
               item-value="value"
+              :items="parallelCoordinateItems"
               label="Latitude"
               placeholder="Select a saved coordinate"
               variant="outlined"
@@ -86,12 +88,12 @@
               <!-- End Coordinates selector -->
               <v-select
                 v-model="form.endCoord"
-                :items="coordinateItems"
                 class="mb-4"
                 clearable
                 density="compact"
                 item-title="label"
                 item-value="value"
+                :items="coordinateItems"
                 label="End Coordinates"
                 placeholder="Select a saved coordinate"
                 variant="outlined"
@@ -133,12 +135,12 @@
               <!-- Intersection Coordinates selector -->
               <v-select
                 v-model="form.intersectCoord"
-                :items="coordinateItems"
                 class="mb-4"
                 clearable
                 density="compact"
                 item-title="label"
                 item-value="value"
+                :items="coordinateItems"
                 label="Intersection Coordinates"
                 placeholder="Select a saved coordinate"
                 variant="outlined"
@@ -198,7 +200,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { SavedCoordinate } from '@/services/storage';
 import { computed, inject, ref, watch } from 'vue';
 import { getReverseGeocodeAddress } from '@/services/address';
 import { calculateDistance, destinationPoint, endpointFromIntersection } from '@/services/geometry';

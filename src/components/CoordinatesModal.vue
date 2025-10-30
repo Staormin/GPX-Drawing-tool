@@ -14,12 +14,12 @@
           <v-text-field
             ref="nameInput"
             v-model="form.name"
+            autofocus
             class="mb-4"
             density="compact"
             label="Coordinate Name (optional)"
             placeholder="e.g., Paris Center"
             variant="outlined"
-            autofocus
           />
 
           <v-text-field

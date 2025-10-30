@@ -1,18 +1,9 @@
 <template>
-  <div
-    ref="scrollContainer"
-    class="d-flex flex-column h-100"
-    style="overflow-y: auto"
-  >
+  <div ref="scrollContainer" class="d-flex flex-column h-100" style="overflow-y: auto">
     <!-- Sticky Header Section -->
     <div
       class="position-sticky"
-      style="
-        top: 0;
-        z-index: 10;
-        background: rgb(var(--v-theme-surface));
-        padding: 16px 16px 0;
-      "
+      style="top: 0; z-index: 10; background: rgb(var(--v-theme-surface)); padding: 16px 16px 0"
     >
       <!-- Header -->
       <div class="d-flex align-center gap-2 flex-shrink-0 mb-4">
@@ -22,21 +13,21 @@
 
       <!-- Filter Section -->
       <SearchFilters
+        v-model:excluded-types="excludedTypes"
         v-model:filter-text="filterText"
         v-model:included-types="includedTypes"
-        v-model:excluded-types="excludedTypes"
-        v-model:live-display-distance="liveDisplayDistance"
         v-model:live-altitude-range="liveAltitudeRange"
-        :available-include-types="availableIncludeTypes"
-        :available-exclude-types="availableExcludeTypes"
-        :max-search-distance="maxSearchDistance"
-        :altitude-min="altitudeMinMax.min"
+        v-model:live-display-distance="liveDisplayDistance"
         :altitude-max="altitudeMinMax.max"
+        :altitude-min="altitudeMinMax.min"
+        :available-exclude-types="availableExcludeTypes"
+        :available-include-types="availableIncludeTypes"
         :is-searching="isSearching"
-        @remove-included-type="removeIncludedType"
-        @remove-excluded-type="removeExcludedType"
-        @distance-release="handleDisplayDistanceRelease"
+        :max-search-distance="maxSearchDistance"
         @altitude-release="handleAltitudeRangeRelease"
+        @distance-release="handleDisplayDistanceRelease"
+        @remove-excluded-type="removeExcludedType"
+        @remove-included-type="removeIncludedType"
       />
     </div>
 
@@ -55,17 +46,17 @@
       <!-- Main Content Area -->
       <template v-else>
         <SearchResultsTable
-          :filtered-results="filteredResults"
-          :is-filtering="isFiltering"
-          :sort-by="sortBy"
-          :sort-asc="sortAsc"
-          :included-types="includedTypes"
           :excluded-types="excludedTypes"
+          :filtered-results="filteredResults"
+          :included-types="includedTypes"
+          :is-filtering="isFiltering"
           :path-points="pathPoints"
-          @toggle-sort="toggleSort"
-          @result-click="handleResultClick"
-          @add-included-type="addIncludedType"
+          :sort-asc="sortAsc"
+          :sort-by="sortBy"
           @add-excluded-type="addExcludedType"
+          @add-included-type="addIncludedType"
+          @result-click="handleResultClick"
+          @toggle-sort="toggleSort"
         />
       </template>
     </div>
@@ -77,6 +68,8 @@ import type L from 'leaflet';
 import type { AddressSearchResult } from '@/services/geoportail';
 import * as turf from '@turf/turf';
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue';
+import SearchFilters from '@/components/search/SearchFilters.vue';
+import SearchResultsTable from '@/components/search/SearchResultsTable.vue';
 import { generateLinePointsLinear } from '@/services/geometry';
 import {
   distancePointToSegment,
@@ -86,8 +79,6 @@ import {
 import { createSearchZoneLayer, removeSearchZoneLayer } from '@/services/searchZone';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
-import SearchFilters from '@/components/search/SearchFilters.vue';
-import SearchResultsTable from '@/components/search/SearchResultsTable.vue';
 
 const uiStore = useUIStore();
 const layersStore = useLayersStore();

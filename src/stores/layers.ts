@@ -32,7 +32,7 @@ export const useLayersStore = defineStore('layers', () => {
 
   // Sorted layers by creation date (newest first)
   const sortedCircles = computed(() => {
-    return [...circles.value].sort((a, b) => {
+    return circles.value.toSorted((a, b) => {
       const aTime = a.createdAt || 0;
       const bTime = b.createdAt || 0;
       return bTime - aTime; // Newest first
@@ -40,7 +40,7 @@ export const useLayersStore = defineStore('layers', () => {
   });
 
   const sortedLineSegments = computed(() => {
-    return [...lineSegments.value].sort((a, b) => {
+    return lineSegments.value.toSorted((a, b) => {
       const aTime = a.createdAt || 0;
       const bTime = b.createdAt || 0;
       return bTime - aTime; // Newest first
@@ -48,7 +48,7 @@ export const useLayersStore = defineStore('layers', () => {
   });
 
   const sortedPoints = computed(() => {
-    return [...points.value].sort((a, b) => {
+    return points.value.toSorted((a, b) => {
       const aTime = a.createdAt || 0;
       const bTime = b.createdAt || 0;
       return bTime - aTime; // Newest first

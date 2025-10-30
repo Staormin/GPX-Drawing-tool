@@ -6,13 +6,13 @@
       'drag-over': isDragOver,
     }"
     :draggable="draggable"
-    @dragstart="$emit('dragstart', $event)"
+    @click="$emit('click', $event)"
     @dragend="$emit('dragend', $event)"
-    @dragover.prevent="$emit('dragover', $event)"
     @dragenter.prevent
     @dragleave="$emit('dragleave', $event)"
+    @dragover.prevent="$emit('dragover', $event)"
+    @dragstart="$emit('dragstart', $event)"
     @drop.prevent="$emit('drop', $event)"
-    @click="$emit('click', $event)"
   >
     <div class="layer-item-info">
       <div class="layer-item-name">{{ name }}</div>

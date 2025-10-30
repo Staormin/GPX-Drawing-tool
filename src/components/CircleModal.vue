@@ -21,12 +21,12 @@
           <!-- Center Coordinates selector -->
           <v-select
             v-model="form.centerCoord"
-            :items="coordinateItems"
             class="mb-4"
             clearable
             density="compact"
             item-title="label"
             item-value="value"
+            :items="coordinateItems"
             label="Center Coordinates"
             placeholder="Select a saved coordinate"
             variant="outlined"
@@ -63,7 +63,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { SavedCoordinate } from '@/services/storage';
 import { computed, inject, ref, watch } from 'vue';
 import { getReverseGeocodeAddress } from '@/services/address';
 import { useCoordinatesStore } from '@/stores/coordinates';

@@ -1,15 +1,15 @@
 <template>
   <v-select
-    :model-value="modelValue"
-    :items="items"
-    :label="label"
-    :placeholder="placeholder"
+    class="mb-4"
     clearable
     density="compact"
     item-title="label"
     item-value="value"
+    :items="items"
+    :label="label"
+    :model-value="modelValue"
+    :placeholder="placeholder"
     variant="outlined"
-    class="mb-4"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <template #no-data>
@@ -22,13 +22,13 @@
 
 <script lang="ts" setup>
 defineProps<{
-  modelValue: string | null
-  items: Array<{ label: string; value: string }>
-  label: string
-  placeholder?: string
-}>()
+  modelValue: string | null;
+  items: Array<{ label: string; value: string }>;
+  label: string;
+  placeholder?: string;
+}>();
 
 defineEmits<{
-  'update:modelValue': [value: string | null]
-}>()
+  'update:modelValue': [value: string | null];
+}>();
 </script>

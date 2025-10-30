@@ -1,5 +1,10 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="600px" @click:outside="closeModal" @keydown.esc="closeModal">
+  <v-dialog
+    v-model="isOpen"
+    max-width="600px"
+    @click:outside="closeModal"
+    @keydown.esc="closeModal"
+  >
     <v-card>
       <v-card-title>Add Line (Free Hand)</v-card-title>
 
@@ -7,10 +12,10 @@
         <v-form @submit.prevent="submitForm">
           <v-text-field
             v-model="form.name"
-            label="Line Name (optional)"
-            density="compact"
-            variant="outlined"
             class="mb-4"
+            density="compact"
+            label="Line Name (optional)"
+            variant="outlined"
           />
 
           <CoordinateSelector
@@ -22,18 +27,18 @@
 
           <v-text-field
             v-model.number="form.azimuth"
-            label="Azimuth (degrees, optional)"
-            type="number"
-            min="0"
-            max="360"
-            step="0.01"
-            density="compact"
-            variant="outlined"
-            placeholder="Leave empty for free direction"
             class="mb-4"
+            density="compact"
+            label="Azimuth (degrees, optional)"
+            max="360"
+            min="0"
+            placeholder="Leave empty for free direction"
+            step="0.01"
+            type="number"
+            variant="outlined"
           />
 
-          <v-alert type="info" density="compact" class="mb-0">
+          <v-alert class="mb-0" density="compact" type="info">
             Click "Start Drawing" to enter drawing mode. Move your mouse to set the endpoint. Press
             Escape to cancel.
           </v-alert>

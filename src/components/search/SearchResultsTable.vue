@@ -5,11 +5,7 @@
       <div
         v-if="isFiltering"
         class="position-absolute d-flex align-center justify-center rounded"
-        style="
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 10;
-        "
+        style="inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 10"
       >
         <div class="d-flex flex-column align-center gap-2">
           <v-progress-circular color="primary" indeterminate size="32" width="3" />
@@ -28,13 +24,8 @@
           >
             <th
               class="cursor-pointer"
-              style="
-                padding: 8px;
-                text-align: left;
-                width: 45%;
-                min-width: 120px;
-              "
-              @click="$emit('toggleSort', 'name')"
+              style="padding: 8px; text-align: left; width: 45%; min-width: 120px"
+              @click="$emit('toggle-sort', 'name')"
             >
               <div class="text-xs font-medium text-slate-700 d-flex align-center gap-1">
                 Name
@@ -47,17 +38,10 @@
             </th>
             <th
               class="cursor-pointer"
-              style="
-                padding: 8px;
-                text-align: right;
-                width: 27%;
-                min-width: 70px;
-              "
-              @click="$emit('toggleSort', 'distance')"
+              style="padding: 8px; text-align: right; width: 27%; min-width: 70px"
+              @click="$emit('toggle-sort', 'distance')"
             >
-              <div
-                class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-              >
+              <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
                 Distance
                 <v-icon
                   v-if="sortBy === 'distance'"
@@ -68,17 +52,10 @@
             </th>
             <th
               class="cursor-pointer"
-              style="
-                padding: 8px;
-                text-align: right;
-                width: 28%;
-                min-width: 70px;
-              "
-              @click="$emit('toggleSort', 'elevation')"
+              style="padding: 8px; text-align: right; width: 28%; min-width: 70px"
+              @click="$emit('toggle-sort', 'elevation')"
             >
-              <div
-                class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1"
-              >
+              <div class="text-xs font-medium text-slate-700 d-flex align-center justify-end gap-1">
                 Elevation
                 <v-icon
                   v-if="sortBy === 'elevation'"
@@ -98,7 +75,7 @@
               border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
               transition: background-color 0.2s;
             "
-            @click="$emit('resultClick', result)"
+            @click="$emit('result-click', result)"
             @mouseenter="
               (e) =>
                 ((e.currentTarget as HTMLElement).style.backgroundColor =
@@ -119,15 +96,10 @@
                 "
                 :title="result.main.length > 35 ? result.main : ''"
               >
-                {{
-                  result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main
-                }}
+                {{ result.main.length > 35 ? result.main.substring(0, 35) + '...' : result.main }}
               </div>
               <div class="d-flex align-center gap-1">
-                <div
-                  class="text-xs text-slate-600 text-truncate"
-                  :title="result.type || 'N/A'"
-                >
+                <div class="text-xs text-slate-600 text-truncate" :title="result.type || 'N/A'">
                   {{ result.type || 'N/A' }}
                 </div>
                 <v-btn
@@ -136,7 +108,7 @@
                   icon="mdi-plus"
                   size="x-small"
                   variant="text"
-                  @click.stop="$emit('addIncludedType', result.type || 'N/A')"
+                  @click.stop="$emit('add-included-type', result.type || 'N/A')"
                 />
                 <v-btn
                   v-if="!excludedTypes.includes(result.type || 'N/A')"
@@ -144,7 +116,7 @@
                   icon="mdi-minus"
                   size="x-small"
                   variant="text"
-                  @click.stop="$emit('addExcludedType', result.type || 'N/A')"
+                  @click.stop="$emit('add-excluded-type', result.type || 'N/A')"
                 />
               </div>
             </td>
@@ -157,9 +129,7 @@
                 white-space: nowrap;
               "
             >
-              <div class="text-sm font-medium">
-                {{ getResultDistance(result).toFixed(1) }} km
-              </div>
+              <div class="text-sm font-medium">{{ getResultDistance(result).toFixed(1) }} km</div>
             </td>
             <td
               style="
@@ -200,10 +170,10 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  toggleSort: [column: 'name' | 'type' | 'elevation' | 'distance'];
-  resultClick: [result: AddressSearchResult];
-  addIncludedType: [type: string];
-  addExcludedType: [type: string];
+  'toggle-sort': [column: 'name' | 'type' | 'elevation' | 'distance'];
+  'result-click': [result: AddressSearchResult];
+  'add-included-type': [type: string];
+  'add-excluded-type': [type: string];
 }>();
 
 function getResultDistance(result: AddressSearchResult): number {

@@ -9,13 +9,13 @@
         <v-spacer />
 
         <!-- Action buttons section -->
-        <v-divider vertical class="mx-2" />
+        <v-divider class="mx-2" vertical />
 
         <v-btn-group density="compact">
           <v-btn
+            color="surface-bright"
             icon="mdi-book-open-variant"
             variant="elevated"
-            color="surface-bright"
             @click="uiStore.openModal('coordinatesModal')"
           >
             <v-icon>mdi-book-open-variant</v-icon>
@@ -24,7 +24,12 @@
 
           <v-menu location="bottom">
             <template #activator="{ props }">
-              <v-btn icon="mdi-content-save" variant="elevated" color="surface-bright" v-bind="props">
+              <v-btn
+                color="surface-bright"
+                icon="mdi-content-save"
+                variant="elevated"
+                v-bind="props"
+              >
                 <v-icon>mdi-content-save</v-icon>
                 <v-tooltip activator="parent" location="bottom">Save/Load Project</v-tooltip>
               </v-btn>
@@ -58,27 +63,44 @@
             </v-list>
           </v-menu>
 
-          <v-btn icon="mdi-download" variant="elevated" color="surface-bright" @click="handleExportGPX">
+          <v-btn
+            color="surface-bright"
+            icon="mdi-download"
+            variant="elevated"
+            @click="handleExportGPX"
+          >
             <v-icon>mdi-download</v-icon>
             <v-tooltip activator="parent" location="bottom">Export GPX</v-tooltip>
           </v-btn>
         </v-btn-group>
 
-        <v-divider vertical class="mx-2" />
+        <v-divider class="mx-2" vertical />
 
         <!-- Help button -->
-        <v-btn icon="mdi-help-circle" variant="elevated" color="surface-bright" class="mr-2" @click="uiStore.setShowTutorial(true)">
+        <v-btn
+          class="mr-2"
+          color="surface-bright"
+          icon="mdi-help-circle"
+          variant="elevated"
+          @click="uiStore.setShowTutorial(true)"
+        >
           <v-icon>mdi-help-circle</v-icon>
           <v-tooltip activator="parent" location="bottom">Help & Tutorial</v-tooltip>
         </v-btn>
 
         <!-- Drawing tools - absolutely centered -->
-        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-center align-center" style="pointer-events: none; overflow: hidden">
-          <v-btn-group density="compact" style="pointer-events: auto; position: relative; z-index: 1">
+        <div
+          class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-center align-center"
+          style="pointer-events: none; overflow: hidden"
+        >
+          <v-btn-group
+            density="compact"
+            style="pointer-events: auto; position: relative; z-index: 1"
+          >
             <v-btn
+              color="surface-bright"
               icon="mdi-circle-outline"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('circleModal')"
             >
               <v-icon>mdi-circle-outline</v-icon>
@@ -86,9 +108,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-vector-line"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('twoPointsLineModal')"
             >
               <v-icon>mdi-vector-line</v-icon>
@@ -96,9 +118,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-compass-outline"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('azimuthLineModal')"
             >
               <v-icon>mdi-compass-outline</v-icon>
@@ -106,9 +128,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-vector-intersection"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('intersectionLineModal')"
             >
               <v-icon>mdi-vector-intersection</v-icon>
@@ -116,9 +138,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-minus"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('parallelLineModal')"
             >
               <v-icon>mdi-minus</v-icon>
@@ -126,9 +148,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-gesture"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('freeHandLineModal')"
             >
               <v-icon>mdi-gesture</v-icon>
@@ -136,9 +158,9 @@
             </v-btn>
 
             <v-btn
+              color="surface-bright"
               icon="mdi-map-marker"
               variant="elevated"
-              color="surface-bright"
               @click="uiStore.openModal('pointModal')"
             >
               <v-icon>mdi-map-marker</v-icon>
@@ -149,30 +171,37 @@
       </v-app-bar>
 
       <!-- Collapse button (below app bar, centered) -->
-      <div class="position-fixed w-100 d-flex justify-center pt-2" style="top: 64px; z-index: 1050; pointer-events: none">
+      <div
+        class="position-fixed w-100 d-flex justify-center pt-2"
+        style="top: 64px; z-index: 1050; pointer-events: none"
+      >
         <v-btn
+          aria-label="Collapse top bar"
+          color="surface-bright"
+          elevation="4"
           icon="mdi-chevron-up"
           size="small"
-          variant="elevated"
-          color="surface-bright"
-          aria-label="Collapse top bar"
-          elevation="4"
           style="pointer-events: auto"
+          variant="elevated"
           @click="topBarOpen = false"
         />
       </div>
     </template>
 
     <!-- Collapsed state - only toggle button -->
-    <div v-else class="position-fixed top-0 w-100 d-flex justify-center pt-2" style="z-index: 1050; pointer-events: none">
+    <div
+      v-else
+      class="position-fixed top-0 w-100 d-flex justify-center pt-2"
+      style="z-index: 1050; pointer-events: none"
+    >
       <v-btn
+        aria-label="Expand top bar"
+        color="surface-bright"
+        elevation="4"
         icon="mdi-chevron-down"
         size="small"
-        variant="elevated"
-        color="surface-bright"
-        aria-label="Expand top bar"
-        elevation="4"
         style="pointer-events: auto"
+        variant="elevated"
         @click="topBarOpen = true"
       />
     </div>

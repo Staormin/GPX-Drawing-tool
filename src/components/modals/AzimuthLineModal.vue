@@ -1,69 +1,68 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="600px" @click:outside="closeModal" @keydown.esc="closeModal">
-    <v-card>
-      <v-card-title>{{ isEditing ? 'Edit Line (Azimuth)' : 'Add Line (Azimuth)' }}</v-card-title>
+  <BaseModal
+    :is-open="isOpen"
+    :submit-text="isEditing ? 'Update' : 'Add'"
+    :title="isEditing ? 'Edit Line (Azimuth)' : 'Add Line (Azimuth)'"
+    @close="closeModal"
+    @submit="submitForm"
+  >
+    <v-form @submit.prevent="submitForm">
+      <v-text-field
+        v-model="form.name"
+        class="mb-4"
+        density="compact"
+        label="Line Name"
+        variant="outlined"
+      />
 
-      <v-card-text>
-        <v-form @submit.prevent="submitForm">
-          <v-text-field
-            v-model="form.name"
-            label="Line Name"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
+      <CoordinateSelector
+        v-model="form.startCoord"
+        :items="coordinateItems"
+        label="Start Coordinates"
+        placeholder="Select a saved coordinate"
+      />
 
-          <CoordinateSelector
-            v-model="form.startCoord"
-            :items="coordinateItems"
-            label="Start Coordinates"
-            placeholder="Select a saved coordinate"
-          />
+      <v-text-field
+        v-model.number="form.azimuth"
+        class="mb-4"
+        density="compact"
+        label="Azimuth (degrees)"
+        max="360"
+        min="0"
+        step="0.01"
+        type="number"
+        variant="outlined"
+      />
 
-          <v-text-field
-            v-model.number="form.azimuth"
-            label="Azimuth (degrees)"
-            type="number"
-            min="0"
-            max="360"
-            step="0.01"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
-
-          <v-text-field
-            v-model.number="form.distance"
-            label="Distance (km)"
-            type="number"
-            min="0"
-            step="0.1"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn @click="closeModal">Cancel</v-btn>
-        <v-btn color="primary" @click="submitForm">{{ isEditing ? 'Update' : 'Add' }}</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      <v-text-field
+        v-model.number="form.distance"
+        class="mb-4"
+        density="compact"
+        label="Distance (km)"
+        min="0"
+        step="0.1"
+        type="number"
+        variant="outlined"
+      />
+    </v-form>
+  </BaseModal>
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from 'vue';
+import { computed, inject, reactive, watch } from 'vue';
+import BaseModal from '@/components/shared/BaseModal.vue';
 import CoordinateSelector from '@/components/shared/CoordinateSelector.vue';
-import { useCoordinatesStore } from '@/stores/coordinates';
+import { useCoordinateItems } from '@/composables/useCoordinateItems';
+import { useLineNameGeneration } from '@/composables/useLineNameGeneration';
+import { destinationPoint } from '@/services/geometry';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
 
 const uiStore = useUIStore();
-const coordinatesStore = useCoordinatesStore();
 const layersStore = useLayersStore();
+const { coordinateItems } = useCoordinateItems();
+const { generateAzimuthName } = useLineNameGeneration();
+const drawing = inject('drawing') as any;
 
 const isOpen = computed(() => uiStore.isModalOpen('azimuthLineModal'));
 const isEditing = computed(() => !!uiStore.editingElement);
@@ -73,13 +72,6 @@ const form = reactive({
   startCoord: null as string | null,
   azimuth: 0,
   distance: 0,
-});
-
-const coordinateItems = computed(() => {
-  return coordinatesStore.savedCoordinates.map((coord) => ({
-    label: `${coord.name} (${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)})`,
-    value: `${coord.lat},${coord.lon}`,
-  }));
 });
 
 watch(isOpen, (newVal) => {
@@ -106,7 +98,7 @@ function closeModal() {
   uiStore.stopEditing();
 }
 
-function submitForm() {
+async function submitForm() {
   if (!form.startCoord) {
     uiStore.addToast('Please select start coordinates', 'error');
     return;
@@ -116,9 +108,15 @@ function submitForm() {
   const startLat = startCoords[0]!;
   const startLon = startCoords[1]!;
 
+  // Auto-generate name if empty
+  let name = form.name.trim();
+  if (!name) {
+    name = await generateAzimuthName(startLat, startLon, form.azimuth);
+  }
+
   if (isEditing.value && uiStore.editingElement) {
     layersStore.updateLineSegment(uiStore.editingElement.id, {
-      name: form.name,
+      name,
       center: { lat: startLat, lon: startLon },
       mode: 'azimuth',
       azimuth: form.azimuth,
@@ -126,6 +124,23 @@ function submitForm() {
     });
     uiStore.addToast('Line updated successfully!', 'success');
   } else {
+    // Calculate endpoint from azimuth and distance
+    const endpoint = destinationPoint(startLat, startLon, form.distance, form.azimuth);
+
+    // Create new azimuth line
+    drawing.drawLineSegment(
+      startLat,
+      startLon,
+      endpoint.lat,
+      endpoint.lon,
+      name,
+      'azimuth',
+      form.distance,
+      form.azimuth,
+      undefined,
+      undefined,
+      undefined
+    );
     uiStore.addToast('Line added successfully!', 'success');
   }
 

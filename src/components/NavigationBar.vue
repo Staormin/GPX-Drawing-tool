@@ -20,15 +20,11 @@
       <div class="navigation-instructions">
         <span class="navigation-icon">✏️</span>
         <span class="navigation-text">
-          <template v-if="!uiStore.freeHandDrawing.startCoord">
-            Click to set start point
-          </template>
-          <template v-else>
-            Move mouse to set endpoint • Click to confirm
-          </template>
+          <template v-if="!uiStore.freeHandDrawing.startCoord"> Click to set start point </template>
+          <template v-else> Move mouse to set endpoint • Click to confirm </template>
           <template v-if="uiStore.freeHandDrawing.azimuth === undefined">
-            • Hold <strong>ALT</strong> to lock azimuth
-            • Hold <strong>CTRL</strong> to lock distance
+            • Hold <strong>ALT</strong> to lock azimuth • Hold <strong>CTRL</strong> to lock
+            distance
           </template>
           • Press <strong>ESC</strong> to cancel
         </span>

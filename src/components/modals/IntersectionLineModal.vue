@@ -1,64 +1,63 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="600px" @click:outside="closeModal" @keydown.esc="closeModal">
-    <v-card>
-      <v-card-title>{{ isEditing ? 'Edit Line (Intersection)' : 'Add Line (Intersection)' }}</v-card-title>
+  <BaseModal
+    :is-open="isOpen"
+    :submit-text="isEditing ? 'Update' : 'Add'"
+    :title="isEditing ? 'Edit Line (Intersection)' : 'Add Line (Intersection)'"
+    @close="closeModal"
+    @submit="submitForm"
+  >
+    <v-form @submit.prevent="submitForm">
+      <v-text-field
+        v-model="form.name"
+        class="mb-4"
+        density="compact"
+        label="Line Name"
+        variant="outlined"
+      />
 
-      <v-card-text>
-        <v-form @submit.prevent="submitForm">
-          <v-text-field
-            v-model="form.name"
-            label="Line Name"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
+      <CoordinateSelector
+        v-model="form.startCoord"
+        :items="coordinateItems"
+        label="Start Coordinates"
+        placeholder="Select a saved coordinate"
+      />
 
-          <CoordinateSelector
-            v-model="form.startCoord"
-            :items="coordinateItems"
-            label="Start Coordinates"
-            placeholder="Select a saved coordinate"
-          />
+      <CoordinateSelector
+        v-model="form.intersectCoord"
+        :items="coordinateItems"
+        label="Intersection Coordinates"
+        placeholder="Select a saved coordinate"
+      />
 
-          <CoordinateSelector
-            v-model="form.intersectCoord"
-            :items="coordinateItems"
-            label="Intersection Coordinates"
-            placeholder="Select a saved coordinate"
-          />
-
-          <v-text-field
-            v-model.number="form.distance"
-            label="Distance (km)"
-            type="number"
-            min="0"
-            step="0.1"
-            density="compact"
-            variant="outlined"
-            class="mb-4"
-          />
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn @click="closeModal">Cancel</v-btn>
-        <v-btn color="primary" @click="submitForm">{{ isEditing ? 'Update' : 'Add' }}</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      <v-text-field
+        v-model.number="form.distance"
+        class="mb-4"
+        density="compact"
+        label="Distance (km)"
+        min="0"
+        step="0.1"
+        type="number"
+        variant="outlined"
+      />
+    </v-form>
+  </BaseModal>
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from 'vue';
+import { computed, inject, reactive, watch } from 'vue';
+import BaseModal from '@/components/shared/BaseModal.vue';
 import CoordinateSelector from '@/components/shared/CoordinateSelector.vue';
-import { useCoordinatesStore } from '@/stores/coordinates';
+import { useCoordinateItems } from '@/composables/useCoordinateItems';
+import { useLineNameGeneration } from '@/composables/useLineNameGeneration';
+import { calculateDistance, endpointFromIntersection } from '@/services/geometry';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
 
 const uiStore = useUIStore();
-const coordinatesStore = useCoordinatesStore();
 const layersStore = useLayersStore();
+const { coordinateItems } = useCoordinateItems();
+const { generateIntersectionName } = useLineNameGeneration();
+const drawing = inject('drawing') as any;
 
 const isOpen = computed(() => uiStore.isModalOpen('intersectionLineModal'));
 const isEditing = computed(() => !!uiStore.editingElement);
@@ -68,13 +67,6 @@ const form = reactive({
   startCoord: null as string | null,
   intersectCoord: null as string | null,
   distance: 0,
-});
-
-const coordinateItems = computed(() => {
-  return coordinatesStore.savedCoordinates.map((coord) => ({
-    label: `${coord.name} (${coord.lat.toFixed(6)}, ${coord.lon.toFixed(6)})`,
-    value: `${coord.lat},${coord.lon}`,
-  }));
 });
 
 watch(isOpen, (newVal) => {
@@ -103,7 +95,7 @@ function closeModal() {
   uiStore.stopEditing();
 }
 
-function submitForm() {
+async function submitForm() {
   if (!form.startCoord || !form.intersectCoord) {
     uiStore.addToast('Please select both start and intersection coordinates', 'error');
     return;
@@ -116,9 +108,34 @@ function submitForm() {
   const intersectLat = intersectCoords[0]!;
   const intersectLon = intersectCoords[1]!;
 
+  // Validate distance is >= distance to intersection point
+  const distToIntersection = calculateDistance(startLat, startLon, intersectLat, intersectLon);
+  if (form.distance < distToIntersection - 1e-6) {
+    uiStore.addToast(
+      `Distance must be at least ${distToIntersection.toFixed(2)} km (distance to intersection)`,
+      'error'
+    );
+    return;
+  }
+
+  // Calculate endpoint from intersection
+  const endpoint = endpointFromIntersection(
+    startLat,
+    startLon,
+    intersectLat,
+    intersectLon,
+    form.distance
+  );
+
+  // Auto-generate name if empty
+  let name = form.name.trim();
+  if (!name) {
+    name = await generateIntersectionName(startLat, startLon, intersectLat, intersectLon);
+  }
+
   if (isEditing.value && uiStore.editingElement) {
     layersStore.updateLineSegment(uiStore.editingElement.id, {
-      name: form.name,
+      name,
       center: { lat: startLat, lon: startLon },
       mode: 'intersection',
       intersectionPoint: { lat: intersectLat, lon: intersectLon },
@@ -126,6 +143,20 @@ function submitForm() {
     });
     uiStore.addToast('Line updated successfully!', 'success');
   } else {
+    // Create new intersection line
+    drawing.drawLineSegment(
+      startLat,
+      startLon,
+      endpoint.lat,
+      endpoint.lon,
+      name,
+      'intersection',
+      form.distance,
+      undefined,
+      intersectLat,
+      intersectLon,
+      undefined
+    );
     uiStore.addToast('Line added successfully!', 'success');
   }
 

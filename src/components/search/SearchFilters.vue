@@ -2,10 +2,10 @@
   <div v-if="!isSearching" class="d-flex flex-column gap-3 pb-4">
     <!-- Text Filter -->
     <v-text-field
-      :model-value="filterText"
       clearable
       density="compact"
       :disabled="isSearching"
+      :model-value="filterText"
       placeholder="Filter results by name..."
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
@@ -14,7 +14,6 @@
 
     <!-- Include Type Filter -->
     <v-select
-      :model-value="includedTypes"
       chips
       clearable
       closable-chips
@@ -22,6 +21,7 @@
       :disabled="isSearching"
       :items="availableIncludeTypes"
       label="Include types"
+      :model-value="includedTypes"
       multiple
       variant="outlined"
       @update:model-value="$emit('update:includedTypes', $event)"
@@ -33,7 +33,7 @@
             closable
             color="success"
             size="small"
-            @click:close="$emit('removeIncludedType', includedTypes[index]!)"
+            @click:close="$emit('remove-included-type', includedTypes[index]!)"
           >
             {{ includedTypes[index] }}
           </v-chip>
@@ -46,7 +46,6 @@
 
     <!-- Exclude Type Filter -->
     <v-select
-      :model-value="excludedTypes"
       chips
       clearable
       closable-chips
@@ -54,6 +53,7 @@
       :disabled="isSearching"
       :items="availableExcludeTypes"
       label="Exclude types"
+      :model-value="excludedTypes"
       multiple
       variant="outlined"
       @update:model-value="$emit('update:excludedTypes', $event)"
@@ -65,7 +65,7 @@
             closable
             color="error"
             size="small"
-            @click:close="$emit('removeExcludedType', excludedTypes[index]!)"
+            @click:close="$emit('remove-excluded-type', excludedTypes[index]!)"
           >
             {{ excludedTypes[index] }}
           </v-chip>
@@ -85,17 +85,17 @@
         >
       </div>
       <v-slider
-        :model-value="liveDisplayDistance"
         color="primary"
         :disabled="isSearching"
         :max="maxSearchDistance"
         :min="0.5"
+        :model-value="liveDisplayDistance"
         :step="0.1"
         thumb-size="20"
         track-size="4"
+        @mouseup="$emit('distance-release')"
+        @touchend="$emit('distance-release')"
         @update:model-value="$emit('update:liveDisplayDistance', $event)"
-        @mouseup="$emit('distanceRelease')"
-        @touchend="$emit('distanceRelease')"
       />
     </div>
 
@@ -108,17 +108,17 @@
         </span>
       </div>
       <v-range-slider
-        :model-value="liveAltitudeRange"
         color="primary"
         :disabled="isSearching"
         :max="altitudeMax"
         :min="altitudeMin"
+        :model-value="liveAltitudeRange"
         :step="10"
         thumb-size="20"
         track-size="4"
+        @mouseup="$emit('altitude-release')"
+        @touchend="$emit('altitude-release')"
         @update:model-value="$emit('update:liveAltitudeRange', $event)"
-        @mouseup="$emit('altitudeRelease')"
-        @touchend="$emit('altitudeRelease')"
       />
     </div>
   </div>
@@ -145,9 +145,9 @@ defineEmits<{
   'update:excludedTypes': [value: string[]];
   'update:liveDisplayDistance': [value: number];
   'update:liveAltitudeRange': [value: [number, number]];
-  removeIncludedType: [type: string];
-  removeExcludedType: [type: string];
-  distanceRelease: [];
-  altitudeRelease: [];
+  'remove-included-type': [type: string];
+  'remove-excluded-type': [type: string];
+  'distance-release': [];
+  'altitude-release': [];
 }>();
 </script>

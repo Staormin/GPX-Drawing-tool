@@ -12,8 +12,8 @@
   <v-navigation-drawer
     v-model="sidebarOpen"
     location="left"
-    :width="640"
     style="top: 64px; height: calc(100vh - 64px)"
+    :width="640"
   >
     <!-- Search Along Panel (when active) -->
     <SearchAlongPanelInline v-if="uiStore.searchAlongPanel.isOpen" />
@@ -29,7 +29,7 @@
         <SidebarLayersPanel />
 
         <!-- Status messages -->
-        <v-alert v-if="lastMessage" :type="lastMessageType" density="compact" class="mb-0">
+        <v-alert v-if="lastMessage" class="mb-0" density="compact" :type="lastMessageType">
           {{ lastMessage }}
         </v-alert>
       </div>
@@ -38,12 +38,12 @@
 
   <!-- Sidebar toggle button -->
   <v-btn
-    icon
-    size="large"
     :aria-label="sidebarOpen ? 'Close sidebar' : 'Open sidebar'"
     :aria-pressed="sidebarOpen"
     color="surface-bright"
     elevation="4"
+    icon
+    size="large"
     :style="{
       position: 'fixed',
       top: '50%',
@@ -333,7 +333,7 @@ onMounted(async () => {
     const inverseBearing = (bearing + 180) % 360;
 
     // Determine which azimuth to use (predefined or current/locked bearing)
-    const effectiveAzimuth = azimuth !== undefined ? azimuth : (isAltPressed ? bearing : null);
+    const effectiveAzimuth = azimuth === undefined ? (isAltPressed ? bearing : null) : azimuth;
 
     // Update tooltip content
     cursorTooltip.value.distance = `${distance.toFixed(3)} km${isCtrlPressed && azimuth === undefined ? ' (locked)' : ''}`;
@@ -394,6 +394,10 @@ onMounted(async () => {
     const { lat, lng } = event.latlng;
     const { startCoord, azimuth, name } = uiStore.freeHandDrawing;
 
+    // Check if Alt or Ctrl keys were pressed at click time
+    const isAltPressed = event.originalEvent?.altKey || false;
+    const isCtrlPressed = event.originalEvent?.ctrlKey || false;
+
     // Parse start coordinates if provided
     let startLat: number, startLon: number;
     if (startCoord && startCoord.trim() !== '') {
@@ -415,18 +419,44 @@ onMounted(async () => {
 
     let endLat: number, endLon: number;
 
+    // Calculate distance and bearing from start to click position
+    let distance = calculateDistance(startLat, startLon, lat, lng);
+    let bearing = calculateBearing(startLat, startLon, lat, lng);
+
     // If azimuth is defined, constrain the line to that azimuth
-    if (azimuth !== undefined) {
+    if (azimuth === undefined) {
+      // Handle Alt key - use locked azimuth if Alt was pressed during click
+      if (isAltPressed && lockedAzimuth !== null) {
+        bearing = lockedAzimuth;
+      }
+
+      // Handle Ctrl key - use locked distance if Ctrl was pressed during click
+      if (isCtrlPressed && lockedDistance !== null) {
+        distance = lockedDistance;
+      }
+
+      // If Alt was pressed (azimuth locked), calculate endpoint at locked bearing
+      if (isAltPressed && lockedAzimuth !== null) {
+        const endpoint = destinationPoint(startLat, startLon, distance, lockedAzimuth);
+        endLat = endpoint.lat;
+        endLon = endpoint.lon;
+      } else if (isCtrlPressed && lockedDistance !== null) {
+        // If Ctrl was pressed (distance locked), calculate endpoint at locked distance
+        const endpoint = destinationPoint(startLat, startLon, lockedDistance, bearing);
+        endLat = endpoint.lat;
+        endLon = endpoint.lon;
+      } else {
+        // Free direction - endpoint is click position
+        endLat = lat;
+        endLon = lng;
+      }
+    } else {
       // Calculate distance from start to click position
       const dist = calculateDistance(startLat, startLon, lat, lng);
       // Calculate the endpoint at the specified azimuth
       const endpoint = destinationPoint(startLat, startLon, dist, azimuth);
       endLat = endpoint.lat;
       endLon = endpoint.lon;
-    } else {
-      // Free direction - endpoint is click position
-      endLat = lat;
-      endLon = lng;
     }
 
     // Remove preview layer
@@ -460,6 +490,10 @@ onMounted(async () => {
 
     uiStore.addToast('Line segment added successfully!', 'success');
     uiStore.stopFreeHandDrawing();
+
+    // Reset locked values
+    lockedAzimuth = null;
+    lockedDistance = null;
   };
 
   // Add event listeners to the map
@@ -471,13 +505,20 @@ onMounted(async () => {
   // Setup keyboard shortcuts and navigation
   const handleKeydown = (event: KeyboardEvent) => {
     // Free hand drawing mode keyboard handling
-    if (uiStore.freeHandDrawing.isDrawing) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        uiStore.stopFreeHandDrawing();
-        uiStore.addToast('Free hand drawing cancelled', 'info');
-        return;
+    if (uiStore.freeHandDrawing.isDrawing && event.key === 'Escape') {
+      event.preventDefault();
+      uiStore.stopFreeHandDrawing();
+      uiStore.addToast('Free hand drawing cancelled', 'info');
+
+      // Reset locked values and clean up preview layer
+      lockedAzimuth = null;
+      lockedDistance = null;
+      if (freeHandPreviewLayer && mapContainer.map?.value) {
+        mapContainer.map.value.removeLayer(freeHandPreviewLayer);
+        freeHandPreviewLayer = null;
       }
+
+      return;
     }
 
     // Navigation mode keyboard handling
