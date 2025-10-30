@@ -72,6 +72,7 @@ export const useUIStore = defineStore('ui', () => {
     azimuth: undefined,
     name: '',
   });
+  const searchBarVisible = ref(false);
 
   // Computed
   const isModalOpen = computed(() => (modalId: string) => openModals.value.has(modalId));
@@ -270,6 +271,14 @@ export const useUIStore = defineStore('ui', () => {
     };
   }
 
+  function toggleSearchBar(): void {
+    searchBarVisible.value = !searchBarVisible.value;
+  }
+
+  function setSearchBarVisible(visible: boolean): void {
+    searchBarVisible.value = visible;
+  }
+
   return {
     // State
     openModals,
@@ -291,6 +300,7 @@ export const useUIStore = defineStore('ui', () => {
     showTutorial,
     searchAlongPanel,
     freeHandDrawing,
+    searchBarVisible,
 
     // Computed
     isModalOpen,
@@ -333,5 +343,7 @@ export const useUIStore = defineStore('ui', () => {
     closeSearchAlong,
     startFreeHandDrawing,
     stopFreeHandDrawing,
+    toggleSearchBar,
+    setSearchBarVisible,
   };
 });

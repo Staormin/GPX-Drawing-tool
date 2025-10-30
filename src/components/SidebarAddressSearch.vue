@@ -1,28 +1,33 @@
 <template>
-  <div class="position-relative">
-    <!-- Search input with Vuetify -->
-    <v-text-field
-      v-model="addressSearchInput"
-      class="mb-0"
-      clearable
-      density="compact"
-      :loading="addressSearchLoading"
-      placeholder="Search address..."
-      prepend-inner-icon="mdi-magnify"
-      variant="outlined"
-    />
+  <v-menu
+    v-model="showResults"
+    :close-on-content-click="false"
+    location="bottom"
+    max-height="400"
+    :open-on-click="false"
+  >
+    <template #activator="{ props: menuProps }">
+      <div v-bind="menuProps">
+        <v-text-field
+          v-model="addressSearchInput"
+          bg-color="surface-bright"
+          class="my-0"
+          clearable
+          density="compact"
+          hide-details
+          :loading="addressSearchLoading"
+          placeholder="Search address..."
+          prepend-inner-icon="mdi-magnify"
+          variant="solo"
+        />
+      </div>
+    </template>
 
-    <!-- Dropdown results - positioned absolutely to not affect layout -->
-    <v-card
-      v-if="addressSearchResults.length > 0 && addressSearchInput && showResults"
-      class="position-absolute w-100 mt-0 rounded-t-0"
-      style="top: 100%; left: 0; right: 0; z-index: 10; border-radius: 0 0 8px 8px"
-    >
+    <v-card v-if="addressSearchResults.length > 0" elevation="24">
       <v-list class="pa-0" density="compact">
         <v-list-item
           v-for="(result, idx) in addressSearchResults"
           :key="idx"
-          class="cursor-pointer"
           @click="onAddressSelect(result.coordinates)"
         >
           <template #prepend>
@@ -37,7 +42,7 @@
         </v-list-item>
       </v-list>
     </v-card>
-  </div>
+  </v-menu>
 </template>
 
 <script lang="ts" setup>

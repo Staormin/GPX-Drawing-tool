@@ -19,21 +19,7 @@
     <SearchAlongPanelInline v-if="uiStore.searchAlongPanel.isOpen" />
 
     <!-- Normal sidebar content (when not in search mode) -->
-    <template v-else>
-      <!-- Scrollable content area -->
-      <div class="pa-4 d-flex flex-column ga-4 h-100 overflow-y-auto">
-        <!-- Address search (includes title header) -->
-        <SidebarAddressSearch />
-
-        <!-- Layers panel -->
-        <SidebarLayersPanel />
-
-        <!-- Status messages -->
-        <v-alert v-if="lastMessage" class="mb-0" density="compact" :type="lastMessageType">
-          {{ lastMessage }}
-        </v-alert>
-      </div>
-    </template>
+    <SidebarLayersPanel v-else />
   </v-navigation-drawer>
 
   <!-- Sidebar toggle button -->
@@ -43,7 +29,7 @@
     color="surface-bright"
     elevation="4"
     icon
-    size="large"
+    size="small"
     :style="{
       position: 'fixed',
       top: '50%',
@@ -118,7 +104,6 @@ import NavigationBar from '@/components/NavigationBar.vue';
 import NewProjectModal from '@/components/NewProjectModal.vue';
 import PointModal from '@/components/PointModal.vue';
 import SearchAlongPanelInline from '@/components/SearchAlongPanel.vue';
-import SidebarAddressSearch from '@/components/SidebarAddressSearch.vue';
 import SidebarLayersPanel from '@/components/SidebarLayersPanel.vue';
 import TopBar from '@/components/TopBar.vue';
 import TutorialModal from '@/components/TutorialModal.vue';
@@ -156,8 +141,6 @@ watch(
     sidebarOpen.value = newValue;
   }
 );
-const lastMessage = ref<string>('');
-const lastMessageType = ref<'success' | 'error'>('success');
 
 // Free hand drawing cursor tooltip
 const cursorTooltip = ref<{

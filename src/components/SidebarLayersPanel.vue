@@ -303,7 +303,6 @@ function handleGoTo(
   }
 
   mapContainer.setCenter(lat, lon, zoom);
-  uiStore.addToast(`Going to ${element.name}`, 'info');
 }
 
 // Drag and drop handlers for creating lines between points

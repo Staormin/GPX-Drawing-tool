@@ -1,10 +1,25 @@
 <template>
   <div v-if="!uiStore.navigatingElement && !uiStore.freeHandDrawing.isDrawing">
-    <!-- Expanded app bar -->
-    <template v-if="topBarOpen">
-      <v-app-bar color="surface" elevation="4">
-        <!-- App title -->
-        <v-app-bar-title class="text-h6 font-weight-bold ml-4">GeoChase</v-app-bar-title>
+    <!-- Top navigation drawer -->
+    <v-navigation-drawer
+      v-model="topBarOpen"
+      color="surface"
+      elevation="4"
+      location="top"
+      permanent
+      style="height: 64px !important"
+    >
+      <div class="d-flex align-center px-4 h-100">
+        <!-- Left section: Title and Search -->
+        <div class="d-flex align-center ga-4">
+          <!-- App title -->
+          <div class="text-h6 font-weight-bold">GeoChase</div>
+
+          <!-- Search bar next to title -->
+          <div class="position-relative" style="width: 350px">
+            <SidebarAddressSearch />
+          </div>
+        </div>
 
         <v-spacer />
 
@@ -168,41 +183,28 @@
             </v-btn>
           </v-btn-group>
         </div>
-      </v-app-bar>
-
-      <!-- Collapse button (below app bar, centered) -->
-      <div
-        class="position-fixed w-100 d-flex justify-center pt-2"
-        style="top: 64px; z-index: 1050; pointer-events: none"
-      >
-        <v-btn
-          aria-label="Collapse top bar"
-          color="surface-bright"
-          elevation="4"
-          icon="mdi-chevron-up"
-          size="small"
-          style="pointer-events: auto"
-          variant="elevated"
-          @click="topBarOpen = false"
-        />
       </div>
-    </template>
+    </v-navigation-drawer>
 
-    <!-- Collapsed state - only toggle button -->
+    <!-- Collapse/Expand button (centered) -->
     <div
-      v-else
-      class="position-fixed top-0 w-100 d-flex justify-center pt-2"
-      style="z-index: 1050; pointer-events: none"
+      class="position-fixed w-100 d-flex justify-center pt-2"
+      :style="{
+        top: topBarOpen ? '64px' : '0',
+        zIndex: 1050,
+        pointerEvents: 'none',
+        transition: 'top 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      }"
     >
       <v-btn
-        aria-label="Expand top bar"
+        :aria-label="topBarOpen ? 'Collapse top bar' : 'Expand top bar'"
         color="surface-bright"
         elevation="4"
-        icon="mdi-chevron-down"
+        :icon="topBarOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
         size="small"
         style="pointer-events: auto"
         variant="elevated"
-        @click="topBarOpen = true"
+        @click="topBarOpen = !topBarOpen"
       />
     </div>
   </div>
@@ -210,6 +212,7 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import SidebarAddressSearch from '@/components/SidebarAddressSearch.vue';
 import { downloadGPX, generateCompleteGPX, getTimestamp } from '@/services/gpx';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';

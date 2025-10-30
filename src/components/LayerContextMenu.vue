@@ -200,7 +200,6 @@ function handleNavigate() {
   const elementType = props.elementType as 'circle' | 'lineSegment' | 'point';
   if (elementType === 'circle' || elementType === 'lineSegment') {
     uiStore.startNavigating(elementType, props.elementId);
-    uiStore.addToast(`Navigating ${element.name} - use arrow keys`, 'info');
   }
   isOpen.value = false;
 }
