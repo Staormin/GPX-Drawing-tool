@@ -14,6 +14,7 @@ declare module 'vue' {
     AddPointOnSegmentModal: typeof import('./components/AddPointOnSegmentModal.vue')['default']
     AzimuthLineModal: typeof import('./components/modals/AzimuthLineModal.vue')['default']
     BaseModal: typeof import('./components/shared/BaseModal.vue')['default']
+    BearingsModal: typeof import('./components/BearingsModal.vue')['default']
     CircleModal: typeof import('./components/CircleModal.vue')['default']
     CoordinateSelector: typeof import('./components/shared/CoordinateSelector.vue')['default']
     CoordinatesModal: typeof import('./components/CoordinatesModal.vue')['default']

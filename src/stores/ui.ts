@@ -42,6 +42,11 @@ export interface FreeHandDrawing {
   name: string;
 }
 
+export interface BearingsPanel {
+  isOpen: boolean;
+  sourcePointId: string | null;
+}
+
 export const useUIStore = defineStore('ui', () => {
   // State
   const openModals = ref<Set<string>>(new Set());
@@ -73,6 +78,10 @@ export const useUIStore = defineStore('ui', () => {
     name: '',
   });
   const searchBarVisible = ref(false);
+  const bearingsPanel = ref<BearingsPanel>({
+    isOpen: false,
+    sourcePointId: null,
+  });
 
   // Computed
   const isModalOpen = computed(() => (modalId: string) => openModals.value.has(modalId));
@@ -279,6 +288,20 @@ export const useUIStore = defineStore('ui', () => {
     searchBarVisible.value = visible;
   }
 
+  function openBearings(sourcePointId: string): void {
+    bearingsPanel.value = {
+      isOpen: true,
+      sourcePointId,
+    };
+  }
+
+  function closeBearings(): void {
+    bearingsPanel.value = {
+      isOpen: false,
+      sourcePointId: null,
+    };
+  }
+
   return {
     // State
     openModals,
@@ -301,6 +324,7 @@ export const useUIStore = defineStore('ui', () => {
     searchAlongPanel,
     freeHandDrawing,
     searchBarVisible,
+    bearingsPanel,
 
     // Computed
     isModalOpen,
@@ -345,5 +369,7 @@ export const useUIStore = defineStore('ui', () => {
     stopFreeHandDrawing,
     toggleSearchBar,
     setSearchBarVisible,
+    openBearings,
+    closeBearings,
   };
 });

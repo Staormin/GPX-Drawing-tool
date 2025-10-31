@@ -56,6 +56,7 @@
   <CoordinatesModal v-if="uiStore.isModalOpen('coordinatesModal')" />
   <NewProjectModal v-if="uiStore.isModalOpen('newProjectModal')" />
   <LoadProjectModal v-if="uiStore.isModalOpen('loadProjectModal')" />
+  <BearingsModal v-if="uiStore.bearingsPanel.isOpen" />
   <TutorialModal />
 
   <!-- Toast notifications -->
@@ -91,6 +92,7 @@
 <script lang="ts" setup>
 import { onMounted, provide, ref, watch } from 'vue';
 import AddPointOnSegmentModal from '@/components/AddPointOnSegmentModal.vue';
+import BearingsModal from '@/components/BearingsModal.vue';
 import CircleModal from '@/components/CircleModal.vue';
 import CoordinatesModal from '@/components/CoordinatesModal.vue';
 import LineSegmentModal from '@/components/LineSegmentModal.vue';

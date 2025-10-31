@@ -258,6 +258,10 @@
                     <strong>🧭 Navigate:</strong> Use arrow keys to move around the shape (circles
                     and lines)
                   </li>
+                  <li>
+                    <strong>🧭 Bearings:</strong> View distances and azimuths to all other points
+                    (points only)
+                  </li>
                   <li><strong>➕ Create with:</strong> Create new shapes from a point</li>
                 </ul>
               </div>
@@ -439,6 +443,32 @@
                     no predefined azimuth)
                   </li>
                   <li><strong>CTRL</strong> - Hold during free hand drawing to lock distance</li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">🧭 Bearings Analysis</h4>
+                <p class="mb-2">
+                  Analyze distances and directions between points for treasure hunt navigation:
+                </p>
+                <ul class="tutorial-list">
+                  <li>
+                    <strong>Open bearings view</strong> - Click ⋮ menu on any point and select
+                    "Bearings"
+                  </li>
+                  <li>
+                    <strong>View calculations</strong> - See distance (km), azimuth (bearing to
+                    point), and inverse azimuth (return bearing) for all other points
+                  </li>
+                  <li><strong>Sort data</strong> - Click column headers to sort by any field</li>
+                  <li>
+                    <strong>Navigate quickly</strong> - Click any row to close the modal and jump to
+                    that point on the map
+                  </li>
+                  <li>
+                    Use bearings to triangulate locations or verify geometric relationships between
+                    points
+                  </li>
                 </ul>
               </div>
 

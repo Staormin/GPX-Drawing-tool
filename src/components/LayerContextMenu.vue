@@ -46,6 +46,14 @@
         <v-list-item-title>Location near</v-list-item-title>
       </v-list-item>
 
+      <!-- Bearings (only for points) -->
+      <v-list-item v-if="elementType === 'point'" @click="handleBearings">
+        <template #prepend>
+          <v-icon icon="mdi-compass" size="small" />
+        </template>
+        <v-list-item-title>Bearings</v-list-item-title>
+      </v-list-item>
+
       <!-- Add as coordinate (only for points without existing coordinate) -->
       <v-list-item
         v-if="elementType === 'point' && !hasCoordinateAtLocation"
@@ -310,6 +318,19 @@ function handleLocationNear() {
   }
 
   uiStore.openSearchAlong(elementType, props.elementId);
+  isOpen.value = false;
+}
+
+function handleBearings() {
+  if (props.elementType !== 'point') return;
+
+  const element = getElement();
+  if (!element) {
+    uiStore.addToast('Point not found', 'error');
+    return;
+  }
+
+  uiStore.openBearings(props.elementId);
   isOpen.value = false;
 }
 </script>

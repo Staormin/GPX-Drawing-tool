@@ -89,6 +89,20 @@ export function calculateBearing(
 }
 
 /**
+ * Calculate inverse bearing (reverse azimuth) between two points
+ * This is the bearing from point B back to point A
+ */
+export function calculateInverseBearing(
+  fromLat: number,
+  fromLon: number,
+  toLat: number,
+  toLon: number
+): number {
+  // Inverse bearing is just the bearing from the destination back to the origin
+  return calculateBearing(toLat, toLon, fromLat, fromLon);
+}
+
+/**
  * Calculate distance between two points using haversine formula
  */
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
