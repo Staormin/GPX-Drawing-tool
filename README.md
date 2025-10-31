@@ -31,6 +31,14 @@ A web-based mapping application for solving geoportail treasure hunts through ge
   - Sortable table by name, distance, azimuth, or inverse azimuth
   - Click rows to navigate to points
 - **Navigation Mode**: Move along circles and lines using arrow keys
+- **Precision Mode**: Magnified lens view (2.5x) for accurate positioning
+  - Press 'Z' to toggle precision mode
+  - Crosshair overlay for pinpoint accuracy
+  - Right-click or ESC to exit
+- **Notes**: Add notes to circles, lines, and points
+  - Document clues, observations, and calculations
+  - Notes appear as tooltips on map hover
+  - One note per element, saved with projects
 - **Layer Management**: Show/hide, edit, delete shapes via context menu
 
 ### Data Management
@@ -81,9 +89,10 @@ src/
 
 ## Key Keyboard Shortcuts
 
+- **Z**: Toggle precision mode (magnified lens view)
 - **Arrow keys**: Navigate along shapes
-- **ESC**: Exit navigation/drawing mode
-- **Right-click**: Save coordinates
+- **ESC**: Exit navigation/drawing/precision mode
+- **Right-click**: Save coordinates, close precision mode
 - **ALT** (free hand): Lock azimuth
 - **CTRL** (free hand): Lock distance
 

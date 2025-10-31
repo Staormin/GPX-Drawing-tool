@@ -88,6 +88,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Precision mode indicator -->
+  <div
+    v-if="precisionLens.isActive.value"
+    class="precision-mode-indicator"
+  >
+    <v-icon size="small">mdi-magnify-plus</v-icon>
+    <span>Precision Mode (Z)</span>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -115,6 +124,7 @@ import { useDrawing } from '@/composables/useDrawing';
 import { useMap } from '@/composables/useMap';
 import { useNavigation } from '@/composables/useNavigation';
 import { useNoteTooltips } from '@/composables/useNoteTooltips';
+import { usePrecisionLens } from '@/composables/usePrecisionLens';
 import {
   calculateBearing,
   calculateDistance,
@@ -134,6 +144,7 @@ const layersStore = useLayersStore();
 const mapContainer = useMap('map');
 const drawing = useDrawing(mapContainer);
 const navigation = useNavigation();
+const precisionLens = usePrecisionLens(mapContainer);
 
 // Create a ref for note tooltips (will be initialized after map is ready)
 const noteTooltipsRef = ref<ReturnType<typeof useNoteTooltips> | null>(null);
@@ -714,5 +725,34 @@ body,
   color: rgb(var(--v-theme-on-surface));
   font-weight: 600;
   font-family: monospace;
+}
+
+/* Precision mode indicator */
+.precision-mode-indicator {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  z-index: 1000;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.7);
+  }
 }
 </style>

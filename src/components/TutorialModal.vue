@@ -38,6 +38,12 @@
             Layers
           </v-tab>
 
+          <!-- Notes Tab -->
+          <v-tab value="notes">
+            <v-icon class="me-2" icon="mdi-note-text" />
+            Notes
+          </v-tab>
+
           <!-- Coordinates Tab -->
           <v-tab value="coordinates">
             <v-icon class="me-2" icon="mdi-map-marker" />
@@ -279,6 +285,61 @@
             </div>
           </v-window-item>
 
+          <!-- Notes -->
+          <v-window-item value="notes">
+            <div class="tutorial-section">
+              <h3 class="mb-3">📝 Notes</h3>
+              <p class="mb-3">
+                Add notes to your drawings to document important information, observations, or clues:
+              </p>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">How to Add Notes</h4>
+                <ol class="tutorial-list">
+                  <li>Open the <strong>Layers panel</strong> in the left sidebar</li>
+                  <li>Click the <strong>⋮ menu</strong> on a circle, line, or point</li>
+                  <li>Select <strong>Add note</strong> from the menu</li>
+                  <li>Enter a <strong>title</strong> and <strong>content</strong> for your note</li>
+                  <li>Click <strong>Save</strong> to attach the note to the element</li>
+                </ol>
+              </div>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">Managing Notes</h4>
+                <ul class="tutorial-list">
+                  <li>
+                    <strong>View notes on map:</strong> Notes appear as tooltips when you hover over
+                    elements on the map
+                  </li>
+                  <li>
+                    <strong>Edit notes:</strong> Click the ⋮ menu and select "Edit note" to modify an
+                    existing note
+                  </li>
+                  <li>
+                    <strong>Delete notes:</strong> Click the trash icon in the note tooltip or edit the
+                    note and delete it
+                  </li>
+                  <li><strong>One note per element:</strong> Each element can have only one note</li>
+                  <li>
+                    <strong>Notes are saved:</strong> Notes are stored with your project and included
+                    in exports
+                  </li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step">
+                <h4 class="mb-2">💡 Use Cases</h4>
+                <ul class="tutorial-list">
+                  <li>Document clues or hints associated with specific locations</li>
+                  <li>Record observations about terrain, landmarks, or features</li>
+                  <li>Keep track of why you created a particular circle or line</li>
+                  <li>Store calculations, measurements, or reference data</li>
+                  <li>Add reminders or next steps for your treasure hunt investigation</li>
+                </ul>
+              </div>
+            </div>
+          </v-window-item>
+
           <!-- Coordinates -->
           <v-window-item value="coordinates">
             <div class="tutorial-section">
@@ -436,13 +497,41 @@
                     <strong>Arrow Keys (← →)</strong> - Navigate along circles/lines during
                     navigation mode
                   </li>
-                  <li><strong>ESC</strong> - Exit navigation mode or cancel free hand drawing</li>
-                  <li><strong>Right-click on map</strong> - Save coordinates at that location</li>
+                  <li><strong>Z</strong> - Toggle precision mode (magnified lens view)</li>
+                  <li><strong>ESC</strong> - Exit navigation mode, precision mode, or cancel free hand drawing</li>
+                  <li><strong>Right-click on map</strong> - Save coordinates at that location (also closes precision mode)</li>
                   <li>
                     <strong>ALT</strong> - Hold during free hand drawing to lock azimuth (only when
                     no predefined azimuth)
                   </li>
                   <li><strong>CTRL</strong> - Hold during free hand drawing to lock distance</li>
+                </ul>
+              </div>
+
+              <div class="tutorial-step mb-4">
+                <h4 class="mb-2">🔍 Precision Mode</h4>
+                <p class="mb-2">
+                  Precision mode provides a magnified view of the map for accurate positioning:
+                </p>
+                <ul class="tutorial-list">
+                  <li>
+                    <strong>Activate:</strong> Press the <strong>Z</strong> key to toggle precision mode
+                  </li>
+                  <li>
+                    <strong>Magnified lens:</strong> A circular lens appears above your cursor showing a 2.5x magnified view
+                  </li>
+                  <li>
+                    <strong>Crosshair:</strong> The center crosshair helps you pinpoint exact locations
+                  </li>
+                  <li>
+                    <strong>Same zoom level:</strong> The lens shows the same map zoom level, just magnified for easier viewing
+                  </li>
+                  <li>
+                    <strong>Deactivate:</strong> Press <strong>Z</strong> again, <strong>ESC</strong>, or <strong>right-click</strong> to exit
+                  </li>
+                  <li>
+                    Use precision mode when placing points, drawing lines, or examining detailed map features
+                  </li>
                 </ul>
               </div>
 
