@@ -121,6 +121,14 @@
         </v-list>
       </v-menu>
 
+      <!-- Add/Edit note -->
+      <v-list-item @click="handleAddNote">
+        <template #prepend>
+          <v-icon :icon="hasNote ? 'mdi-note-edit' : 'mdi-note-plus'" size="small" />
+        </template>
+        <v-list-item-title>{{ hasNote ? 'Edit note' : 'Add note' }}</v-list-item-title>
+      </v-list-item>
+
       <!-- Edit -->
       <v-list-item @click="handleEdit">
         <template #prepend>
@@ -173,6 +181,11 @@ const hasCoordinateAtLocation = computed(() => {
   return coordinatesStore.savedCoordinates.some(
     (c) => c.lat === point.coordinates.lat && c.lon === point.coordinates.lon
   );
+});
+
+const hasNote = computed(() => {
+  const element = getElement();
+  return element?.noteId !== undefined;
 });
 
 function getElement() {
@@ -331,6 +344,29 @@ function handleBearings() {
   }
 
   uiStore.openBearings(props.elementId);
+  isOpen.value = false;
+}
+
+function handleAddNote() {
+  const element = getElement();
+
+  if (element?.noteId) {
+    // Element already has a note - edit it
+    const note = layersStore.notes.find((n) => n.id === element.noteId);
+    if (note) {
+      uiStore.startEditing('note', note.id);
+      uiStore.openModal('noteModal');
+    } else {
+      // Note ID exists but note not found - create new one
+      uiStore.setNotePreFill(props.elementType, props.elementId);
+      uiStore.openModal('noteModal');
+    }
+  } else {
+    // No note exists - create new one
+    uiStore.setNotePreFill(props.elementType, props.elementId);
+    uiStore.openModal('noteModal');
+  }
+
   isOpen.value = false;
 }
 </script>

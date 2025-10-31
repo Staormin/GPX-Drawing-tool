@@ -73,6 +73,7 @@ const coordinatesStore = useCoordinatesStore();
 const projectsStore = useProjectsStore();
 const mapContainer = inject('mapContainer') as any;
 const drawing = inject('drawing') as any;
+const noteTooltipsRef = inject('noteTooltips') as any;
 
 const isOpen = computed({
   get: () => uiStore.isModalOpen('loadProjectModal'),
@@ -84,25 +85,45 @@ const isOpen = computed({
 function loadProject(projectId: string) {
   const project = projectsStore.projects.find((p) => p.id === projectId);
   if (project) {
-    // Clear current map layers and store
-    mapContainer.clearLayers();
-    layersStore.clearLayers();
-    coordinatesStore.clearCoordinates();
+    try {
+      // Clear note tooltips before clearing layers
+      const noteTooltips = noteTooltipsRef?.value;
+      if (noteTooltips) {
+        noteTooltips.clearAllTooltips();
+      }
 
-    // Load new layers from project
-    layersStore.loadLayers(project.data);
+      // Clear current map layers and store
+      mapContainer.clearLayers();
+      layersStore.clearLayers();
+      coordinatesStore.clearCoordinates();
 
-    // Load coordinates from project
-    coordinatesStore.loadCoordinates(project.data.savedCoordinates || []);
+      // Load new layers from project
+      layersStore.loadLayers(project.data);
 
-    // Redraw on map
-    drawing.redrawAllElements();
+      // Load coordinates from project
+      coordinatesStore.loadCoordinates(project.data.savedCoordinates || []);
 
-    // Set this project as active so auto-save works correctly
-    projectsStore.setActiveProject(projectId);
+      // Redraw on map
+      drawing.redrawAllElements();
 
-    uiStore.addToast(`Project "${project.name}" loaded successfully!`, 'success');
-    closeModal();
+      // Set this project as active so auto-save works correctly
+      projectsStore.setActiveProject(projectId);
+
+      uiStore.addToast(`Project "${project.name}" loaded successfully!`, 'success');
+      closeModal();
+    } catch (error) {
+      console.error('Error loading project:', error);
+      uiStore.addToast(
+        `Failed to load project "${project.name}". Some data may be corrupted.`,
+        'error',
+        5000
+      );
+
+      // Revert to clean state
+      mapContainer.clearLayers();
+      layersStore.clearLayers();
+      coordinatesStore.clearCoordinates();
+    }
   }
 }
 

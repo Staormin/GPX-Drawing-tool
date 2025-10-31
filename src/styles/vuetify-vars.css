@@ -1,0 +1,26 @@
+/**
+ * Vuetify CSS custom properties for IDE intellisense
+ * These are generated at runtime by Vuetify based on the theme configuration
+ * This file exists only to help IDEs recognize the variables
+ */
+
+:root {
+  /* Theme colors */
+  --v-theme-background: 10, 14, 39;
+  --v-theme-surface: 21, 25, 52;
+  --v-theme-surface-bright: 30, 36, 64;
+  --v-theme-surface-variant: 30, 36, 64;
+  --v-theme-primary: 99, 102, 241;
+  --v-theme-primary-darken-1: 79, 70, 229;
+  --v-theme-secondary: 139, 92, 246;
+  --v-theme-secondary-darken-1: 124, 58, 237;
+  --v-theme-accent: 6, 182, 212;
+  --v-theme-error: 239, 68, 68;
+  --v-theme-warning: 245, 158, 11;
+  --v-theme-info: 59, 130, 246;
+  --v-theme-success: 16, 185, 129;
+  --v-theme-on-background: 255, 255, 255;
+  --v-theme-on-surface: 255, 255, 255;
+  --v-theme-on-primary: 255, 255, 255;
+  --v-theme-on-secondary: 255, 255, 255;
+}

@@ -21,7 +21,8 @@ export function useDrawing(mapRef: any) {
     circleId: string,
     centerLat: number,
     centerLon: number,
-    radiusKm: number
+    radiusKm: number,
+    color?: string
   ) => {
     if (!mapRef.map?.value) {
       return;
@@ -31,7 +32,7 @@ export function useDrawing(mapRef: any) {
     const latLngs = points.map((p) => [p.lat, p.lon] as [number, number]);
 
     const polyline = L.polyline(latLngs, {
-      color: DEFAULT_COLOR,
+      color: color || DEFAULT_COLOR,
       weight: 3,
       opacity: 1,
       className: `circle-layer circle-${circleId}`,
@@ -39,6 +40,12 @@ export function useDrawing(mapRef: any) {
 
     const newLeafletId = L.stamp(polyline);
     layersStore.storeLeafletId('circle', circleId, newLeafletId);
+
+    // Update the circle element's leafletId in the store
+    const circle = layersStore.circles.find((c) => c.id === circleId);
+    if (circle) {
+      circle.leafletId = newLeafletId;
+    }
   };
 
   // Helper function to redraw a line segment on the map without adding to store
@@ -50,7 +57,8 @@ export function useDrawing(mapRef: any) {
     endLon: number,
     mode: 'coordinate' | 'azimuth' | 'intersection' = 'coordinate',
     intersectLat?: number,
-    intersectLon?: number
+    intersectLon?: number,
+    color?: string
   ) => {
     if (!mapRef.map?.value) {
       return;
@@ -62,7 +70,7 @@ export function useDrawing(mapRef: any) {
     ];
 
     const polyline = L.polyline(latLngs, {
-      color: DEFAULT_COLOR,
+      color: color || DEFAULT_COLOR,
       weight: 3,
       opacity: 1,
       className: `line-layer line-${lineId}`,
@@ -70,6 +78,12 @@ export function useDrawing(mapRef: any) {
 
     const newLeafletId = L.stamp(polyline);
     layersStore.storeLeafletId('lineSegment', lineId, newLeafletId);
+
+    // Update the line segment element's leafletId in the store
+    const segment = layersStore.lineSegments.find((s) => s.id === lineId);
+    if (segment) {
+      segment.leafletId = newLeafletId;
+    }
 
     // For intersection mode, show the intersection point marker
     if (mode === 'intersection' && intersectLat && intersectLon) {
@@ -85,17 +99,46 @@ export function useDrawing(mapRef: any) {
     }
   };
 
-  // Helper function to redraw a point on the map without adding to store
-  const redrawPointOnMap = (pointId: string, lat: number, lon: number) => {
+  // Helper function to redraw a parallel line on the map without adding to store
+  const redrawParallelOnMap = (lineId: string, latitude: number, color?: string) => {
     if (!mapRef.map?.value) {
       return;
     }
 
+    const latLngs: [number, number][] = [
+      [latitude, -180],
+      [latitude, 180],
+    ];
+
+    const polyline = L.polyline(latLngs, {
+      color: color || DEFAULT_COLOR,
+      weight: 3,
+      opacity: 1,
+      className: `line-layer line-${lineId}`,
+    }).addTo(mapRef.map.value);
+
+    const newLeafletId = L.stamp(polyline);
+    layersStore.storeLeafletId('lineSegment', lineId, newLeafletId);
+
+    // Update the line segment element's leafletId in the store
+    const segment = layersStore.lineSegments.find((s) => s.id === lineId);
+    if (segment) {
+      segment.leafletId = newLeafletId;
+    }
+  };
+
+  // Helper function to redraw a point on the map without adding to store
+  const redrawPointOnMap = (pointId: string, lat: number, lon: number, color?: string) => {
+    if (!mapRef.map?.value) {
+      return;
+    }
+
+    const pointColor = color || DEFAULT_COLOR;
     const marker = L.circleMarker([lat, lon], {
       radius: DEFAULT_RADIUS,
-      color: DEFAULT_COLOR,
+      color: pointColor,
       fill: true,
-      fillColor: DEFAULT_COLOR,
+      fillColor: pointColor,
       fillOpacity: 1,
       weight: 3,
       className: `point-layer point-${pointId}`,
@@ -103,6 +146,12 @@ export function useDrawing(mapRef: any) {
 
     const newLeafletId = L.stamp(marker);
     layersStore.storeLeafletId('point', pointId, newLeafletId);
+
+    // Update the point element's leafletId in the store
+    const point = layersStore.points.find((p) => p.id === pointId);
+    if (point) {
+      point.leafletId = newLeafletId;
+    }
   };
 
   // Circle drawing
@@ -565,21 +614,28 @@ export function useDrawing(mapRef: any) {
       // No default
     }
 
+    // Delete any notes linked to this element
+    const linkedNotes = layersStore.notes.filter(
+      (note) => note.linkedElementType === elementType && note.linkedElementId === elementId
+    );
+    for (const note of linkedNotes) {
+      if (note.id) {
+        layersStore.deleteNote(note.id);
+      }
+    }
+
     // Remove from store
     switch (elementType) {
       case 'circle': {
         layersStore.deleteCircle(elementId);
-
         break;
       }
       case 'lineSegment': {
         layersStore.deleteLineSegment(elementId);
-
         break;
       }
       case 'point': {
         layersStore.deletePoint(elementId);
-
         break;
       }
       // No default
@@ -617,30 +673,43 @@ export function useDrawing(mapRef: any) {
     // Redraw circles (using redraw helper to avoid adding to store twice)
     for (const circle of circles) {
       if (circle.id) {
-        redrawCircleOnMap(circle.id, circle.center.lat, circle.center.lon, circle.radius);
+        redrawCircleOnMap(
+          circle.id,
+          circle.center.lat,
+          circle.center.lon,
+          circle.radius,
+          circle.color
+        );
       }
     }
 
     // Redraw line segments (using redraw helper to avoid adding to store twice)
     for (const segment of lineSegments) {
-      if (segment.id && segment.endpoint) {
-        redrawLineSegmentOnMap(
-          segment.id,
-          segment.center.lat,
-          segment.center.lon,
-          segment.endpoint.lat,
-          segment.endpoint.lon,
-          segment.mode as 'coordinate' | 'azimuth' | 'intersection',
-          segment.intersectionPoint?.lat,
-          segment.intersectionPoint?.lon
-        );
+      if (segment.id) {
+        if (segment.mode === 'parallel' && segment.longitude !== undefined) {
+          // Redraw parallel line
+          redrawParallelOnMap(segment.id, segment.longitude, segment.color);
+        } else if (segment.endpoint) {
+          // Redraw regular line segment
+          redrawLineSegmentOnMap(
+            segment.id,
+            segment.center.lat,
+            segment.center.lon,
+            segment.endpoint.lat,
+            segment.endpoint.lon,
+            segment.mode as 'coordinate' | 'azimuth' | 'intersection',
+            segment.intersectionPoint?.lat,
+            segment.intersectionPoint?.lon,
+            segment.color
+          );
+        }
       }
     }
 
     // Redraw points (using redraw helper to avoid adding to store twice)
     for (const point of points) {
       if (point.id) {
-        redrawPointOnMap(point.id, point.coordinates.lat, point.coordinates.lon);
+        redrawPointOnMap(point.id, point.coordinates.lat, point.coordinates.lon, point.color);
       }
     }
 

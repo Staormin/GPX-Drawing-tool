@@ -37,6 +37,16 @@
             <v-tooltip activator="parent" location="bottom">Saved Coordinates</v-tooltip>
           </v-btn>
 
+          <v-btn
+            color="surface-bright"
+            icon="mdi-note-text"
+            variant="elevated"
+            @click="handleCreateNote"
+          >
+            <v-icon>mdi-note-text</v-icon>
+            <v-tooltip activator="parent" location="bottom">Create Note</v-tooltip>
+          </v-btn>
+
           <v-menu location="bottom">
             <template #activator="{ props }">
               <v-btn
@@ -150,16 +160,16 @@
             >
               <v-icon>
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  height="24"
                   viewBox="0 0 24 24"
                   width="24"
-                  height="24"
-                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <!-- Diagonal line -->
-                  <path d="M4,20 L20,4" stroke="currentColor" stroke-width="2" fill="none" />
+                  <path d="M4,20 L20,4" fill="none" stroke="currentColor" stroke-width="2" />
                   <!-- Center point/circle -->
-                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                  <circle cx="12" cy="12" fill="currentColor" r="3" />
                 </svg>
               </v-icon>
               <v-tooltip activator="parent" location="bottom">Line (Intersection)</v-tooltip>
@@ -245,6 +255,11 @@ function handleNewProject() {
 
 function handleLoadProject() {
   uiStore.openModal('loadProjectModal');
+}
+
+function handleCreateNote() {
+  uiStore.clearNotePreFill();
+  uiStore.openModal('noteModal');
 }
 
 function handleExportGPX() {

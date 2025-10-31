@@ -25,6 +25,7 @@ export interface ProjectLayerData {
   lineSegments: LineSegmentElement[];
   points: PointElement[];
   savedCoordinates: SavedCoordinate[];
+  notes: NoteElement[];
 }
 
 export interface CircleElement {
@@ -34,6 +35,7 @@ export interface CircleElement {
   radius: number;
   color?: string;
   leafletId?: number;
+  noteId?: string; // ID of the linked note (one-to-one)
   createdAt?: number;
 }
 
@@ -50,6 +52,7 @@ export interface LineSegmentElement {
   longitude?: number;
   color?: string;
   leafletId?: number;
+  noteId?: string; // ID of the linked note (one-to-one)
   createdAt?: number;
 }
 
@@ -60,7 +63,18 @@ export interface PointElement {
   elevation?: number;
   color?: string;
   leafletId?: number;
+  noteId?: string; // ID of the linked note (one-to-one)
   createdAt?: number;
+}
+
+export interface NoteElement {
+  id: string;
+  title: string;
+  content: string;
+  linkedElementType?: 'circle' | 'lineSegment' | 'point';
+  linkedElementId?: string;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 const PROJECTS_STORAGE_KEY = 'geochase_projects';
@@ -111,13 +125,14 @@ export function createProject(name: string, data: ProjectLayerData): ProjectData
 }
 
 /**
- * Save a new project
+ * Save a new project and return the created project
  */
-export function saveProject(projectName: string, data: ProjectLayerData): void {
+export function saveProject(projectName: string, data: ProjectLayerData): ProjectData {
   const projects = getAllProjects();
   const newProject = createProject(projectName, data);
   projects.push(newProject);
   saveProjectsToStorage(projects);
+  return newProject;
 }
 
 /**

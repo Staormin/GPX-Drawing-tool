@@ -25,7 +25,10 @@
     <!-- No results state -->
     <div
       v-else-if="
-        filteredCircles.length === 0 && filteredLines.length === 0 && filteredPoints.length === 0
+        filteredCircles.length === 0 &&
+        filteredLines.length === 0 &&
+        filteredPoints.length === 0 &&
+        filteredNotes.length === 0
       "
       class="layers-empty"
     >
@@ -147,12 +150,66 @@
           </div>
         </div>
       </div>
+
+      <!-- Notes -->
+      <div v-if="filteredNotes.length > 0">
+        <div class="layers-section-header" @click="notesExpanded = !notesExpanded">
+          <span class="layers-section-title"
+            >Notes ({{ filteredNotes.length
+            }}{{ searchQuery ? ` of ${layersStore.noteCount}` : '' }})</span
+          >
+          <span class="collapse-icon">{{ notesExpanded ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="notesExpanded" class="layer-items">
+          <div
+            v-for="note in filteredNotes"
+            :key="note.id"
+            class="layer-item"
+            @click="handleNoteClick(note)"
+          >
+            <div class="layer-item-info">
+              <div class="layer-item-name">{{ note.title }}</div>
+              <div class="layer-item-type">
+                {{
+                  note.linkedElementType ? `Linked to ${note.linkedElementType}` : 'Standalone note'
+                }}
+              </div>
+            </div>
+            <div class="layer-item-actions" @click.stop>
+              <v-menu location="bottom">
+                <template #activator="{ props }">
+                  <v-btn icon="mdi-dots-vertical" size="x-small" variant="text" v-bind="props" />
+                </template>
+                <v-list density="compact">
+                  <v-list-item @click="handleEditNote(note)">
+                    <template #prepend>
+                      <v-icon icon="mdi-pencil" size="small" />
+                    </template>
+                    <v-list-item-title>Edit</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item class="text-error" @click="handleDeleteNote(note)">
+                    <template #prepend>
+                      <v-icon color="error" icon="mdi-delete" size="small" />
+                    </template>
+                    <v-list-item-title>Delete</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage';
+import type {
+  CircleElement,
+  LineSegmentElement,
+  NoteElement,
+  PointElement,
+} from '@/services/storage';
 import { computed, inject, ref } from 'vue';
 import LayerContextMenu from '@/components/LayerContextMenu.vue';
 import { calculateBearing, calculateDistance, destinationPoint } from '@/services/geometry';
@@ -190,10 +247,19 @@ const filteredPoints = computed(() => {
   return layersStore.sortedPoints.filter((p) => p.name.toLowerCase().includes(query));
 });
 
+const filteredNotes = computed(() => {
+  if (!searchQuery.value) return layersStore.sortedNotes;
+  const query = searchQuery.value.toLowerCase();
+  return layersStore.sortedNotes.filter(
+    (n) => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)
+  );
+});
+
 // Collapse states for each section
 const circlesExpanded = ref(true);
 const linesExpanded = ref(true);
 const pointsExpanded = ref(true);
+const notesExpanded = ref(true);
 
 function getLineInfo(line: LineSegmentElement) {
   // Special handling for parallel mode
@@ -412,6 +478,47 @@ function handleDragEnd(event: DragEvent) {
     dragOverPointId.value = null;
     lastDropTarget.value = null;
   }, 50);
+}
+
+function handleNoteClick(note: NoteElement) {
+  // If note is linked to an element, navigate to it
+  if (note.linkedElementType && note.linkedElementId) {
+    let element;
+    const elementType = note.linkedElementType;
+
+    switch (note.linkedElementType) {
+      case 'circle': {
+        element = layersStore.circles.find((c) => c.id === note.linkedElementId);
+        break;
+      }
+      case 'lineSegment': {
+        element = layersStore.lineSegments.find((l) => l.id === note.linkedElementId);
+        break;
+      }
+      case 'point': {
+        element = layersStore.points.find((p) => p.id === note.linkedElementId);
+        break;
+      }
+    }
+
+    if (element) {
+      handleGoTo(elementType, element);
+    }
+  }
+}
+
+function handleEditNote(note: NoteElement) {
+  if (note.id) {
+    uiStore.startEditing('note', note.id);
+    uiStore.openModal('noteModal');
+  }
+}
+
+function handleDeleteNote(note: NoteElement) {
+  if (note.id && confirm(`Are you sure you want to delete the note "${note.title}"?`)) {
+    layersStore.deleteNote(note.id);
+    uiStore.addToast('Note deleted successfully!', 'success');
+  }
 }
 </script>
 

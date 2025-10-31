@@ -16,7 +16,7 @@ export interface Toast {
 }
 
 export interface EditingElement {
-  type: 'circle' | 'lineSegment' | 'point';
+  type: 'circle' | 'lineSegment' | 'point' | 'note';
   id: string;
 }
 
@@ -45,6 +45,11 @@ export interface FreeHandDrawing {
 export interface BearingsPanel {
   isOpen: boolean;
   sourcePointId: string | null;
+}
+
+export interface NotePreFillElement {
+  type: 'circle' | 'lineSegment' | 'point';
+  id: string;
 }
 
 export const useUIStore = defineStore('ui', () => {
@@ -82,6 +87,7 @@ export const useUIStore = defineStore('ui', () => {
     isOpen: false,
     sourcePointId: null,
   });
+  const notePreFillElement = ref<NotePreFillElement | null>(null);
 
   // Computed
   const isModalOpen = computed(() => (modalId: string) => openModals.value.has(modalId));
@@ -185,7 +191,7 @@ export const useUIStore = defineStore('ui', () => {
     elementVisibility.value[key] = visible;
   }
 
-  function startEditing(type: 'circle' | 'lineSegment' | 'point', id: string): void {
+  function startEditing(type: 'circle' | 'lineSegment' | 'point' | 'note', id: string): void {
     editingElement.value = { type, id };
   }
 
@@ -193,7 +199,7 @@ export const useUIStore = defineStore('ui', () => {
     editingElement.value = null;
   }
 
-  function isEditing(type: 'circle' | 'lineSegment' | 'point', id: string): boolean {
+  function isEditing(type: 'circle' | 'lineSegment' | 'point' | 'note', id: string): boolean {
     return editingElement.value?.type === type && editingElement.value?.id === id;
   }
 
@@ -302,6 +308,14 @@ export const useUIStore = defineStore('ui', () => {
     };
   }
 
+  function setNotePreFill(type: 'circle' | 'lineSegment' | 'point', id: string): void {
+    notePreFillElement.value = { type, id };
+  }
+
+  function clearNotePreFill(): void {
+    notePreFillElement.value = null;
+  }
+
   return {
     // State
     openModals,
@@ -325,6 +339,7 @@ export const useUIStore = defineStore('ui', () => {
     freeHandDrawing,
     searchBarVisible,
     bearingsPanel,
+    notePreFillElement,
 
     // Computed
     isModalOpen,
@@ -371,5 +386,7 @@ export const useUIStore = defineStore('ui', () => {
     setSearchBarVisible,
     openBearings,
     closeBearings,
+    setNotePreFill,
+    clearNotePreFill,
   };
 });

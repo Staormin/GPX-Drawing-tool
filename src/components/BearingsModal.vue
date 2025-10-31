@@ -93,9 +93,9 @@
 </template>
 
 <script lang="ts" setup>
-import { calculateBearing, calculateDistance, calculateInverseBearing } from '@/services/geometry';
 import type { PointElement } from '@/services/storage';
 import { computed, inject, ref } from 'vue';
+import { calculateBearing, calculateDistance, calculateInverseBearing } from '@/services/geometry';
 import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
 

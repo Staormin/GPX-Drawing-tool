@@ -57,6 +57,7 @@
   <NewProjectModal v-if="uiStore.isModalOpen('newProjectModal')" />
   <LoadProjectModal v-if="uiStore.isModalOpen('loadProjectModal')" />
   <BearingsModal v-if="uiStore.bearingsPanel.isOpen" />
+  <NoteModal v-if="uiStore.isModalOpen('noteModal')" />
   <TutorialModal />
 
   <!-- Toast notifications -->
@@ -104,6 +105,7 @@ import ParallelLineModal from '@/components/modals/ParallelLineModal.vue';
 import TwoPointsLineModal from '@/components/modals/TwoPointsLineModal.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
 import NewProjectModal from '@/components/NewProjectModal.vue';
+import NoteModal from '@/components/NoteModal.vue';
 import PointModal from '@/components/PointModal.vue';
 import SearchAlongPanelInline from '@/components/SearchAlongPanel.vue';
 import SidebarLayersPanel from '@/components/SidebarLayersPanel.vue';
@@ -112,6 +114,7 @@ import TutorialModal from '@/components/TutorialModal.vue';
 import { useDrawing } from '@/composables/useDrawing';
 import { useMap } from '@/composables/useMap';
 import { useNavigation } from '@/composables/useNavigation';
+import { useNoteTooltips } from '@/composables/useNoteTooltips';
 import {
   calculateBearing,
   calculateDistance,
@@ -132,9 +135,13 @@ const mapContainer = useMap('map');
 const drawing = useDrawing(mapContainer);
 const navigation = useNavigation();
 
-// Provide the map container and drawing functions to all child components
+// Create a ref for note tooltips (will be initialized after map is ready)
+const noteTooltipsRef = ref<ReturnType<typeof useNoteTooltips> | null>(null);
+
+// Provide the map container, drawing functions, and note tooltips to all child components
 provide('mapContainer', mapContainer);
 provide('drawing', drawing);
+provide('noteTooltips', noteTooltipsRef);
 
 const sidebarOpen = ref(true);
 watch(
@@ -159,6 +166,27 @@ const cursorTooltip = ref<{
   azimuth: '',
 });
 
+// Debounce autosave to avoid excessive writes
+let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function debouncedAutoSave() {
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+  }
+
+  autoSaveTimeout = setTimeout(() => {
+    if (projectsStore.activeProjectId) {
+      projectsStore.autoSaveActiveProject({
+        circles: layersStore.circles,
+        lineSegments: layersStore.lineSegments,
+        points: layersStore.points,
+        savedCoordinates: coordinatesStore.savedCoordinates,
+        notes: layersStore.notes,
+      });
+    }
+  }, 500); // 500ms debounce
+}
+
 // Auto-save on layers or coordinates change
 watch(
   [
@@ -166,72 +194,65 @@ watch(
     () => layersStore.lineSegments,
     () => layersStore.points,
     () => coordinatesStore.savedCoordinates,
+    () => layersStore.notes,
   ],
-  () => {
-    // Auto-save the active project
-    if (projectsStore.activeProjectId) {
-      projectsStore.autoSaveActiveProject({
-        circles: layersStore.circles,
-        lineSegments: layersStore.lineSegments,
-        points: layersStore.points,
-        savedCoordinates: coordinatesStore.savedCoordinates,
-      });
-    }
-  },
+  debouncedAutoSave,
   { deep: true }
 );
 
 // Initialize map on mount
 onMounted(async () => {
-  await mapContainer.initMap();
+  try {
+    await mapContainer.initMap();
 
-  // Check if any projects exist
-  projectsStore.loadProjects();
-  if (projectsStore.projectCount === 0) {
-    // Prompt for new project if none exist
-    uiStore.openModal('newProjectModal');
-  } else if (projectsStore.activeProjectId) {
-    // Load the active project
-    const activeProject = projectsStore.activeProject;
-    if (activeProject) {
-      // Load project data
-      layersStore.clearLayers();
-      coordinatesStore.clearCoordinates();
+    // Initialize note tooltips after map is ready
+    noteTooltipsRef.value = useNoteTooltips(mapContainer);
 
-      // Restore circles
-      for (const circle of activeProject.data.circles) {
-        drawing.drawCircle(circle.center.lat, circle.center.lon, circle.radius, circle.name);
-      }
+    // Projects are already loaded in store initialization
+    // Check if any projects exist
+    if (projectsStore.projectCount === 0) {
+      // Prompt for new project if none exist
+      uiStore.openModal('newProjectModal');
+    } else if (projectsStore.activeProjectId) {
+      // Load the active project
+      const activeProject = projectsStore.activeProject;
+      if (activeProject) {
+        try {
+          // Load project data into stores (preserves IDs)
+          layersStore.loadLayers({
+            circles: activeProject.data.circles,
+            lineSegments: activeProject.data.lineSegments,
+            points: activeProject.data.points,
+            notes: activeProject.data.notes || [],
+          });
+          coordinatesStore.loadCoordinates(activeProject.data.savedCoordinates || []);
 
-      // Restore line segments
-      for (const line of activeProject.data.lineSegments) {
-        if (line.mode === 'parallel') {
-          drawing.drawParallel(line.longitude === undefined ? 0 : line.longitude, line.name);
-        } else if (line.endpoint) {
-          drawing.drawLineSegment(
-            line.center.lat,
-            line.center.lon,
-            line.endpoint.lat,
-            line.endpoint.lon,
-            line.name,
-            line.mode as 'coordinate' | 'azimuth' | 'intersection',
-            line.distance,
-            line.azimuth,
-            line.intersectionPoint?.lat,
-            line.intersectionPoint?.lon,
-            line.intersectionDistance
+          // Redraw all elements on the map
+          drawing.redrawAllElements();
+
+          console.log(`Project "${activeProject.name}" loaded successfully`);
+        } catch (error) {
+          console.error('Error loading project:', error);
+          uiStore.addToast(
+            `Failed to load project "${activeProject.name}". Some elements may not display correctly.`,
+            'error',
+            5000
           );
+
+          // Clear failed project data to avoid corrupted state
+          layersStore.clearLayers();
+          coordinatesStore.clearCoordinates();
+          projectsStore.setActiveProject(null);
         }
       }
-
-      // Restore points
-      for (const point of activeProject.data.points) {
-        drawing.drawPoint(point.coordinates.lat, point.coordinates.lon, point.name);
-      }
-
-      // Restore coordinates from project
-      coordinatesStore.loadCoordinates(activeProject.data.savedCoordinates || []);
     }
+  } catch (error) {
+    console.error('Fatal error during app initialization:', error);
+    uiStore.addToast(
+      'Failed to initialize the application. Please refresh the page.',
+      'error',
+      10_000
+    );
   }
 
   // Setup right-click to open coordinates modal with pre-filled coordinates

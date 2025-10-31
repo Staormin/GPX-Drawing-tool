@@ -39,18 +39,20 @@ export const useProjectsStore = defineStore('projects', () => {
   }
 
   function createAndSwitchProject(name: string, _data: ProjectLayerData): void {
-    // Create new project with empty state
-    storage.saveProject(name, {
+    // Create new project with empty state and get the returned project
+    const newProject = storage.saveProject(name, {
       circles: [],
       lineSegments: [],
       points: [],
       savedCoordinates: [],
+      notes: [],
     });
-    loadProjects();
 
-    // Find and set the new project as active
-    const newProject = projects.value.find((p) => p.name === name);
-    if (newProject && newProject.id) {
+    // Add to local projects array
+    projects.value.push(newProject);
+
+    // Set as active using the returned ID
+    if (newProject.id) {
       setActiveProject(newProject.id);
     }
   }
@@ -68,13 +70,15 @@ export const useProjectsStore = defineStore('projects', () => {
     if (currentProject) {
       const index = projects.value.indexOf(currentProject);
       if (index !== -1) {
+        // Update project in-place without full reload
+        projects.value[index] = {
+          ...currentProject,
+          data,
+          updatedAt: Date.now(),
+        };
+
+        // Save to storage
         storage.updateProject(index, currentProject.name, data);
-        loadProjects();
-        // Update the active project reference
-        const updatedProject = projects.value.find((p) => p.id === activeProjectId.value);
-        if (updatedProject && updatedProject.id) {
-          setActiveProject(updatedProject.id);
-        }
       }
     }
   }

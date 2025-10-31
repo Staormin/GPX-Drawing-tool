@@ -2,7 +2,12 @@
  * Layers store - Manages drawing layers (circles, lines, points)
  */
 
-import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage';
+import type {
+  CircleElement,
+  LineSegmentElement,
+  NoteElement,
+  PointElement,
+} from '@/services/storage';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
@@ -11,6 +16,7 @@ export const useLayersStore = defineStore('layers', () => {
   const circles = ref<CircleElement[]>([]);
   const lineSegments = ref<LineSegmentElement[]>([]);
   const points = ref<PointElement[]>([]);
+  const notes = ref<NoteElement[]>([]);
 
   // Map of Leaflet layer IDs for removal
   const leafletIdMap = ref<Map<string, number>>(new Map());
@@ -52,6 +58,16 @@ export const useLayersStore = defineStore('layers', () => {
       const aTime = a.createdAt || 0;
       const bTime = b.createdAt || 0;
       return bTime - aTime; // Newest first
+    });
+  });
+
+  const noteCount = computed(() => notes.value.length);
+
+  const sortedNotes = computed(() => {
+    return notes.value.toSorted((a, b) => {
+      const aTime = a.updatedAt || a.createdAt || 0;
+      const bTime = b.updatedAt || b.createdAt || 0;
+      return bTime - aTime; // Most recently updated first
     });
   });
 
@@ -137,6 +153,115 @@ export const useLayersStore = defineStore('layers', () => {
     }
   }
 
+  /**
+   * Helper function to get element by type and id
+   */
+  function getElement(
+    elementType: 'circle' | 'lineSegment' | 'point',
+    elementId: string
+  ): CircleElement | LineSegmentElement | PointElement | undefined {
+    switch (elementType) {
+      case 'circle': {
+        return circles.value.find((c) => c.id === elementId);
+      }
+      case 'lineSegment': {
+        return lineSegments.value.find((s) => s.id === elementId);
+      }
+      case 'point': {
+        return points.value.find((p) => p.id === elementId);
+      }
+      default: {
+        return undefined;
+      }
+    }
+  }
+
+  function addNote(note: NoteElement): void {
+    if (!note.createdAt) {
+      note.createdAt = Date.now();
+    }
+    if (!note.updatedAt) {
+      note.updatedAt = Date.now();
+    }
+
+    // Maintain bidirectional link: set element.noteId
+    if (note.linkedElementType && note.linkedElementId && note.id) {
+      const element = getElement(note.linkedElementType, note.linkedElementId);
+      if (element) {
+        // Check if element already has a note (enforce one-to-one)
+        if (element.noteId && element.noteId !== note.id) {
+          console.warn(
+            `Element ${note.linkedElementId} already has a note. Replacing with new note.`
+          );
+        }
+        element.noteId = note.id;
+      }
+    }
+
+    notes.value.push(note);
+  }
+
+  function updateNote(id: string | undefined, note: Partial<NoteElement>): void {
+    const index = notes.value.findIndex((n) => n.id === id);
+    if (index !== -1 && notes.value[index]) {
+      const oldNote = notes.value[index];
+      const updatedNote = {
+        ...oldNote,
+        ...note,
+        updatedAt: Date.now(),
+      } as NoteElement;
+
+      // Handle element linking changes
+      const oldElementId = oldNote.linkedElementId;
+      const oldElementType = oldNote.linkedElementType;
+      const newElementId = updatedNote.linkedElementId;
+      const newElementType = updatedNote.linkedElementType;
+
+      // If element link changed, update both old and new elements
+      if (oldElementId !== newElementId || oldElementType !== newElementType) {
+        // Clear old element's noteId
+        if (oldElementType && oldElementId) {
+          const oldElement = getElement(oldElementType, oldElementId);
+          if (oldElement && oldElement.noteId === id) {
+            oldElement.noteId = undefined;
+          }
+        }
+
+        // Set new element's noteId
+        if (newElementType && newElementId && updatedNote.id) {
+          const newElement = getElement(newElementType, newElementId);
+          if (newElement) {
+            if (newElement.noteId && newElement.noteId !== updatedNote.id) {
+              console.warn(
+                `Element ${newElementId} already has a note. Replacing with updated note.`
+              );
+            }
+            newElement.noteId = updatedNote.id;
+          }
+        }
+      }
+
+      notes.value[index] = updatedNote;
+    }
+  }
+
+  function deleteNote(id: string | undefined): void {
+    const index = notes.value.findIndex((n) => n.id === id);
+    if (index !== -1) {
+      const note = notes.value[index];
+
+      // Clear the linked element's noteId
+      if (note && note.linkedElementType && note.linkedElementId) {
+        const element = getElement(note.linkedElementType, note.linkedElementId);
+        if (element && element.noteId === id) {
+          element.noteId = undefined;
+        }
+      }
+
+      notes.value.splice(index, 1);
+    }
+  }
+
   function storeLeafletId(
     elementType: string,
     elementId: string | undefined,
@@ -155,20 +280,124 @@ export const useLayersStore = defineStore('layers', () => {
     circles.value = [];
     lineSegments.value = [];
     points.value = [];
+    notes.value = [];
     leafletIdMap.value.clear();
+  }
+
+  /**
+   * Validate and sanitize element data before loading
+   */
+  function validateCircle(circle: any): circle is CircleElement {
+    return (
+      circle &&
+      typeof circle.id === 'string' &&
+      typeof circle.name === 'string' &&
+      circle.center &&
+      typeof circle.center.lat === 'number' &&
+      typeof circle.center.lon === 'number' &&
+      typeof circle.radius === 'number' &&
+      !Number.isNaN(circle.center.lat) &&
+      !Number.isNaN(circle.center.lon) &&
+      !Number.isNaN(circle.radius) &&
+      circle.radius > 0
+    );
+  }
+
+  function validateLineSegment(segment: any): segment is LineSegmentElement {
+    if (
+      !segment ||
+      typeof segment.id !== 'string' ||
+      typeof segment.name !== 'string' ||
+      !segment.center ||
+      typeof segment.center.lat !== 'number' ||
+      typeof segment.center.lon !== 'number' ||
+      !segment.mode
+    ) {
+      return false;
+    }
+
+    // Special validation for parallel lines
+    if (segment.mode === 'parallel') {
+      return typeof segment.longitude === 'number' && !Number.isNaN(segment.longitude);
+    }
+
+    // Regular line segments need endpoint
+    return (
+      segment.endpoint &&
+      typeof segment.endpoint.lat === 'number' &&
+      typeof segment.endpoint.lon === 'number' &&
+      !Number.isNaN(segment.endpoint.lat) &&
+      !Number.isNaN(segment.endpoint.lon)
+    );
+  }
+
+  function validatePoint(point: any): point is PointElement {
+    return (
+      point &&
+      typeof point.id === 'string' &&
+      typeof point.name === 'string' &&
+      point.coordinates &&
+      typeof point.coordinates.lat === 'number' &&
+      typeof point.coordinates.lon === 'number' &&
+      !Number.isNaN(point.coordinates.lat) &&
+      !Number.isNaN(point.coordinates.lon)
+    );
+  }
+
+  function validateNote(note: any): note is NoteElement {
+    return (
+      note &&
+      typeof note.id === 'string' &&
+      typeof note.title === 'string' &&
+      typeof note.content === 'string'
+    );
   }
 
   function loadLayers(data: {
     circles: CircleElement[];
     lineSegments: LineSegmentElement[];
     points: PointElement[];
+    notes?: NoteElement[];
   }): void {
     clearLayers();
-    // Use spread operator instead of structuredClone to avoid DataCloneError
-    // Data from storage is already plain JSON, no need for deep cloning
-    circles.value = [...(data.circles || [])];
-    lineSegments.value = [...(data.lineSegments || [])];
-    points.value = [...(data.points || [])];
+
+    // Validate and filter data before loading
+    const validCircles = (data.circles || []).filter((circle) => {
+      const isValid = validateCircle(circle);
+      if (!isValid) {
+        console.warn('Invalid circle data detected and skipped:', circle);
+      }
+      return isValid;
+    });
+
+    const validLineSegments = (data.lineSegments || []).filter((segment) => {
+      const isValid = validateLineSegment(segment);
+      if (!isValid) {
+        console.warn('Invalid line segment data detected and skipped:', segment);
+      }
+      return isValid;
+    });
+
+    const validPoints = (data.points || []).filter((point) => {
+      const isValid = validatePoint(point);
+      if (!isValid) {
+        console.warn('Invalid point data detected and skipped:', point);
+      }
+      return isValid;
+    });
+
+    const validNotes = (data.notes || []).filter((note) => {
+      const isValid = validateNote(note);
+      if (!isValid) {
+        console.warn('Invalid note data detected and skipped:', note);
+      }
+      return isValid;
+    });
+
+    circles.value = [...validCircles];
+    lineSegments.value = [...validLineSegments];
+    points.value = [...validPoints];
+    notes.value = [...validNotes];
   }
 
   function exportLayers() {
@@ -176,6 +405,7 @@ export const useLayersStore = defineStore('layers', () => {
       circles: circles.value,
       lineSegments: lineSegments.value,
       points: points.value,
+      notes: notes.value,
     };
   }
 
@@ -184,6 +414,7 @@ export const useLayersStore = defineStore('layers', () => {
     circles,
     lineSegments,
     points,
+    notes,
     leafletIdMap,
 
     // Computed
@@ -192,9 +423,11 @@ export const useLayersStore = defineStore('layers', () => {
     circleCount,
     lineSegmentCount,
     pointCount,
+    noteCount,
     sortedCircles,
     sortedLineSegments,
     sortedPoints,
+    sortedNotes,
 
     // Actions
     addCircle,
@@ -206,6 +439,9 @@ export const useLayersStore = defineStore('layers', () => {
     addPoint,
     updatePoint,
     deletePoint,
+    addNote,
+    updateNote,
+    deleteNote,
     storeLeafletId,
     getLeafletId,
     clearLayers,

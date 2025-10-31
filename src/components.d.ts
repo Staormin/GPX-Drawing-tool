@@ -27,6 +27,7 @@ declare module 'vue' {
     LoadProjectModal: typeof import('./components/LoadProjectModal.vue')['default']
     NavigationBar: typeof import('./components/NavigationBar.vue')['default']
     NewProjectModal: typeof import('./components/NewProjectModal.vue')['default']
+    NoteModal: typeof import('./components/NoteModal.vue')['default']
     ParallelLineModal: typeof import('./components/modals/ParallelLineModal.vue')['default']
     PointModal: typeof import('./components/PointModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

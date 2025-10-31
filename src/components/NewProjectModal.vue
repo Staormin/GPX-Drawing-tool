@@ -68,6 +68,7 @@ function submitForm() {
             lineSegments: layerData.lineSegments,
             points: layerData.points,
             savedCoordinates: coordinatesStore.sortedCoordinates,
+            notes: layerData.notes,
           }
         );
       }
@@ -79,6 +80,7 @@ function submitForm() {
       lineSegments: [],
       points: [],
       savedCoordinates: [],
+      notes: [],
     });
 
     // Clear the current view
