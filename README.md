@@ -14,6 +14,10 @@ A web-based mapping application for solving geoportail treasure hunts through ge
   - Parallel: Latitude lines across the map
   - Free hand: Interactive drawing with optional azimuth/distance locking
 - **Points**: Mark locations on the map
+- **Polygons**: Create areas from multiple points (minimum 3)
+  - Select points from existing markers
+  - Visual representation in light green
+  - Extract center point via context menu
 - **Drag & Drop**: Create lines by dragging between points in the layers panel
 
 ### Location Search
@@ -35,11 +39,12 @@ A web-based mapping application for solving geoportail treasure hunts through ge
   - Press 'Z' to toggle precision mode
   - Crosshair overlay for pinpoint accuracy
   - Right-click or ESC to exit
-- **Notes**: Add notes to circles, lines, and points
+- **Notes**: Add notes to circles, lines, points, and polygons
   - Document clues, observations, and calculations
   - Notes appear as tooltips on map hover
   - One note per element, saved with projects
 - **Layer Management**: Show/hide, edit, delete shapes via context menu
+  - Polygon-specific: Extract center point as coordinate
 
 ### Data Management
 
@@ -59,7 +64,7 @@ npm run build  # Production build
 ## Usage
 
 1. Right-click map to save coordinates
-2. Use drawing tools to create circles, lines, and points
+2. Use drawing tools to create circles, lines, points, and polygons
 3. Search for locations by address or along paths
 4. Analyze bearings between points
 5. Navigate shapes using arrow keys

@@ -121,6 +121,14 @@
         </v-list>
       </v-menu>
 
+      <!-- Add center as point (only for polygons) -->
+      <v-list-item v-if="elementType === 'polygon'" @click="handleAddCenterAsPoint">
+        <template #prepend>
+          <v-icon icon="mdi-image-filter-center-focus" size="small" />
+        </template>
+        <v-list-item-title>Add center as point</v-list-item-title>
+      </v-list-item>
+
       <!-- Add/Edit note -->
       <v-list-item @click="handleAddNote">
         <template #prepend>
@@ -156,7 +164,7 @@ import { useLayersStore } from '@/stores/layers';
 import { useUIStore } from '@/stores/ui';
 
 interface Props {
-  elementType: 'circle' | 'lineSegment' | 'point';
+  elementType: 'circle' | 'lineSegment' | 'point' | 'polygon';
   elementId: string;
 }
 
@@ -255,6 +263,35 @@ function handleEdit() {
   if (!element) return;
 
   emit('edit', element);
+  isOpen.value = false;
+}
+
+function handleAddCenterAsPoint() {
+  if (props.elementType !== 'polygon') return;
+
+  const polygon = layersStore.polygons.find((p) => p.id === props.elementId);
+  if (!polygon) {
+    uiStore.addToast('Polygon not found', 'error');
+    return;
+  }
+
+  // Calculate polygon center
+  const sumLat = polygon.points.reduce((sum, p) => sum + p.lat, 0);
+  const sumLon = polygon.points.reduce((sum, p) => sum + p.lon, 0);
+  const centerLat = sumLat / polygon.points.length;
+  const centerLon = sumLon / polygon.points.length;
+
+  // Create point at center
+  if (drawing) {
+    const pointName = `${polygon.name} Center`;
+    drawing.drawPoint(centerLat, centerLon, pointName);
+
+    // Also save as coordinate
+    coordinatesStore.addCoordinate(pointName, centerLat, centerLon);
+
+    uiStore.addToast('Center added as point and coordinate', 'success');
+  }
+
   isOpen.value = false;
 }
 

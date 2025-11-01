@@ -2,7 +2,12 @@
  * Composable for drawing shapes on the map
  */
 
-import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage';
+import type {
+  CircleElement,
+  LineSegmentElement,
+  PointElement,
+  PolygonElement,
+} from '@/services/storage';
 import L from 'leaflet';
 import { v4 as uuidv4 } from 'uuid';
 import { generateCircle } from '@/services/geometry';
@@ -536,6 +541,14 @@ export function useDrawing(mapRef: any) {
 
           break;
         }
+        case 'polygon': {
+          const polygon = layersStore.polygons.find((p) => p.id === elementId);
+          if (polygon && polygon.id) {
+            redrawPolygonOnMap(polygon.id, polygon.points, polygon.color);
+          }
+
+          break;
+        }
         // No default
       }
     }
@@ -611,6 +624,18 @@ export function useDrawing(mapRef: any) {
 
         break;
       }
+      case 'polygon': {
+        const polygon = layersStore.polygons.find((p) => p.id === elementId);
+        if (polygon && polygon.leafletId !== undefined) {
+          mapRef.map.value.eachLayer((layer: any) => {
+            if (L.stamp(layer) === polygon.leafletId) {
+              mapRef.map.value.removeLayer(layer);
+            }
+          });
+        }
+
+        break;
+      }
       // No default
     }
 
@@ -638,6 +663,10 @@ export function useDrawing(mapRef: any) {
         layersStore.deletePoint(elementId);
         break;
       }
+      case 'polygon': {
+        layersStore.deletePolygon(elementId);
+        break;
+      }
       // No default
     }
   };
@@ -648,7 +677,11 @@ export function useDrawing(mapRef: any) {
     if (mapRef.map?.value) {
       // Remove all custom layers (not tiles)
       mapRef.map.value.eachLayer((layer: any) => {
-        if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+        if (
+          layer instanceof L.Polyline ||
+          layer instanceof L.CircleMarker ||
+          layer instanceof L.Polygon
+        ) {
           mapRef.map?.value?.removeLayer(layer);
         }
       });
@@ -656,11 +689,16 @@ export function useDrawing(mapRef: any) {
   };
 
   // Redraw all elements on map (useful after loading project)
+  // eslint-disable-next-line complexity
   const redrawAllElements = () => {
     // Clear only map layers, not the store (store is already populated)
     if (mapRef.map?.value) {
       mapRef.map.value.eachLayer((layer: any) => {
-        if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+        if (
+          layer instanceof L.Polyline ||
+          layer instanceof L.CircleMarker ||
+          layer instanceof L.Polygon
+        ) {
           mapRef.map?.value?.removeLayer(layer);
         }
       });
@@ -669,6 +707,7 @@ export function useDrawing(mapRef: any) {
     const circles = layersStore.circles;
     const lineSegments = layersStore.lineSegments;
     const points = layersStore.points;
+    const polygons = layersStore.polygons;
 
     // Redraw circles (using redraw helper to avoid adding to store twice)
     for (const circle of circles) {
@@ -713,8 +752,18 @@ export function useDrawing(mapRef: any) {
       }
     }
 
+    // Redraw polygons (using redraw helper to avoid adding to store twice)
+    for (const polygon of polygons) {
+      if (polygon.id) {
+        redrawPolygonOnMap(polygon.id, polygon.points, polygon.color);
+      }
+    }
+
     // Fit map to all elements if any exist
-    if ((circles.length > 0 || lineSegments.length > 0 || points.length > 0) && mapRef.fitBounds) {
+    if (
+      (circles.length > 0 || lineSegments.length > 0 || points.length > 0 || polygons.length > 0) &&
+      mapRef.fitBounds
+    ) {
       // Calculate bounds that include all elements
       let minLat = 90,
         maxLat = -90,
@@ -743,6 +792,15 @@ export function useDrawing(mapRef: any) {
         maxLat = Math.max(maxLat, point.coordinates.lat);
         minLon = Math.min(minLon, point.coordinates.lon);
         maxLon = Math.max(maxLon, point.coordinates.lon);
+      }
+
+      for (const polygon of polygons) {
+        for (const point of polygon.points) {
+          minLat = Math.min(minLat, point.lat);
+          maxLat = Math.max(maxLat, point.lat);
+          minLon = Math.min(minLon, point.lon);
+          maxLon = Math.max(maxLon, point.lon);
+        }
       }
 
       if (minLat <= maxLat && minLon <= maxLon) {
@@ -844,6 +902,88 @@ export function useDrawing(mapRef: any) {
     layersStore.storeLeafletId('lineSegment', lineId, newLeafletId);
   };
 
+  // Polygon drawing
+  const drawPolygon = (points: { lat: number; lon: number }[], name?: string, color?: string) => {
+    if (!mapRef.map?.value) {
+      return null;
+    }
+
+    if (points.length < 3) {
+      console.warn('Polygon must have at least 3 points');
+      return null;
+    }
+
+    const polygonId = generateId();
+    const polygonColor = color || '#90EE90'; // Light green
+    const polygonElement: PolygonElement = {
+      id: polygonId,
+      name: name || `Polygon ${layersStore.polygonCount + 1}`,
+      points,
+      color: polygonColor,
+    };
+
+    // Create Leaflet polygon
+    const latLngs = points.map((p) => [p.lat, p.lon] as [number, number]);
+    const polygon = L.polygon(latLngs, {
+      color: polygonColor,
+      fillColor: polygonColor,
+      fillOpacity: 0.2,
+      weight: 3,
+      opacity: 1,
+      className: `polygon-layer polygon-${polygonId}`,
+    }).addTo(mapRef.map.value);
+
+    // Store Leaflet ID
+    polygonElement.leafletId = L.stamp(polygon);
+    layersStore.storeLeafletId('polygon', polygonId, polygonElement.leafletId);
+
+    // Add to store
+    layersStore.addPolygon(polygonElement);
+
+    // Fit map to polygon bounds
+    if (mapRef.fitBounds) {
+      const bounds = polygon.getBounds();
+      mapRef.fitBounds([
+        [bounds.getSouth(), bounds.getWest()],
+        [bounds.getNorth(), bounds.getEast()],
+      ]);
+    }
+
+    return polygonElement;
+  };
+
+  // Helper function to redraw a polygon on the map without adding to store
+  const redrawPolygonOnMap = (
+    polygonId: string,
+    points: { lat: number; lon: number }[],
+    color = '#90EE90'
+  ) => {
+    if (!mapRef.map?.value) {
+      return;
+    }
+
+    const polygonColor = color;
+    const latLngs = points.map((p) => [p.lat, p.lon] as [number, number]);
+
+    const polygon = L.polygon(latLngs, {
+      color: polygonColor,
+      fillColor: polygonColor,
+      fillOpacity: 0.2,
+      weight: 3,
+      opacity: 1,
+      className: `polygon-layer polygon-${polygonId}`,
+    }).addTo(mapRef.map.value);
+
+    const newLeafletId = L.stamp(polygon);
+    layersStore.storeLeafletId('polygon', polygonId, newLeafletId);
+
+    // Update the polygon element's leafletId in the store
+    const polygonElement = layersStore.polygons.find((p) => p.id === polygonId);
+    if (polygonElement) {
+      polygonElement.leafletId = newLeafletId;
+    }
+  };
+
   return {
     drawCircle,
     updateCircle,
@@ -852,6 +992,7 @@ export function useDrawing(mapRef: any) {
     drawParallel,
     updateParallel,
     drawPoint,
+    drawPolygon,
     updateElementVisibility,
     deleteElement,
     clearAllElements,

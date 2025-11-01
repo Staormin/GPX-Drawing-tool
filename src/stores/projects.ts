@@ -44,6 +44,7 @@ export const useProjectsStore = defineStore('projects', () => {
       circles: [],
       lineSegments: [],
       points: [],
+      polygons: [],
       savedCoordinates: [],
       notes: [],
     });

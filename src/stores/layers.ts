@@ -7,6 +7,7 @@ import type {
   LineSegmentElement,
   NoteElement,
   PointElement,
+  PolygonElement,
 } from '@/services/storage';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -16,6 +17,7 @@ export const useLayersStore = defineStore('layers', () => {
   const circles = ref<CircleElement[]>([]);
   const lineSegments = ref<LineSegmentElement[]>([]);
   const points = ref<PointElement[]>([]);
+  const polygons = ref<PolygonElement[]>([]);
   const notes = ref<NoteElement[]>([]);
 
   // Map of Leaflet layer IDs for removal
@@ -23,11 +25,16 @@ export const useLayersStore = defineStore('layers', () => {
 
   // Computed
   const isEmpty = computed(
-    () => circles.value.length === 0 && lineSegments.value.length === 0 && points.value.length === 0
+    () =>
+      circles.value.length === 0 &&
+      lineSegments.value.length === 0 &&
+      points.value.length === 0 &&
+      polygons.value.length === 0
   );
 
   const totalCount = computed(
-    () => circles.value.length + lineSegments.value.length + points.value.length
+    () =>
+      circles.value.length + lineSegments.value.length + points.value.length + polygons.value.length
   );
 
   const circleCount = computed(() => circles.value.length);
@@ -35,6 +42,8 @@ export const useLayersStore = defineStore('layers', () => {
   const lineSegmentCount = computed(() => lineSegments.value.length);
 
   const pointCount = computed(() => points.value.length);
+
+  const polygonCount = computed(() => polygons.value.length);
 
   // Sorted layers by creation date (newest first)
   const sortedCircles = computed(() => {
@@ -55,6 +64,14 @@ export const useLayersStore = defineStore('layers', () => {
 
   const sortedPoints = computed(() => {
     return points.value.toSorted((a, b) => {
+      const aTime = a.createdAt || 0;
+      const bTime = b.createdAt || 0;
+      return bTime - aTime; // Newest first
+    });
+  });
+
+  const sortedPolygons = computed(() => {
+    return polygons.value.toSorted((a, b) => {
       const aTime = a.createdAt || 0;
       const bTime = b.createdAt || 0;
       return bTime - aTime; // Newest first
@@ -153,13 +170,39 @@ export const useLayersStore = defineStore('layers', () => {
     }
   }
 
+  function addPolygon(polygon: PolygonElement): void {
+    // Add timestamp if not present
+    if (!polygon.createdAt) {
+      polygon.createdAt = Date.now();
+    }
+    polygons.value.push(polygon);
+  }
+
+  function updatePolygon(id: string | undefined, polygon: Partial<PolygonElement>): void {
+    const index = polygons.value.findIndex((p) => p.id === id);
+    if (index !== -1 && polygons.value[index]) {
+      polygons.value[index] = { ...polygons.value[index], ...polygon } as PolygonElement;
+    }
+  }
+
+  function deletePolygon(id: string | undefined): void {
+    const index = polygons.value.findIndex((p) => p.id === id);
+    if (index !== -1 && polygons.value[index]) {
+      const polygon = polygons.value[index];
+      if (polygon && polygon.leafletId !== undefined) {
+        leafletIdMap.value.delete(`polygon_${id}`);
+      }
+      polygons.value.splice(index, 1);
+    }
+  }
+
   /**
    * Helper function to get element by type and id
    */
   function getElement(
-    elementType: 'circle' | 'lineSegment' | 'point',
+    elementType: 'circle' | 'lineSegment' | 'point' | 'polygon',
     elementId: string
-  ): CircleElement | LineSegmentElement | PointElement | undefined {
+  ): CircleElement | LineSegmentElement | PointElement | PolygonElement | undefined {
     switch (elementType) {
       case 'circle': {
         return circles.value.find((c) => c.id === elementId);
@@ -169,6 +212,9 @@ export const useLayersStore = defineStore('layers', () => {
       }
       case 'point': {
         return points.value.find((p) => p.id === elementId);
+      }
+      case 'polygon': {
+        return polygons.value.find((p) => p.id === elementId);
       }
       default: {
         return undefined;
@@ -280,6 +326,7 @@ export const useLayersStore = defineStore('layers', () => {
     circles.value = [];
     lineSegments.value = [];
     points.value = [];
+    polygons.value = [];
     notes.value = [];
     leafletIdMap.value.clear();
   }
@@ -344,6 +391,24 @@ export const useLayersStore = defineStore('layers', () => {
     );
   }
 
+  function validatePolygon(polygon: any): polygon is PolygonElement {
+    return (
+      polygon &&
+      typeof polygon.id === 'string' &&
+      typeof polygon.name === 'string' &&
+      Array.isArray(polygon.points) &&
+      polygon.points.length >= 3 &&
+      polygon.points.every(
+        (point: any) =>
+          point &&
+          typeof point.lat === 'number' &&
+          typeof point.lon === 'number' &&
+          !Number.isNaN(point.lat) &&
+          !Number.isNaN(point.lon)
+      )
+    );
+  }
+
   function validateNote(note: any): note is NoteElement {
     return (
       note &&
@@ -357,6 +422,7 @@ export const useLayersStore = defineStore('layers', () => {
     circles: CircleElement[];
     lineSegments: LineSegmentElement[];
     points: PointElement[];
+    polygons?: PolygonElement[];
     notes?: NoteElement[];
   }): void {
     clearLayers();
@@ -386,6 +452,14 @@ export const useLayersStore = defineStore('layers', () => {
       return isValid;
     });
 
+    const validPolygons = (data.polygons || []).filter((polygon) => {
+      const isValid = validatePolygon(polygon);
+      if (!isValid) {
+        console.warn('Invalid polygon data detected and skipped:', polygon);
+      }
+      return isValid;
+    });
+
     const validNotes = (data.notes || []).filter((note) => {
       const isValid = validateNote(note);
       if (!isValid) {
@@ -397,6 +471,7 @@ export const useLayersStore = defineStore('layers', () => {
     circles.value = [...validCircles];
     lineSegments.value = [...validLineSegments];
     points.value = [...validPoints];
+    polygons.value = [...validPolygons];
     notes.value = [...validNotes];
   }
 
@@ -405,6 +480,7 @@ export const useLayersStore = defineStore('layers', () => {
       circles: circles.value,
       lineSegments: lineSegments.value,
       points: points.value,
+      polygons: polygons.value,
       notes: notes.value,
     };
   }
@@ -414,6 +490,7 @@ export const useLayersStore = defineStore('layers', () => {
     circles,
     lineSegments,
     points,
+    polygons,
     notes,
     leafletIdMap,
 
@@ -423,10 +500,12 @@ export const useLayersStore = defineStore('layers', () => {
     circleCount,
     lineSegmentCount,
     pointCount,
+    polygonCount,
     noteCount,
     sortedCircles,
     sortedLineSegments,
     sortedPoints,
+    sortedPolygons,
     sortedNotes,
 
     // Actions
@@ -439,6 +518,9 @@ export const useLayersStore = defineStore('layers', () => {
     addPoint,
     updatePoint,
     deletePoint,
+    addPolygon,
+    updatePolygon,
+    deletePolygon,
     addNote,
     updateNote,
     deleteNote,

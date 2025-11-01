@@ -204,6 +204,16 @@
               <v-icon>mdi-map-marker</v-icon>
               <v-tooltip activator="parent" location="bottom">Point</v-tooltip>
             </v-btn>
+
+            <v-btn
+              color="surface-bright"
+              icon="mdi-pentagon-outline"
+              variant="elevated"
+              @click="uiStore.openModal('polygonModal')"
+            >
+              <v-icon>mdi-pentagon-outline</v-icon>
+              <v-tooltip activator="parent" location="bottom">Polygon</v-tooltip>
+            </v-btn>
           </v-btn-group>
         </div>
       </div>

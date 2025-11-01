@@ -24,6 +24,7 @@ export interface ProjectLayerData {
   circles: CircleElement[];
   lineSegments: LineSegmentElement[];
   points: PointElement[];
+  polygons: PolygonElement[];
   savedCoordinates: SavedCoordinate[];
   notes: NoteElement[];
 }
@@ -67,11 +68,21 @@ export interface PointElement {
   createdAt?: number;
 }
 
+export interface PolygonElement {
+  id: string;
+  name: string;
+  points: { lat: number; lon: number }[]; // Array of at least 3 points
+  color?: string;
+  leafletId?: number;
+  noteId?: string; // ID of the linked note (one-to-one)
+  createdAt?: number;
+}
+
 export interface NoteElement {
   id: string;
   title: string;
   content: string;
-  linkedElementType?: 'circle' | 'lineSegment' | 'point';
+  linkedElementType?: 'circle' | 'lineSegment' | 'point' | 'polygon';
   linkedElementId?: string;
   createdAt?: number;
   updatedAt?: number;

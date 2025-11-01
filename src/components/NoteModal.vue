@@ -86,7 +86,7 @@ const noteTooltipsRef = inject<
 const form = ref({
   title: '',
   content: '',
-  linkedElementType: undefined as 'circle' | 'lineSegment' | 'point' | undefined,
+  linkedElementType: undefined as 'circle' | 'lineSegment' | 'point' | 'polygon' | undefined,
   linkedElementId: undefined as string | undefined,
 });
 

@@ -56,6 +56,7 @@ function submitForm() {
       circles: layerData.circles,
       lineSegments: layerData.lineSegments,
       points: layerData.points,
+      polygons: layerData.polygons,
       savedCoordinates: [],
       notes: layerData.notes,
     });

@@ -151,6 +151,41 @@
         </div>
       </div>
 
+      <!-- Polygons -->
+      <div v-if="filteredPolygons.length > 0">
+        <div class="layers-section-header" @click="polygonsExpanded = !polygonsExpanded">
+          <span class="layers-section-title"
+            >Polygons ({{ filteredPolygons.length
+            }}{{ searchQuery ? ` of ${layersStore.polygonCount}` : '' }})</span
+          >
+          <span class="collapse-icon">{{ polygonsExpanded ? '▼' : '▶' }}</span>
+        </div>
+        <div v-show="polygonsExpanded" class="layer-items">
+          <div
+            v-for="polygon in filteredPolygons"
+            :key="polygon.id"
+            class="layer-item"
+            :class="{
+              'layer-item-hidden': polygon.id && !uiStore.isElementVisible('polygon', polygon.id),
+            }"
+            @click="handlePolygonClick($event, polygon)"
+          >
+            <div class="layer-item-info">
+              <div class="layer-item-name">{{ polygon.name }}</div>
+              <div class="layer-item-type">Polygon ({{ polygon.points.length }} points)</div>
+            </div>
+            <div class="layer-item-actions" @click.stop>
+              <LayerContextMenu
+                v-if="polygon.id"
+                :element-id="polygon.id"
+                element-type="polygon"
+                @delete="handleDeleteElement"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Notes -->
       <div v-if="filteredNotes.length > 0">
         <div class="layers-section-header" @click="notesExpanded = !notesExpanded">
@@ -209,6 +244,7 @@ import type {
   LineSegmentElement,
   NoteElement,
   PointElement,
+  PolygonElement,
 } from '@/services/storage';
 import { computed, inject, ref } from 'vue';
 import LayerContextMenu from '@/components/LayerContextMenu.vue';
@@ -247,6 +283,12 @@ const filteredPoints = computed(() => {
   return layersStore.sortedPoints.filter((p) => p.name.toLowerCase().includes(query));
 });
 
+const filteredPolygons = computed(() => {
+  if (!searchQuery.value) return layersStore.sortedPolygons;
+  const query = searchQuery.value.toLowerCase();
+  return layersStore.sortedPolygons.filter((p) => p.name.toLowerCase().includes(query));
+});
+
 const filteredNotes = computed(() => {
   if (!searchQuery.value) return layersStore.sortedNotes;
   const query = searchQuery.value.toLowerCase();
@@ -259,6 +301,7 @@ const filteredNotes = computed(() => {
 const circlesExpanded = ref(true);
 const linesExpanded = ref(true);
 const pointsExpanded = ref(true);
+const polygonsExpanded = ref(true);
 const notesExpanded = ref(true);
 
 function getLineInfo(line: LineSegmentElement) {
@@ -323,19 +366,23 @@ function handleDeleteElement(elementType: string, elementId: string) {
 
 function handleGoTo(
   elementType: string,
-  element: CircleElement | LineSegmentElement | PointElement
+  element: CircleElement | LineSegmentElement | PointElement | PolygonElement
 ) {
   let lat: number;
   let lon: number;
   let zoom: number;
 
-  if (elementType === 'circle') {
+  switch (elementType) {
+  case 'circle': {
     const circle = element as CircleElement;
     lat = circle.center.lat;
     lon = circle.center.lon;
     // Calculate zoom based on radius: more zoomed in formula
     zoom = Math.max(6, Math.min(18, 15 - Math.log2(circle.radius / 1.5)));
-  } else if (elementType === 'lineSegment') {
+  
+  break;
+  }
+  case 'lineSegment': {
     const segment = element as LineSegmentElement;
     if (segment.mode === 'parallel') {
       // For parallel, center on the parallel's latitude
@@ -361,11 +408,37 @@ function handleGoTo(
       lon = segment.center.lon;
       zoom = 13;
     }
-  } else {
+  
+  break;
+  }
+  case 'polygon': {
+    const polygon = element as PolygonElement;
+    // Calculate center of polygon
+    const sumLat = polygon.points.reduce((sum, p) => sum + p.lat, 0);
+    const sumLon = polygon.points.reduce((sum, p) => sum + p.lon, 0);
+    lat = sumLat / polygon.points.length;
+    lon = sumLon / polygon.points.length;
+
+    // Calculate bounds to determine zoom
+    const lats = polygon.points.map((p) => p.lat);
+    const lons = polygon.points.map((p) => p.lon);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+
+    // Calculate diagonal distance of bounding box
+    const diagonal = calculateDistance(minLat, minLon, maxLat, maxLon);
+    zoom = Math.max(6, Math.min(18, 15 - Math.log2(diagonal / 1.5)));
+  
+  break;
+  }
+  default: {
     const point = element as PointElement;
     lat = point.coordinates.lat;
     lon = point.coordinates.lon;
     zoom = 16; // Closer zoom for points
+  }
   }
 
   mapContainer.setCenter(lat, lon, zoom);
@@ -384,6 +457,10 @@ function handlePointClick(event: MouseEvent, point: PointElement) {
   if (!isDragging.value) {
     handleGoTo('point', point);
   }
+}
+
+function handlePolygonClick(event: MouseEvent, polygon: PolygonElement) {
+  handleGoTo('polygon', polygon);
 }
 
 function handleDragOver(event: DragEvent, point: PointElement) {

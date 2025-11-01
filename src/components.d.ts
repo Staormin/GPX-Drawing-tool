@@ -30,6 +30,7 @@ declare module 'vue' {
     NoteModal: typeof import('./components/NoteModal.vue')['default']
     ParallelLineModal: typeof import('./components/modals/ParallelLineModal.vue')['default']
     PointModal: typeof import('./components/PointModal.vue')['default']
+    PolygonModal: typeof import('./components/PolygonModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SaveProjectModal: typeof import('./components/SaveProjectModal.vue')['default']

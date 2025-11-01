@@ -52,6 +52,7 @@
   <FreeHandLineModal v-if="uiStore.isModalOpen('freeHandLineModal')" />
   <LineSegmentModal v-if="uiStore.isModalOpen('lineSegmentModal')" />
   <PointModal v-if="uiStore.isModalOpen('pointModal')" />
+  <PolygonModal v-if="uiStore.isModalOpen('polygonModal')" />
   <AddPointOnSegmentModal v-if="uiStore.isModalOpen('addPointOnSegmentModal')" />
   <CoordinatesModal v-if="uiStore.isModalOpen('coordinatesModal')" />
   <NewProjectModal v-if="uiStore.isModalOpen('newProjectModal')" />
@@ -90,10 +91,7 @@
   </div>
 
   <!-- Precision mode indicator -->
-  <div
-    v-if="precisionLens.isActive.value"
-    class="precision-mode-indicator"
-  >
+  <div v-if="precisionLens.isActive.value" class="precision-mode-indicator">
     <v-icon size="small">mdi-magnify-plus</v-icon>
     <span>Precision Mode (Z)</span>
   </div>
@@ -116,6 +114,7 @@ import NavigationBar from '@/components/NavigationBar.vue';
 import NewProjectModal from '@/components/NewProjectModal.vue';
 import NoteModal from '@/components/NoteModal.vue';
 import PointModal from '@/components/PointModal.vue';
+import PolygonModal from '@/components/PolygonModal.vue';
 import SearchAlongPanelInline from '@/components/SearchAlongPanel.vue';
 import SidebarLayersPanel from '@/components/SidebarLayersPanel.vue';
 import TopBar from '@/components/TopBar.vue';
@@ -191,6 +190,7 @@ function debouncedAutoSave() {
         circles: layersStore.circles,
         lineSegments: layersStore.lineSegments,
         points: layersStore.points,
+        polygons: layersStore.polygons,
         savedCoordinates: coordinatesStore.savedCoordinates,
         notes: layersStore.notes,
       });
@@ -204,6 +204,7 @@ watch(
     () => layersStore.circles,
     () => layersStore.lineSegments,
     () => layersStore.points,
+    () => layersStore.polygons,
     () => coordinatesStore.savedCoordinates,
     () => layersStore.notes,
   ],
@@ -234,6 +235,7 @@ onMounted(async () => {
             circles: activeProject.data.circles,
             lineSegments: activeProject.data.lineSegments,
             points: activeProject.data.points,
+            polygons: activeProject.data.polygons || [],
             notes: activeProject.data.notes || [],
           });
           coordinatesStore.loadCoordinates(activeProject.data.savedCoordinates || []);

@@ -12,15 +12,8 @@ interface PrecisionLensOptions {
   magnification?: number; // Magnification factor (e.g., 2 = 2x larger)
 }
 
-export function usePrecisionLens(
-  mapRef: any,
-  options: PrecisionLensOptions = {}
-) {
-  const {
-    lensSize = 200,
-    offsetY = -220,
-    magnification = 2.5,
-  } = options;
+export function usePrecisionLens(mapRef: any, options: PrecisionLensOptions = {}) {
+  const { lensSize = 200, offsetY = -220, magnification = 2.5 } = options;
 
   const isActive = ref(false);
   const lensElement = ref<HTMLElement | null>(null);
@@ -88,13 +81,14 @@ export function usePrecisionLens(
       transform-origin: center center;
     `;
 
-    lens.appendChild(mapContainer);
-    lens.appendChild(crosshair);
-    document.body.appendChild(lens);
+    lens.append(mapContainer);
+    lens.append(crosshair);
+    document.body.append(lens);
 
     lensElement.value = lens;
 
     // Initialize mini map
+    // eslint-disable-next-line unicorn/no-array-callback-reference, unicorn/no-array-method-this-argument
     const miniMap = L.map(mapContainer, {
       zoomControl: false,
       attributionControl: false,
@@ -147,10 +141,7 @@ export function usePrecisionLens(
     const mainMap = mapRef.map.value;
     const mapContainer = mainMap.getContainer();
     const rect = mapContainer.getBoundingClientRect();
-    const point = L.point(
-      mouseEvent.clientX - rect.left,
-      mouseEvent.clientY - rect.top
-    );
+    const point = L.point(mouseEvent.clientX - rect.left, mouseEvent.clientY - rect.top);
     const latlng = mainMap.containerPointToLatLng(point);
 
     // Update mini map view with same zoom level
@@ -213,11 +204,7 @@ export function usePrecisionLens(
     if (event.key === 'z' || event.key === 'Z') {
       // Don't activate if typing in an input
       const target = event.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 

@@ -48,7 +48,7 @@ export interface BearingsPanel {
 }
 
 export interface NotePreFillElement {
-  type: 'circle' | 'lineSegment' | 'point';
+  type: 'circle' | 'lineSegment' | 'point' | 'polygon';
   id: string;
 }
 
@@ -308,7 +308,7 @@ export const useUIStore = defineStore('ui', () => {
     };
   }
 
-  function setNotePreFill(type: 'circle' | 'lineSegment' | 'point', id: string): void {
+  function setNotePreFill(type: 'circle' | 'lineSegment' | 'point' | 'polygon', id: string): void {
     notePreFillElement.value = { type, id };
   }
 

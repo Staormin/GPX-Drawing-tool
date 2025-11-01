@@ -81,7 +81,9 @@
               </p>
               <p class="mb-3">Here's what you can do to solve treasure hunts:</p>
               <ul class="tutorial-list">
-                <li><strong>Draw circles, lines, and points</strong> on an interactive map</li>
+                <li>
+                  <strong>Draw circles, lines, points, and polygons</strong> on an interactive map
+                </li>
                 <li><strong>Search for locations</strong> by address and explore nearby places</li>
                 <li>
                   <strong>Find locations along paths</strong> with distance and altitude filters
@@ -106,7 +108,7 @@
                 <ul class="tutorial-list">
                   <li>Click the buttons in the center of the top bar to open drawing modals</li>
                   <li>The top bar can be collapsed/expanded using the chevron button</li>
-                  <li>Drawing tools include: Circle, Lines (multiple types), and Point</li>
+                  <li>Drawing tools include: Circle, Lines (multiple types), Point, and Polygon</li>
                 </ul>
               </div>
 
@@ -150,11 +152,33 @@
                 </ul>
               </div>
 
-              <div class="tutorial-step">
+              <div class="tutorial-step mb-4">
                 <h4 class="mb-2">📍 Point</h4>
                 <p>
                   Mark specific locations on the map. Points can be saved as coordinates for reuse.
                 </p>
+              </div>
+
+              <div class="tutorial-step">
+                <h4 class="mb-2">⬟ Polygon</h4>
+                <p class="mb-2">Create an area by connecting multiple points:</p>
+                <ul class="tutorial-list">
+                  <li>
+                    <strong>Select Points:</strong> Choose at least 3 existing points from the map
+                  </li>
+                  <li>
+                    <strong>Visual:</strong> Polygons are displayed in light green with
+                    semi-transparent fill
+                  </li>
+                  <li>
+                    <strong>Extract Center:</strong> Right-click menu to add the polygon's center as
+                    a point and coordinate
+                  </li>
+                  <li>
+                    <strong>Use Case:</strong> Define search areas, mark zones of interest, or
+                    visualize boundaries
+                  </li>
+                </ul>
               </div>
             </div>
           </v-window-item>
@@ -244,7 +268,7 @@
                 <ul class="tutorial-list">
                   <li>The layers panel is located in the <strong>left sidebar</strong></li>
                   <li>Toggle the left sidebar using the button on the left edge of the screen</li>
-                  <li>All circles, lines, and points are listed in separate sections</li>
+                  <li>All circles, lines, points, and polygons are listed in separate sections</li>
                 </ul>
               </div>
 
@@ -269,6 +293,10 @@
                     (points only)
                   </li>
                   <li><strong>➕ Create with:</strong> Create new shapes from a point</li>
+                  <li>
+                    <strong>⬟ Add center as point:</strong> Extract polygon center as a point and
+                    coordinate (polygons only)
+                  </li>
                 </ul>
               </div>
 
@@ -290,14 +318,15 @@
             <div class="tutorial-section">
               <h3 class="mb-3">📝 Notes</h3>
               <p class="mb-3">
-                Add notes to your drawings to document important information, observations, or clues:
+                Add notes to your drawings to document important information, observations, or
+                clues:
               </p>
 
               <div class="tutorial-step mb-4">
                 <h4 class="mb-2">How to Add Notes</h4>
                 <ol class="tutorial-list">
                   <li>Open the <strong>Layers panel</strong> in the left sidebar</li>
-                  <li>Click the <strong>⋮ menu</strong> on a circle, line, or point</li>
+                  <li>Click the <strong>⋮ menu</strong> on a circle, line, point, or polygon</li>
                   <li>Select <strong>Add note</strong> from the menu</li>
                   <li>Enter a <strong>title</strong> and <strong>content</strong> for your note</li>
                   <li>Click <strong>Save</strong> to attach the note to the element</li>
@@ -312,17 +341,19 @@
                     elements on the map
                   </li>
                   <li>
-                    <strong>Edit notes:</strong> Click the ⋮ menu and select "Edit note" to modify an
-                    existing note
+                    <strong>Edit notes:</strong> Click the ⋮ menu and select "Edit note" to modify
+                    an existing note
                   </li>
                   <li>
-                    <strong>Delete notes:</strong> Click the trash icon in the note tooltip or edit the
-                    note and delete it
+                    <strong>Delete notes:</strong> Click the trash icon in the note tooltip or edit
+                    the note and delete it
                   </li>
-                  <li><strong>One note per element:</strong> Each element can have only one note</li>
                   <li>
-                    <strong>Notes are saved:</strong> Notes are stored with your project and included
-                    in exports
+                    <strong>One note per element:</strong> Each element can have only one note
+                  </li>
+                  <li>
+                    <strong>Notes are saved:</strong> Notes are stored with your project and
+                    included in exports
                   </li>
                 </ul>
               </div>
@@ -498,8 +529,14 @@
                     navigation mode
                   </li>
                   <li><strong>Z</strong> - Toggle precision mode (magnified lens view)</li>
-                  <li><strong>ESC</strong> - Exit navigation mode, precision mode, or cancel free hand drawing</li>
-                  <li><strong>Right-click on map</strong> - Save coordinates at that location (also closes precision mode)</li>
+                  <li>
+                    <strong>ESC</strong> - Exit navigation mode, precision mode, or cancel free hand
+                    drawing
+                  </li>
+                  <li>
+                    <strong>Right-click on map</strong> - Save coordinates at that location (also
+                    closes precision mode)
+                  </li>
                   <li>
                     <strong>ALT</strong> - Hold during free hand drawing to lock azimuth (only when
                     no predefined azimuth)
@@ -515,22 +552,28 @@
                 </p>
                 <ul class="tutorial-list">
                   <li>
-                    <strong>Activate:</strong> Press the <strong>Z</strong> key to toggle precision mode
+                    <strong>Activate:</strong> Press the <strong>Z</strong> key to toggle precision
+                    mode
                   </li>
                   <li>
-                    <strong>Magnified lens:</strong> A circular lens appears above your cursor showing a 2.5x magnified view
+                    <strong>Magnified lens:</strong> A circular lens appears above your cursor
+                    showing a 2.5x magnified view
                   </li>
                   <li>
-                    <strong>Crosshair:</strong> The center crosshair helps you pinpoint exact locations
+                    <strong>Crosshair:</strong> The center crosshair helps you pinpoint exact
+                    locations
                   </li>
                   <li>
-                    <strong>Same zoom level:</strong> The lens shows the same map zoom level, just magnified for easier viewing
+                    <strong>Same zoom level:</strong> The lens shows the same map zoom level, just
+                    magnified for easier viewing
                   </li>
                   <li>
-                    <strong>Deactivate:</strong> Press <strong>Z</strong> again, <strong>ESC</strong>, or <strong>right-click</strong> to exit
+                    <strong>Deactivate:</strong> Press <strong>Z</strong> again,
+                    <strong>ESC</strong>, or <strong>right-click</strong> to exit
                   </li>
                   <li>
-                    Use precision mode when placing points, drawing lines, or examining detailed map features
+                    Use precision mode when placing points, drawing lines, or examining detailed map
+                    features
                   </li>
                 </ul>
               </div>
