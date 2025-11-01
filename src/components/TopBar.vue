@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!uiStore.navigatingElement && !uiStore.freeHandDrawing.isDrawing">
+  <div v-if="!uiStore.navigatingElement && !uiStore.freeHandDrawing.isDrawing && !uiStore.animationState.isPlaying">
     <!-- Top navigation drawer -->
     <v-navigation-drawer
       v-model="topBarOpen"
@@ -100,6 +100,19 @@
         </v-btn-group>
 
         <v-divider class="mx-2" vertical />
+
+        <!-- Animation button -->
+        <v-btn
+          color="surface-bright"
+          :icon="uiStore.animationState.isPlaying ? 'mdi-stop' : 'mdi-play'"
+          variant="elevated"
+          @click="handleAnimationToggle"
+        >
+          <v-icon>{{ uiStore.animationState.isPlaying ? 'mdi-stop' : 'mdi-play' }}</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            {{ uiStore.animationState.isPlaying ? 'Stop Animation' : 'Play Animation' }}
+          </v-tooltip>
+        </v-btn>
 
         <!-- Help button -->
         <v-btn
@@ -270,6 +283,14 @@ function handleLoadProject() {
 function handleCreateNote() {
   uiStore.clearNotePreFill();
   uiStore.openModal('noteModal');
+}
+
+function handleAnimationToggle() {
+  if (uiStore.animationState.isPlaying) {
+    uiStore.stopAnimation();
+  } else {
+    uiStore.startAnimation();
+  }
 }
 
 function handleExportGPX() {

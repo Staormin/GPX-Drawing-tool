@@ -468,6 +468,45 @@ export const useLayersStore = defineStore('layers', () => {
       return isValid;
     });
 
+    // Assign timestamps to elements that don't have them (for old projects)
+    // Use a sequential counter to maintain original order
+    let baseTimestamp = Date.now() - (validCircles.length + validLineSegments.length + validPoints.length + validPolygons.length) * 1000;
+
+    for (const circle of validCircles) {
+      if (!circle.createdAt) {
+        circle.createdAt = baseTimestamp;
+        baseTimestamp += 1000; // 1 second apart
+      }
+    }
+
+    for (const segment of validLineSegments) {
+      if (!segment.createdAt) {
+        segment.createdAt = baseTimestamp;
+        baseTimestamp += 1000;
+      }
+    }
+
+    for (const point of validPoints) {
+      if (!point.createdAt) {
+        point.createdAt = baseTimestamp;
+        baseTimestamp += 1000;
+      }
+    }
+
+    for (const polygon of validPolygons) {
+      if (!polygon.createdAt) {
+        polygon.createdAt = baseTimestamp;
+        baseTimestamp += 1000;
+      }
+    }
+
+    for (const note of validNotes) {
+      if (!note.createdAt) {
+        note.createdAt = baseTimestamp;
+        baseTimestamp += 1000;
+      }
+    }
+
     circles.value = [...validCircles];
     lineSegments.value = [...validLineSegments];
     points.value = [...validPoints];

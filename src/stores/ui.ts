@@ -52,6 +52,12 @@ export interface NotePreFillElement {
   id: string;
 }
 
+export interface AnimationState {
+  isPlaying: boolean;
+  currentElementIndex: number;
+  countdown: number;
+}
+
 export const useUIStore = defineStore('ui', () => {
   // State
   const openModals = ref<Set<string>>(new Set());
@@ -88,6 +94,11 @@ export const useUIStore = defineStore('ui', () => {
     sourcePointId: null,
   });
   const notePreFillElement = ref<NotePreFillElement | null>(null);
+  const animationState = ref<AnimationState>({
+    isPlaying: false,
+    currentElementIndex: -1,
+    countdown: 0,
+  });
 
   // Computed
   const isModalOpen = computed(() => (modalId: string) => openModals.value.has(modalId));
@@ -316,6 +327,30 @@ export const useUIStore = defineStore('ui', () => {
     notePreFillElement.value = null;
   }
 
+  function startAnimation(): void {
+    animationState.value = {
+      isPlaying: true,
+      currentElementIndex: -1,
+      countdown: 3,
+    };
+  }
+
+  function stopAnimation(): void {
+    animationState.value = {
+      isPlaying: false,
+      currentElementIndex: -1,
+      countdown: 0,
+    };
+  }
+
+  function setAnimationCountdown(countdown: number): void {
+    animationState.value.countdown = countdown;
+  }
+
+  function setAnimationIndex(index: number): void {
+    animationState.value.currentElementIndex = index;
+  }
+
   return {
     // State
     openModals,
@@ -340,6 +375,7 @@ export const useUIStore = defineStore('ui', () => {
     searchBarVisible,
     bearingsPanel,
     notePreFillElement,
+    animationState,
 
     // Computed
     isModalOpen,
@@ -388,5 +424,9 @@ export const useUIStore = defineStore('ui', () => {
     closeBearings,
     setNotePreFill,
     clearNotePreFill,
+    startAnimation,
+    stopAnimation,
+    setAnimationCountdown,
+    setAnimationIndex,
   };
 });
