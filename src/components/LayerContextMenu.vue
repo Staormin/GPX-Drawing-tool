@@ -137,8 +137,8 @@
         <v-list-item-title>{{ hasNote ? 'Edit note' : 'Add note' }}</v-list-item-title>
       </v-list-item>
 
-      <!-- Edit -->
-      <v-list-item @click="handleEdit">
+      <!-- Edit (not available for polygons) -->
+      <v-list-item v-if="elementType !== 'polygon'" @click="handleEdit">
         <template #prepend>
           <v-icon icon="mdi-pencil" size="small" />
         </template>
@@ -157,7 +157,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { CircleElement, LineSegmentElement, PointElement } from '@/services/storage';
+import type { CircleElement, LineSegmentElement, PointElement, PolygonElement } from '@/services/storage';
 import { computed, inject, ref } from 'vue';
 import { useCoordinatesStore } from '@/stores/coordinates';
 import { useLayersStore } from '@/stores/layers';
@@ -170,7 +170,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits<{
-  edit: [element: CircleElement | LineSegmentElement | PointElement];
+  edit: [element: CircleElement | LineSegmentElement | PointElement | PolygonElement];
   delete: [elementType: string, elementId: string];
 }>();
 
@@ -206,6 +206,9 @@ function getElement() {
     }
     case 'point': {
       return layersStore.points.find((p) => p.id === props.elementId);
+    }
+    case 'polygon': {
+      return layersStore.polygons.find((p) => p.id === props.elementId);
     }
   }
 }

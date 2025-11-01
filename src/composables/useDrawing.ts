@@ -622,13 +622,75 @@ export function useDrawing(mapRef: any) {
           });
         }
 
+        // Before deleting the point, collect polygons that will become invalid
+        const deletedCoords = point?.coordinates;
+        const polygonsToRemove: string[] = [];
+
+        if (deletedCoords) {
+          for (const polygon of layersStore.polygons) {
+            // Check if this polygon contains the point being deleted
+            const containsPoint = polygon.points.some(
+              (p) =>
+                Math.abs(p.lat - deletedCoords.lat) < 0.000001 &&
+                Math.abs(p.lon - deletedCoords.lon) < 0.000001
+            );
+
+            if (containsPoint) {
+              // Count remaining points after removing this one
+              const remainingPoints = polygon.points.filter(
+                (p) =>
+                  Math.abs(p.lat - deletedCoords.lat) >= 0.000001 ||
+                  Math.abs(p.lon - deletedCoords.lon) >= 0.000001
+              );
+
+              // If polygon would have less than 3 points, mark it for removal from map
+              if (remainingPoints.length < 3 && polygon.id) {
+                polygonsToRemove.push(polygon.id);
+              }
+            }
+          }
+        }
+
+        // Remove affected polygons from the map BEFORE deleting the point from store
+        for (const polygonId of polygonsToRemove) {
+          const polygon = layersStore.polygons.find((p) => p.id === polygonId);
+          if (polygon) {
+            // Remove from map
+            if (polygon.leafletId !== undefined) {
+              mapRef.map.value.eachLayer((layer: any) => {
+                if (L.stamp(layer) === polygon.leafletId) {
+                  mapRef.map.value.removeLayer(layer);
+                }
+              });
+            }
+            // Fallback: also try removing by className
+            mapRef.map.value.eachLayer((layer: any) => {
+              const className = layer.options?.className;
+              if (className && className.includes(`polygon-${polygonId}`)) {
+                mapRef.map.value.removeLayer(layer);
+              }
+            });
+          }
+        }
+
         break;
       }
       case 'polygon': {
         const polygon = layersStore.polygons.find((p) => p.id === elementId);
-        if (polygon && polygon.leafletId !== undefined) {
+        if (polygon) {
+          // Try to remove by leafletId first
+          if (polygon.leafletId !== undefined) {
+            mapRef.map.value.eachLayer((layer: any) => {
+              if (L.stamp(layer) === polygon.leafletId) {
+                mapRef.map.value.removeLayer(layer);
+              }
+            });
+          }
+
+          // Fallback: also try removing by className
           mapRef.map.value.eachLayer((layer: any) => {
-            if (L.stamp(layer) === polygon.leafletId) {
+            const className = layer.options?.className;
+            if (className && className.includes(`polygon-${elementId}`)) {
               mapRef.map.value.removeLayer(layer);
             }
           });

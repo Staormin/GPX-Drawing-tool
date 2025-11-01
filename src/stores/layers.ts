@@ -166,7 +166,42 @@ export const useLayersStore = defineStore('layers', () => {
       if (point && point.leafletId !== undefined) {
         leafletIdMap.value.delete(`point_${id}`);
       }
+
+      // Get the point's coordinates before deletion
+      const deletedCoords = point!.coordinates;
+
+      // Delete the point
       points.value.splice(index, 1);
+
+      // Check all polygons and delete those that used this point and now have < 3 points
+      const polygonsToDelete: string[] = [];
+      for (const polygon of polygons.value) {
+        // Check if this polygon contains the deleted point's coordinates
+        const containsPoint = polygon.points.some(
+          (p) =>
+            Math.abs(p.lat - deletedCoords.lat) < 0.000001 &&
+            Math.abs(p.lon - deletedCoords.lon) < 0.000001
+        );
+
+        if (containsPoint) {
+          // Count remaining points after removing this one
+          const remainingPoints = polygon.points.filter(
+            (p) =>
+              Math.abs(p.lat - deletedCoords.lat) >= 0.000001 ||
+              Math.abs(p.lon - deletedCoords.lon) >= 0.000001
+          );
+
+          // If polygon would have less than 3 points, mark it for deletion
+          if (remainingPoints.length < 3 && polygon.id) {
+            polygonsToDelete.push(polygon.id);
+          }
+        }
+      }
+
+      // Delete invalid polygons
+      for (const polygonId of polygonsToDelete) {
+        deletePolygon(polygonId);
+      }
     }
   }
 
